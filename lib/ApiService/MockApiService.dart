@@ -18,6 +18,24 @@ class MockApiService extends ApiService {
       'balance': 50000.0,
       'currency': 'CFA',
     },
+    '/transactions': [
+      {
+        'id': '1',
+        'amount': 1000.0,
+        'type': 'deposit',
+        'status': 'completed',
+        'date': '2024-01-15T10:30:00Z',
+        'description': 'Test transaction 1'
+      },
+      {
+        'id': '2',
+        'amount': 500.0,
+        'type': 'withdrawal',
+        'status': 'completed',
+        'date': '2024-01-14T14:20:00Z',
+        'description': 'Test transaction 2'
+      }
+    ],
     '/utilisateurs/refresh': {
       'token': 'mock_new_token',
       'refreshToken': 'mock_refresh_token',

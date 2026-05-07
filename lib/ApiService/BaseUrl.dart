@@ -1,5 +1,5 @@
 class BaseUrl {
-  static const String defaultApiBase = 'https://URL-production';
+  static const String defaultApiBase = 'https://api.jambarpay.com';
   
   static String get base => const String.fromEnvironment(
     'API_BASE',

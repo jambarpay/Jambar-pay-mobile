@@ -10,7 +10,6 @@ import '../widgets/transaction_widgets.dart';
 import '../widgets/home_widgets.dart';
 import '../models/mobile_employee_space.dart';
 
-/// Converts domain Transaction to UI TransactionItemModel.
 TransactionItemModel _toTransactionItemModel(Transaction t) {
   return TransactionItemModel(
     id: t.id,

@@ -22,6 +22,15 @@ class RestaurantsScreen extends StatefulWidget {
 
 class _RestaurantsScreenState extends State<RestaurantsScreen> {
   bool _showMap = false;
+  String _searchQuery = '';
+
+  List<RestaurantPartnerModel> get _filteredRestaurants {
+    if (_searchQuery.isEmpty) return widget.restaurants;
+    return widget.restaurants
+        .where((r) =>
+            r.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +49,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
             onRightTap: () => setState(() => _showMap = false),
             isDarkMode: widget.isDarkMode,
           ),
-          subtitle: '${widget.restaurants.length} restaurants pres de vous',
+          subtitle: '${_filteredRestaurants.length} restaurants pres de vous',
           isDarkMode: widget.isDarkMode,
         ),
         Expanded(
@@ -49,11 +58,14 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
             child: _showMap
                 ? RestaurantsMapView(
                     isDarkMode: widget.isDarkMode,
-                    restaurants: widget.restaurants,
+                    restaurants: _filteredRestaurants,
                   )
                 : RestaurantsListView(
                     isDarkMode: widget.isDarkMode,
-                    restaurants: widget.restaurants,
+                    restaurants: _filteredRestaurants,
+                    onSearchChanged: (value) {
+                      setState(() => _searchQuery = value);
+                    },
                   ),
           ),
         ),

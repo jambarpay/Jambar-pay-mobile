@@ -5,7 +5,7 @@ import '../widgets/app_palette.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/profile_widgets.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     super.key,
     required this.onBackHome,
@@ -13,6 +13,7 @@ class ProfileScreen extends StatelessWidget {
     required this.onDarkModeChanged,
     required this.userProfile,
     required this.onChangeSecretCode,
+    required this.onLogout,
   });
 
   final VoidCallback onBackHome;
@@ -20,22 +21,92 @@ class ProfileScreen extends StatelessWidget {
   final ValueChanged<bool> onDarkModeChanged;
   final UserProfileModel userProfile;
   final String? Function(String currentPin, String newPin) onChangeSecretCode;
+  final VoidCallback onLogout;
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _selectedLanguage = 'Francais';
+
+  void _showLanguageDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Choisir la langue'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<String>(
+              title: const Text('Francais'),
+              value: 'Francais',
+              groupValue: _selectedLanguage,
+              onChanged: (value) {
+                setState(() => _selectedLanguage = value!);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Langue changee: Francais')),
+                );
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('English'),
+              value: 'English',
+              groupValue: _selectedLanguage,
+              onChanged: (value) {
+                setState(() => _selectedLanguage = value!);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Language changed: English')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _contactSupport() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Contact Support'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Email: support@jambarpay.com'),
+            SizedBox(height: 8),
+            Text('Phone: +221 33 123 45 67'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppPalette(isDarkMode);
+    final palette = AppPalette(widget.isDarkMode);
 
     return Column(
       children: [
         SubPageHeader(
           title: '',
-          onBack: onBackHome,
+          onBack: widget.onBackHome,
           customContent: ProfileHeaderCard(
-            onBack: onBackHome,
-            isDarkMode: isDarkMode,
-            userProfile: userProfile,
+            onBack: widget.onBackHome,
+            isDarkMode: widget.isDarkMode,
+            userProfile: widget.userProfile,
           ),
-          isDarkMode: isDarkMode,
+          isDarkMode: widget.isDarkMode,
         ),
         Expanded(
           child: ColoredBox(
@@ -46,15 +117,15 @@ class ProfileScreen extends StatelessWidget {
                 ProfileActionTile(
                   icon: Icons.shield_outlined,
                   label: 'Modifiez votre code secret',
-                  isDarkMode: isDarkMode,
+                  isDarkMode: widget.isDarkMode,
                   onTap: () async {
                     final didChange = await Navigator.of(context).push<bool>(
                       MaterialPageRoute(
                         builder: (context) => SecretCodeScreen(
                           mode: SecretCodeFlowMode.change,
-                          phoneNumber: userProfile.phone,
-                          isDarkMode: isDarkMode,
-                          onChangePin: onChangeSecretCode,
+                          phoneNumber: widget.userProfile.phone,
+                          isDarkMode: widget.isDarkMode,
+                          onChangePin: widget.onChangeSecretCode,
                         ),
                       ),
                     );
@@ -71,29 +142,53 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 ProfileSwitchTile(
                   icon: Icons.contrast,
-                  label: isDarkMode ? 'Sombre' : 'Claire',
-                  value: isDarkMode,
-                  onChanged: onDarkModeChanged,
-                  isDarkMode: isDarkMode,
+                  label: widget.isDarkMode ? 'Sombre' : 'Claire',
+                  value: widget.isDarkMode,
+                  onChanged: widget.onDarkModeChanged,
+                  isDarkMode: widget.isDarkMode,
                 ),
                 const SizedBox(height: 12),
-                ProfileDropdownTile(
+                ProfileActionTile(
                   icon: Icons.language,
-                  label: 'Francais',
-                  isDarkMode: isDarkMode,
+                  label: _selectedLanguage,
+                  isDarkMode: widget.isDarkMode,
+                  onTap: _showLanguageDialog,
                 ),
                 const SizedBox(height: 32),
                 ProfileActionTile(
                   icon: Icons.headset_mic_outlined,
                   label: 'Contactez le support',
-                  isDarkMode: isDarkMode,
+                  isDarkMode: widget.isDarkMode,
+                  onTap: _contactSupport,
                 ),
                 const SizedBox(height: 18),
                 ProfileActionTile(
                   icon: Icons.logout,
                   label: 'Deconnexion',
                   color: Colors.red,
-                  isDarkMode: isDarkMode,
+                  isDarkMode: widget.isDarkMode,
+                  onTap: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Deconnexion'),
+                        content: const Text('Voulez-vous vraiment vous deconnecter?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Annuler'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              widget.onLogout();
+                            },
+                            child: const Text('Deconnexion', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

@@ -17,6 +17,7 @@ class HomeScreen extends StatelessWidget {
     required this.appState,
     required this.onChangeSecretCode,
     required this.onPaymentCompleted,
+    required this.onLogout,
   });
 
   final int currentIndex;
@@ -26,6 +27,7 @@ class HomeScreen extends StatelessWidget {
   final AppState appState;
   final String? Function(String currentPin, String newPin) onChangeSecretCode;
   final void Function(QRScanResultModel, PaymentResultModel) onPaymentCompleted;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +56,7 @@ class HomeScreen extends StatelessWidget {
             onDarkModeChanged: onDarkModeChanged,
             userProfile: appState.userProfile,
             onChangeSecretCode: onChangeSecretCode,
+            onLogout: onLogout,
           ),
         _ => HomeDashboard(
             onTabSelected: onTabSelected,

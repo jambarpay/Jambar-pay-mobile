@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import '../ApiService/ApiService.dart';
+import '../ApiService/MockApiService.dart';
 import '../di.dart' as di;
 import 'data/datasources/remote/auth_remote_datasource.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
@@ -32,17 +33,17 @@ final GetIt sl = GetIt.instance;
 
 void init() {
   if (sl.isRegistered<ApiService>()) {
-    return;
+    try {
+      sl.reset();
+    } catch (_) {
+    }
   }
-  
-  // Detect mock API mode from dart-define
   const useMockApi = String.fromEnvironment('USE_MOCK_API') == 'true';
-  // Detect local auth mode from dart-define
   const useLocalAuth = String.fromEnvironment('USE_LOCAL_AUTH') == 'true';
   print('🔧 [Injection] Initializing with useMockApi=$useMockApi, useLocalAuth=$useLocalAuth');
   
   sl.registerLazySingleton<ApiService>(
-    () => di.apiService,
+    () => useMockApi ? MockApiService() : di.apiService,
   );
 
   sl.registerLazySingleton<AuthRemoteDataSource>(

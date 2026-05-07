@@ -204,6 +204,10 @@ class _HomeShellState extends State<HomeShell> {
     });
   }
 
+  void _onLogout() {
+    context.read<AuthBloc>().add(const LogoutRequested());
+  }
+
   @override
   Widget build(BuildContext context) {
     return HomeScreen(
@@ -214,6 +218,7 @@ class _HomeShellState extends State<HomeShell> {
       appState: _appState,
       onChangeSecretCode: _onChangeSecretCode,
       onPaymentCompleted: _onPaymentCompleted,
+      onLogout: _onLogout,
     );
   }
 }

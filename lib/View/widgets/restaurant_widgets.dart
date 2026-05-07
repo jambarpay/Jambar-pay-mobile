@@ -3,36 +3,55 @@ import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 import 'home_widgets.dart';
 
-class RestaurantsListView extends StatelessWidget {
+class RestaurantsListView extends StatefulWidget {
   const RestaurantsListView({
     super.key,
     required this.isDarkMode,
     required this.restaurants,
+    this.onSearchChanged,
   });
 
   final bool isDarkMode;
   final List<RestaurantPartnerModel> restaurants;
+  final ValueChanged<String>? onSearchChanged;
+
+  @override
+  State<RestaurantsListView> createState() => _RestaurantsListViewState();
+}
+
+class _RestaurantsListViewState extends State<RestaurantsListView> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppPalette(isDarkMode);
+    final palette = AppPalette(widget.isDarkMode);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       children: [
-        SearchBar(isDarkMode: isDarkMode),
+        SearchBar(
+          isDarkMode: widget.isDarkMode,
+          controller: _searchController,
+          onChanged: widget.onSearchChanged,
+        ),
         const SizedBox(height: 18),
         Container(
-          color: isDarkMode ? palette.sectionContainer : Colors.transparent,
-          padding: EdgeInsets.all(isDarkMode ? 12 : 0),
+          color: widget.isDarkMode ? palette.sectionContainer : Colors.transparent,
+          padding: EdgeInsets.all(widget.isDarkMode ? 12 : 0),
           child: Column(
             children: [
-              for (var index = 0; index < restaurants.length; index++) ...[
+              for (var index = 0; index < widget.restaurants.length; index++) ...[
                 RestaurantCard(
-                  restaurant: restaurants[index],
-                  isDarkMode: isDarkMode,
+                  restaurant: widget.restaurants[index],
+                  isDarkMode: widget.isDarkMode,
                 ),
-                if (index != restaurants.length - 1) const SizedBox(height: 14),
+                if (index != widget.restaurants.length - 1) const SizedBox(height: 14),
               ],
             ],
           ),
@@ -89,43 +108,73 @@ class RestaurantsMapView extends StatelessWidget {
   }
 }
 
-class SearchBar extends StatelessWidget {
-  const SearchBar({super.key, this.isDarkMode = false});
+class SearchBar extends StatefulWidget {
+  const SearchBar({
+    super.key,
+    this.isDarkMode = false,
+    this.controller,
+    this.onChanged,
+  });
 
   final bool isDarkMode;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  State<SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<SearchBar> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppPalette(isDarkMode);
+    final palette = AppPalette(widget.isDarkMode);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: isDarkMode ? palette.tileBackground : const Color(0xFFEAE9FF),
+        color: widget.isDarkMode ? palette.tileBackground : const Color(0xFFEAE9FF),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        children: [
-          Icon(
+      child: TextField(
+        controller: _controller,
+        onChanged: widget.onChanged,
+        style: TextStyle(
+          color: widget.isDarkMode ? palette.primaryText : const Color(0xFF1C1A33),
+          fontSize: 13.5,
+        ),
+        decoration: InputDecoration(
+          hintText: 'rechercher un restaurant',
+          hintStyle: TextStyle(
+            color: widget.isDarkMode
+                ? const Color(0xFF8B86B8)
+                : const Color(0xFF88879A),
+            fontSize: 13.5,
+          ),
+          prefixIcon: Icon(
             Icons.search,
-            color: isDarkMode
+            color: widget.isDarkMode
                 ? const Color(0xFF6A64D8)
                 : const Color(0xFF88879A),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-                'rechercher un restaurant',
-              style: TextStyle(
-                color: isDarkMode
-                    ? const Color(0xFF8B86B8)
-                    : const Color(0xFF88879A),
-                fontSize: 13.5,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
       ),
     );
   }

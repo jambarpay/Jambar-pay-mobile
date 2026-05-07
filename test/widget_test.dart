@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jambar_pay_mobile/main.dart';
+import 'package:jambar_pay_mobile/injection.dart' as di;
 
 void main() {
   testWidgets('navigates from login to pin to home', (
@@ -11,6 +12,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    di.init();
 
     await tester.pumpWidget(const JambarPayApp());
 
