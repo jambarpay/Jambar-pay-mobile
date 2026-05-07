@@ -1,9 +1,0 @@
-[core]
-	repositoryformatversion = 0
-	filemode = true
-	bare = false
-	logallrefupdates = true
-	worktree = /home/abdoulaye/Vidéos/JambarPay/Jambar-Pay-Mobile
-[remote "origin"]
-	url = https://github.com/jambarpay/Jambar-pay-mobile.git
-	fetch = +refs/heads/*:refs/remotes/origin/*
