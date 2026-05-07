@@ -73,7 +73,7 @@ class ApiService {
     String endpoint, {
     Map<String, String>? headers,
     Map<String, String>? queryParameters,
-    Duration timeout = const Duration(seconds: 10),
+    Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint, queryParameters);
     print('ApiService: GET $uri');
@@ -85,7 +85,7 @@ class ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-    Duration timeout = const Duration(seconds: 10),
+    Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint);
     print('ApiService: POST $uri');
@@ -101,7 +101,7 @@ class ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-    Duration timeout = const Duration(seconds: 10),
+    Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
@@ -116,7 +116,7 @@ class ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
-    Duration timeout = const Duration(seconds: 10),
+    Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
@@ -130,7 +130,7 @@ class ApiService {
   Future<dynamic> delete(
     String endpoint, {
     Map<String, String>? headers,
-    Duration timeout = const Duration(seconds: 10),
+    Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
