@@ -35,9 +35,11 @@ void init() {
     return;
   }
   
+  // Detect mock API mode from dart-define
+  const useMockApi = String.fromEnvironment('USE_MOCK_API') == 'true';
   // Detect local auth mode from dart-define
   const useLocalAuth = String.fromEnvironment('USE_LOCAL_AUTH') == 'true';
-  print('🔧 [Injection] Initializing with useLocalAuth=$useLocalAuth');
+  print('🔧 [Injection] Initializing with useMockApi=$useMockApi, useLocalAuth=$useLocalAuth');
   
   sl.registerLazySingleton<ApiService>(
     () => di.apiService,
