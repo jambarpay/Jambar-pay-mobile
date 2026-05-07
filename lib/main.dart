@@ -8,6 +8,7 @@ import 'injection.dart' as di;
 import 'View/main.dart' as app;
 
 void main() {
+  print('📱 [JambarPay] Starting app with USE_MOCK_API=${di.USE_MOCK_API}');
   di.init();
   runApp(const JambarPayApp());
 }
