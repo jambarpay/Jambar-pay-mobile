@@ -41,6 +41,16 @@ dev_dependencies:
   # Code generation
   build_runner: ^2.4.6
   json_serializable: ^6.7.1
+  
+  # App icon generation
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/IconeAppli.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
