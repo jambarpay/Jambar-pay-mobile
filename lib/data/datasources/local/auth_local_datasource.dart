@@ -1,7 +1,7 @@
 class AuthLocalDataSource {
   static const String _testOtp = '1234';
   static const String _testUserId = 'test-user-123';
-  static const String _testUserName = 'Test User';
+  static const String _testUserName = 'Abdoulaye Diallo';
 
   Future<void> sendOtp(String phone) async {
     await Future.delayed(const Duration(milliseconds: 500));

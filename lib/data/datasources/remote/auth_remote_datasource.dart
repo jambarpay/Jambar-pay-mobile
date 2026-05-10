@@ -24,7 +24,12 @@ class AuthRemoteDataSource {
     if (response is! Map) {
       throw Exception('Invalid response format');
     }
-    return Map<String, dynamic>.from(response);
+    final responseMap = Map<String, dynamic>.from(response);
+    // Extract 'user' object if it exists (API structure)
+    if (responseMap.containsKey('user')) {
+      return Map<String, dynamic>.from(responseMap['user']);
+    }
+    return responseMap;
   }
 
   Future<String> refreshToken(String refreshToken) async {

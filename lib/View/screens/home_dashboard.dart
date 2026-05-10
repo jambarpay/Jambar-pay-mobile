@@ -37,7 +37,7 @@ class HomeDashboard extends StatelessWidget {
                 appState.userProfile.name,
                 style: TextStyle(
                   color: palette.primaryText,
-                  fontSize: 18,
+                  fontSize: 26,
                   fontWeight: FontWeight.w700,
                 ),
               ),

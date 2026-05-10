@@ -11,7 +11,7 @@ class MockApiService extends ApiService {
       'user': {
         'id': '123',
         'phone': '777453164',
-        'name': 'Test User',
+        'name': 'Abdoulaye Diallo',
       }
     },
     '/wallet': {
