@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import '../widgets/app_palette.dart';
 import '../widgets/home_widgets.dart';
@@ -35,21 +36,22 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(widget.isDarkMode);
+    final loc = AppLocalizations.of(context);
 
     return Column(
       children: [
         SubPageHeader(
-          title: 'Restaurants',
+          title: loc.restaurants,
           onBack: widget.onBackHome,
           trailing: TogglePill(
-            leftLabel: 'Carte',
-            rightLabel: 'Liste',
+            leftLabel: loc.map,
+            rightLabel: loc.list,
             isLeftSelected: _showMap,
             onLeftTap: () => setState(() => _showMap = true),
             onRightTap: () => setState(() => _showMap = false),
             isDarkMode: widget.isDarkMode,
           ),
-          subtitle: '${_filteredRestaurants.length} restaurants pres de vous',
+          subtitle: loc.restaurantsNearby(_filteredRestaurants.length.toString()),
           isDarkMode: widget.isDarkMode,
         ),
         Expanded(

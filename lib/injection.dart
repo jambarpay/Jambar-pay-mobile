@@ -35,13 +35,15 @@ void init() {
   if (sl.isRegistered<ApiService>()) {
     try {
       sl.reset();
-    } catch (_) {
-    }
+    } catch (_) {}
   }
   const useMockApi = String.fromEnvironment('USE_MOCK_API') == 'true';
-  const useLocalAuth = String.fromEnvironment('USE_LOCAL_AUTH') == 'true';
-  print('🔧 [Injection] Initializing with useMockApi=$useMockApi, useLocalAuth=$useLocalAuth');
-  
+  const useLocalAuth =
+      useMockApi || String.fromEnvironment('USE_LOCAL_AUTH') == 'true';
+  print(
+    '🔧 [Injection] Initializing with useMockApi=$useMockApi, useLocalAuth=$useLocalAuth',
+  );
+
   sl.registerLazySingleton<ApiService>(
     () => useMockApi ? MockApiService() : di.apiService,
   );
@@ -49,9 +51,7 @@ void init() {
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSource(sl<ApiService>()),
   );
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSource(),
-  );
+  sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());
   sl.registerLazySingleton<TransactionRemoteDataSource>(
     () => TransactionRemoteDataSource(sl<ApiService>()),
   );
@@ -72,17 +72,19 @@ void init() {
   sl.registerLazySingleton<WalletRepository>(
     () => WalletRepositoryImpl(sl<WalletRemoteDataSource>()),
   );
-  sl.registerLazySingleton<PaymentRepository>(
-    () => PaymentRepositoryImpl(),
-  );
+  sl.registerLazySingleton<PaymentRepository>(() => PaymentRepositoryImpl());
 
   sl.registerFactory(() => SendOtp(sl<AuthRepository>()));
   sl.registerFactory(() => VerifyOtp(sl<AuthRepository>()));
   sl.registerFactory(() => ChangePin());
 
   sl.registerLazySingleton(() => GetTransactions(sl<TransactionRepository>()));
-  sl.registerLazySingleton(() => FilterTransactions(sl<TransactionRepository>()));
-  sl.registerLazySingleton(() => GetTransactionById(sl<TransactionRepository>()));
+  sl.registerLazySingleton(
+    () => FilterTransactions(sl<TransactionRepository>()),
+  );
+  sl.registerLazySingleton(
+    () => GetTransactionById(sl<TransactionRepository>()),
+  );
 
   sl.registerLazySingleton(() => InitiatePayment(sl<PaymentRepository>()));
   sl.registerLazySingleton(() => ConfirmPayment(sl<PaymentRepository>()));
@@ -104,9 +106,7 @@ void init() {
     ),
   );
   sl.registerFactory<PaymentBloc>(
-    () => PaymentBloc(
-      confirmPayment: sl<ConfirmPayment>(),
-    ),
+    () => PaymentBloc(confirmPayment: sl<ConfirmPayment>()),
   );
   sl.registerFactory<ProfileBloc>(
     () => ProfileBloc(

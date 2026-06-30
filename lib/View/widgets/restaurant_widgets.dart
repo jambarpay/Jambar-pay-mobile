@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 import 'home_widgets.dart';
@@ -87,7 +88,7 @@ class RestaurantsMapView extends StatelessWidget {
             padding: EdgeInsets.all(isDarkMode ? 12 : 0),
             child: Column(
               children: [
-                const SectionHeader(title: 'Restaurants a proximite'),
+                SectionHeader(title: AppLocalizations.of(context).restaurantsNearby('0')),
                 for (
                   var index = 0;
                   index < restaurants.take(2).length;
@@ -159,7 +160,7 @@ class _SearchBarState extends State<SearchBar> {
           fontSize: 13.5,
         ),
         decoration: InputDecoration(
-          hintText: 'rechercher un restaurant',
+          hintText: AppLocalizations.of(context).searchRestaurant,
           hintStyle: TextStyle(
             color: widget.isDarkMode
                 ? const Color(0xFF8B86B8)
@@ -256,7 +257,7 @@ class RestaurantCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                restaurant.isOpen ? 'Ouvert' : 'Ferme',
+                restaurant.isOpen ? AppLocalizations.of(context).open : AppLocalizations.of(context).closed,
                 style: TextStyle(
                   color: restaurant.isOpen
                       ? const Color(0xFF11B777)

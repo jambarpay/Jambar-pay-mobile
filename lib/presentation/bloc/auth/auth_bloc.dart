@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 import '../../../domain/value_objects/phone_number.dart';
@@ -7,21 +10,28 @@ import '../../../domain/use_cases/auth/verify_otp.dart';
 import '../../../domain/use_cases/auth/change_pin.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  static const int _maxPinAttempts = 5;
+  static const Duration _pinLockDuration = Duration(minutes: 2);
+
   final SendOtp _sendOtp;
   final VerifyOtp _verifyOtp;
   final ChangePin _changePin;
 
   String _currentPhone = '';
   String _currentPin = '';
+  int _failedPinAttempts = 0;
+  DateTime? _pinLockedUntil;
+
+  AppLocalizations get _localizations => AppLocalizations(const Locale('fr'));
 
   AuthBloc({
     required SendOtp sendOtp,
     required VerifyOtp verifyOtp,
     required ChangePin changePin,
-  })  : _sendOtp = sendOtp,
-        _verifyOtp = verifyOtp,
-        _changePin = changePin,
-        super(const AuthPhoneInitial()) {
+  }) : _sendOtp = sendOtp,
+       _verifyOtp = verifyOtp,
+       _changePin = changePin,
+       super(const AuthPhoneInitial()) {
     on<PhoneNumberChanged>(_onPhoneNumberChanged);
     on<PhoneNumberBackspace>(_onPhoneNumberBackspace);
     on<PhoneNumberSubmitted>(_onPhoneNumberSubmitted);
@@ -54,9 +64,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final phone = PhoneNumber(_currentPhone);
 
     if (phone.digits.length == 9) {
-      emit(AuthPhoneValid(phone.formatted));
+      if (phone.isValid) {
+        emit(AuthPhoneValid(phone.formatted));
+      } else {
+        emit(
+          AuthPhoneInvalid(
+            _localizations.phoneAuthorizedOnly,
+            _currentPhone,
+          ),
+        );
+      }
     } else if (phone.digits.length > 9) {
-      emit(AuthPhoneInvalid('Numero trop long', _currentPhone));
+      emit(AuthPhoneInvalid(_localizations.phoneTooLong, _currentPhone));
     } else {
       emit(AuthPhoneInitial(_currentPhone));
     }
@@ -86,7 +105,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final phone = PhoneNumber(_currentPhone);
     if (!phone.isValid) {
-      emit(AuthPhoneInvalid('Numero de telephone invalide', _currentPhone));
+      emit(AuthPhoneInvalid(_localizations.invalidPhoneNumber, _currentPhone));
+      return;
+    }
+
+    _clearPinLockIfExpired();
+    if (_isPinLocked) {
+      emit(AuthFailure(_pinLockMessage(), phone.formatted, _pinLockedUntil));
       return;
     }
 
@@ -101,18 +126,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onPinChanged(
-    PinChanged event,
-    Emitter<AuthState> emit,
-  ) {
+  void _onPinChanged(PinChanged event, Emitter<AuthState> emit) {
+    _clearPinLockIfExpired();
+    if (_isPinLocked) {
+      _currentPin = '';
+      emit(
+        AuthFailure(_pinLockMessage(), _formattedCurrentPhone, _pinLockedUntil),
+      );
+      return;
+    }
+
     // append digit(s) to the current pin, but cap at 4 chars
     final incoming = event.pin;
     if (incoming.isEmpty) return;
 
     final combined = _currentPin + incoming;
     _currentPin = combined.length > 4 ? combined.substring(0, 4) : combined;
-    
-    print('🔐 [AuthBloc] PIN update: current="$_currentPin" (length=${_currentPin.length})');
+
+    print(
+      '🔐 [AuthBloc] PIN update: current="$_currentPin" (length=${_currentPin.length})',
+    );
 
     if (_currentPin.length == 4) {
       // update state so the UI shows 4 dots before submitting
@@ -126,10 +159,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
   }
 
-  void _onPinBackspace(
-    PinBackspace event,
-    Emitter<AuthState> emit,
-  ) {
+  void _onPinBackspace(PinBackspace event, Emitter<AuthState> emit) {
+    _clearPinLockIfExpired();
+    if (_isPinLocked) {
+      emit(
+        AuthFailure(_pinLockMessage(), _formattedCurrentPhone, _pinLockedUntil),
+      );
+      return;
+    }
+
     if (_currentPin.isNotEmpty) {
       _currentPin = _currentPin.substring(0, _currentPin.length - 1);
       emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
@@ -140,11 +178,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     PinSubmitted event,
     Emitter<AuthState> emit,
   ) async {
+    _clearPinLockIfExpired();
+    if (_isPinLocked) {
+      _currentPin = '';
+      emit(
+        AuthFailure(_pinLockMessage(), _formattedCurrentPhone, _pinLockedUntil),
+      );
+      return;
+    }
+
     emit(AuthPinLoading(PhoneNumber(_currentPhone).formatted));
     try {
       final phone = PhoneNumber(_currentPhone);
 
-      print('🔐 [AuthBloc] Submitting PIN: "$_currentPin" for phone: ${phone.digits}');
+      print(
+        '🔐 [AuthBloc] Submitting PIN: "$_currentPin" for phone: ${phone.digits}',
+      );
 
       // PIN verification is handled by verifyOtp use case
       // No hardcoded PINs allowed - security requirement
@@ -154,13 +203,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthAuthenticated(user));
 
       // clear sensitive data after success
+      _failedPinAttempts = 0;
+      _pinLockedUntil = null;
       _currentPin = '';
       _currentPhone = '';
     } catch (e) {
       print('❌ [AuthBloc] Authentication failed: ${e.toString()}');
-      // keep phone so user can retry entering PIN
-      emit(AuthFailure('Code secret incorrect. Réessayez.', _currentPhone));
-      _currentPin = '';
+      _registerPinFailure(emit);
     }
   }
 
@@ -179,10 +228,76 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       await _changePin(currentPin: '', newPin: '');
-    } catch (_) {
-    }
+    } catch (_) {}
+    _failedPinAttempts = 0;
+    _pinLockedUntil = null;
     _currentPhone = '';
     _currentPin = '';
     emit(const AuthPhoneInitial());
+  }
+
+  bool get _isPinLocked =>
+      _pinLockedUntil != null && DateTime.now().isBefore(_pinLockedUntil!);
+
+  String get _formattedCurrentPhone => PhoneNumber(_currentPhone).formatted;
+
+  void _clearPinLockIfExpired() {
+    if (_pinLockedUntil == null) {
+      return;
+    }
+
+    if (!DateTime.now().isBefore(_pinLockedUntil!)) {
+      _pinLockedUntil = null;
+      _failedPinAttempts = 0;
+    }
+  }
+
+  void _registerPinFailure(Emitter<AuthState> emit) {
+    _failedPinAttempts += 1;
+    _currentPin = '';
+
+    if (_failedPinAttempts >= _maxPinAttempts) {
+      _pinLockedUntil = DateTime.now().add(_pinLockDuration);
+      emit(
+        AuthFailure(_pinLockMessage(), _formattedCurrentPhone, _pinLockedUntil),
+      );
+      return;
+    }
+
+    final remainingAttempts = _maxPinAttempts - _failedPinAttempts;
+    final attemptLabel = remainingAttempts > 1 ? 'tentatives' : 'tentative';
+
+    emit(
+      AuthFailure(
+        _localizations.incorrectSecretCode(remainingAttempts, attemptLabel),
+        _formattedCurrentPhone,
+      ),
+    );
+  }
+
+  String _pinLockMessage() {
+    final lockedUntil = _pinLockedUntil;
+    if (lockedUntil == null) {
+      return _localizations.retryIn('2:00');
+    }
+
+    final remaining = lockedUntil.difference(DateTime.now());
+    if (remaining.inMilliseconds <= 0) {
+      return _localizations.youCanRetryNow;
+    }
+
+    final totalSeconds = (remaining.inMilliseconds / 1000).ceil();
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (minutes > 0) {
+      if (seconds == 0) {
+        final minuteLabel = minutes > 1 ? 'minutes' : 'minute';
+        return _localizations.retryIn('$minutes $minuteLabel');
+      }
+      return _localizations.retryIn('${minutes} min ${seconds}s');
+    }
+
+    return _localizations.retryIn('${seconds}s');
   }
 }

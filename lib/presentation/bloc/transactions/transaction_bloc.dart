@@ -150,19 +150,19 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
 
     final now = DateTime.now();
     switch (filter) {
-      case "Aujourd'hui":
+      case 'today':
         result = result.where((t) {
           final d = t.date;
           return d.year == now.year && d.month == now.month && d.day == now.day;
         }).toList();
         break;
-      case 'Cette semaine':
+      case 'thisWeek':
         final startOfWeek = DateTime(now.year, now.month, now.day)
             .subtract(Duration(days: now.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 7));
         result = result.where((t) => !t.date.isBefore(startOfWeek) && t.date.isBefore(endOfWeek)).toList();
         break;
-      case 'Ce mois':
+      case 'thisMonth':
         result = result.where((t) => t.date.year == now.year && t.date.month == now.month).toList();
         break;
       default:

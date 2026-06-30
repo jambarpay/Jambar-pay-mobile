@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'payment_simulation_screen.dart';
 import '../widgets/app_palette.dart';
@@ -35,6 +36,27 @@ class _QrScreenState extends State<QrScreen> {
   bool _isOpeningPayment = false;
   late QRScanResultModel? _scanResult;
   late PaymentResultModel? _paymentResult;
+  int _qrAttemptCount = 0;
+  DateTime? _qrLockoutEnd;
+  String? _qrErrorMessage;
+
+  bool get _isQrLockedOut {
+    return _qrLockoutEnd != null && DateTime.now().isBefore(_qrLockoutEnd!);
+  }
+
+  String get _qrLockoutRemaining {
+    if (_qrLockoutEnd == null) return '00:00';
+    final remaining = _qrLockoutEnd!.difference(DateTime.now());
+    if (remaining.isNegative) return '00:00';
+    final minutes = remaining.inMinutes;
+    final seconds = remaining.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+
+  void _clearQrError() {
+    _qrErrorMessage = null;
+  }
 
   @override
   void initState() {
@@ -57,21 +79,29 @@ class _QrScreenState extends State<QrScreen> {
   }
 
   Future<void> _setScannerMode(bool value) async {
+    if (value && _isQrLockedOut) {
+      setState(() {
+        _qrErrorMessage = AppLocalizations.of(context).retryIn(_qrLockoutRemaining);
+      });
+      return;
+    }
+
     setState(() {
       _showScanner = value;
-      if (!value) {
-        _lastScannedValue = null;
+      _lastScannedValue = value ? _lastScannedValue : null;
+      if (value) {
+        _clearQrError();
       }
     });
 
     if (value) {
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          try {
-            await _scannerController.start();
-          } catch (_) {
-            // Ignore start errors (already starting/started)
-          }
-        });
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await _scannerController.start();
+        } catch (_) {
+          // Ignore start errors (already starting/started)
+        }
+      });
       return;
     }
 
@@ -113,7 +143,7 @@ class _QrScreenState extends State<QrScreen> {
                     icon: Icon(Icons.arrow_back, color: palette.primaryText),
                   ),
                   Text(
-                    'Retour',
+                    AppLocalizations.of(context).back,
                     style: TextStyle(
                       color: palette.secondaryText,
                       fontSize: 13,
@@ -164,11 +194,19 @@ class _QrScreenState extends State<QrScreen> {
                     if (_showScanner) ...[
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
-                        onPressed: () => _openPaymentFlow('demo-food-qr'),
-                        icon: const Icon(Icons.flash_on_outlined, size: 16),
-                        label: const Text('Simulation rapide'),
+                        onPressed: () => _openPaymentFlow('1234'),
+                        icon: Icon(
+                          Icons.flash_on_outlined,
+                          size: 16,
+                          color: widget.isDarkMode ? palette.primaryText : palette.mutedText,
+                        ),
+                        label: Text(
+                          AppLocalizations.of(context).testQr,
+                          style: TextStyle(
+                            color: widget.isDarkMode ? palette.primaryText : palette.mutedText,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: palette.primaryText,
                           side: BorderSide(
                             color: palette.accent.withValues(alpha: 0.4),
                           ),
@@ -182,6 +220,18 @@ class _QrScreenState extends State<QrScreen> {
                           ),
                         ),
                       ),
+                      if (_qrErrorMessage != null) ...[
+                        const SizedBox(height: 14),
+                        Text(
+                          _qrErrorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                     const SizedBox(height: 18),
                     if (!_showScanner)
@@ -193,8 +243,8 @@ class _QrScreenState extends State<QrScreen> {
                     if (!_showScanner) const SizedBox(height: 18),
                     if (!_showScanner)
                       TogglePill(
-                        leftLabel: 'Scanner',
-                        rightLabel: 'Mon QR',
+                        leftLabel: AppLocalizations.of(context).scan,
+                        rightLabel: AppLocalizations.of(context).myQr,
                         isLeftSelected: _showScanner,
                         onLeftTap: () => _setScannerMode(true),
                         onRightTap: () => _setScannerMode(false),
@@ -220,6 +270,38 @@ class _QrScreenState extends State<QrScreen> {
       return;
     }
 
+    if (_isQrLockedOut) {
+      setState(() {
+        _qrErrorMessage = AppLocalizations.of(context).retryIn(_qrLockoutRemaining);
+      });
+      return;
+    }
+
+    final code = rawValue.trim();
+    if (code != '1234') {
+      if (_lastScannedValue != code) {
+        _qrAttemptCount += 1;
+      }
+
+      if (_qrAttemptCount >= 5) {
+        _qrLockoutEnd = DateTime.now().add(const Duration(minutes: 5));
+        setState(() {
+          _qrErrorMessage = AppLocalizations.of(context).retryIn('05:00');
+          _lastScannedValue = code;
+        });
+      } else {
+        final remaining = 5 - _qrAttemptCount;
+        setState(() {
+          _qrErrorMessage = AppLocalizations.of(context).invalidQrCode + ' ${AppLocalizations.of(context).retryIn('$remaining')}';
+          _lastScannedValue = code;
+        });
+      }
+      return;
+    }
+
+    _qrErrorMessage = null;
+    _qrAttemptCount = 0;
+    _qrLockoutEnd = null;
     _isOpeningPayment = true;
     final navigator = Navigator.of(context);
     try {
@@ -233,7 +315,7 @@ class _QrScreenState extends State<QrScreen> {
         builder: (context) => PaymentSimulationScreen(
           isDarkMode: widget.isDarkMode,
           qrToken: rawValue,
-          merchantName: _merchantNameFromScan(rawValue),
+          merchantName: _merchantNameFromScan(rawValue, context),
           availableBalance: widget.wallet?.balance,
         ),
       ),
@@ -257,7 +339,7 @@ class _QrScreenState extends State<QrScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Paiement reussi chez ${result.scanResult.merchantName}.',
+            AppLocalizations.of(context).paymentSuccessMessage(result.scanResult.merchantName),
           ),
         ),
       );
@@ -275,7 +357,7 @@ class _QrScreenState extends State<QrScreen> {
     }
   }
 
-  String _merchantNameFromScan(String rawValue) {
+  String _merchantNameFromScan(String rawValue, BuildContext context) {
     final normalized = rawValue.toLowerCase();
 
     if (normalized.contains('food')) {
@@ -291,6 +373,6 @@ class _QrScreenState extends State<QrScreen> {
       return 'Express Cafe';
     }
 
-    return 'Restaurant partenaire';
+    return AppLocalizations.of(context).partnerRestaurant;
   }
 }

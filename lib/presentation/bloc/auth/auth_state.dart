@@ -45,7 +45,6 @@ class AuthPhoneInvalid extends AuthState {
   List<Object?> get props => [errorMessage, phoneNumber];
 }
 
-
 class AuthPinEntry extends AuthState {
   final String phoneNumber;
   final String currentPin;
@@ -55,7 +54,6 @@ class AuthPinEntry extends AuthState {
   @override
   List<Object?> get props => [phoneNumber, currentPin];
 }
-
 
 class AuthPinLoading extends AuthState {
   final String phoneNumber;
@@ -79,9 +77,14 @@ class AuthFailure extends AuthState {
   final String errorMessage;
 
   final String phoneNumber;
+  final DateTime? pinLockedUntil;
 
-  const AuthFailure(this.errorMessage, [this.phoneNumber = '']);
+  const AuthFailure(
+    this.errorMessage, [
+    this.phoneNumber = '',
+    this.pinLockedUntil,
+  ]);
 
   @override
-  List<Object?> get props => [errorMessage, phoneNumber];
+  List<Object?> get props => [errorMessage, phoneNumber, pinLockedUntil];
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 
 class HistoryFilters extends StatelessWidget {
   const HistoryFilters({
@@ -14,7 +15,13 @@ class HistoryFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const filters = ['Tous', "Aujourd'hui", 'Cette semaine', 'Ce mois'];
+    final loc = AppLocalizations.of(context);
+    final filters = <List<String>>[
+      ['all', loc.filterAll],
+      ['today', loc.filterToday],
+      ['thisWeek', loc.filterThisWeek],
+      ['thisMonth', loc.filterThisMonth],
+    ];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -24,10 +31,10 @@ class HistoryFilters extends StatelessWidget {
           children: [
             for (var index = 0; index < filters.length; index++) ...[
               HistoryFilterChip(
-                label: filters[index],
-                isSelected: selectedFilter == filters[index],
+                label: filters[index][1],
+                isSelected: selectedFilter == filters[index][0],
                 isDarkMode: isDarkMode,
-                onTap: () => onFilterSelected(filters[index]),
+                onTap: () => onFilterSelected(filters[index][0]),
               ),
               if (index != filters.length - 1) const SizedBox(width: 10),
             ],
@@ -58,6 +65,7 @@ class HistorySearchField extends StatelessWidget {
     final hintColor = isDarkMode
         ? const Color(0xFF9B97BC)
         : const Color(0xFF88879A);
+    final loc = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -66,7 +74,7 @@ class HistorySearchField extends StatelessWidget {
         onChanged: onChanged,
         decoration: InputDecoration(
           prefixIcon: Icon(Icons.search, color: hintColor),
-          hintText: 'Rechercher une transaction ou un commerce',
+          hintText: loc.searchTransactions,
           hintStyle: TextStyle(color: hintColor, fontSize: 14),
           filled: true,
           fillColor: fillColor,

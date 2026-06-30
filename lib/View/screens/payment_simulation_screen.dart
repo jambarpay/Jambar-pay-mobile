@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 
 import '../models/mobile_employee_space.dart';
 import '../widgets/app_palette.dart';
@@ -41,6 +42,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(widget.isDarkMode);
+    final loc = AppLocalizations.of(context);
     final contentColor = widget.isDarkMode
         ? palette.primaryText
         : const Color(0xFF1C1A33);
@@ -80,7 +82,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            'Retour',
+                            loc.back,
                             style: TextStyle(color: hintColor, fontSize: 13),
                           ),
                         ],
@@ -100,7 +102,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Veuillez entrer le montant a payer',
+                            loc.enterAmountToPay,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
@@ -111,7 +113,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
                           const SizedBox(height: 8),
                           if (widget.availableBalance != null)
                             Text(
-                              'Solde disponible: ${widget.availableBalance!.formatted}',
+                              loc.availableBalance(widget.availableBalance!.formatted),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -121,7 +123,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
                           const SizedBox(height: 26),
                           _AmountField(
                             amountLabel: _amountDigits.isEmpty
-                                ? 'Montant'
+                                ? AppLocalizations.of(context).amount
                                 : MoneyModel.xof(
                                     amount,
                                   ).formatted.replaceAll(' Fcfa', ''),
@@ -167,9 +169,9 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text(
-                                      'Payer',
-                                      style: TextStyle(
+                                  : Text(
+                                      loc.pay,
+                                      style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -238,19 +240,20 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
     final surfaceColor = widget.isDarkMode
         ? palette.sectionContainer
         : Colors.white;
+    final loc = AppLocalizations.of(context);
     final amount = int.tryParse(_amountDigits) ?? 0;
     final balance = widget.availableBalance?.amount ?? double.infinity;
 
     if (amount <= 0) {
       setState(() {
-        _errorMessage = 'Veuillez saisir un montant valide.';
+        _errorMessage = loc.invalidAmount;
       });
       return;
     }
 
     if (amount > balance) {
       setState(() {
-        _errorMessage = 'Solde insuffisant pour ce paiement.';
+        _errorMessage = loc.insufficientBalance;
       });
       return;
     }
@@ -319,7 +322,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Paiement reussi',
+                loc.paymentSuccess,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -328,7 +331,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '${money.formatted} envoye a ${widget.merchantName}.',
+                loc.paymentSuccessBody(money.formatted, widget.merchantName),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -346,7 +349,7 @@ class _PaymentSimulationScreenState extends State<PaymentSimulationScreen> {
                 backgroundColor: actionColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Terminer'),
+              child: Text(loc.finish),
             ),
           ],
         );
@@ -400,10 +403,10 @@ class _AmountField extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 15,
-                fontWeight: amountLabel == 'Montant'
+                fontWeight: amountLabel == AppLocalizations.of(context).amount
                     ? FontWeight.w600
                     : FontWeight.w700,
-                color: amountLabel == 'Montant' ? hintColor : contentColor,
+                color: amountLabel == AppLocalizations.of(context).amount ? hintColor : contentColor,
               ),
             ),
           ),

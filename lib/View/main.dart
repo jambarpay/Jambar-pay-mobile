@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jambar_pay_mobile/domain/entities/user.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+import 'package:jambar_pay_mobile/language_controller.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_state.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_event.dart';
@@ -21,26 +24,48 @@ class JambarPayApp extends StatelessWidget {
     const brandGreen = Color(0xFF11B777);
     const softBackground = Color(0xFFF6F5FB);
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Jambar Pay Mobile',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: softBackground,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: brandOrange,
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: brandOrange,
-          secondary: brandGreen,
-          surface: Colors.white,
-        ),
-        textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: brandDark,
-          displayColor: brandDark,
-        ),
-      ),
-      home: const JambarPayFlow(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LanguageController.localeNotifier,
+      builder: (context, locale, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: AppLocalizations(locale).appTitle,
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          localeResolutionCallback: (deviceLocale, supportedLocales) {
+            if (deviceLocale == null) return supportedLocales.first;
+            for (final supported in supportedLocales) {
+              if (supported.languageCode == deviceLocale.languageCode) {
+                return supported;
+              }
+            }
+            return supportedLocales.first;
+          },
+          theme: ThemeData(
+            useMaterial3: true,
+            scaffoldBackgroundColor: softBackground,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: brandOrange,
+              brightness: Brightness.light,
+            ).copyWith(
+              primary: brandOrange,
+              secondary: brandGreen,
+              surface: Colors.white,
+            ),
+            textTheme: ThemeData.light().textTheme.apply(
+                  bodyColor: brandDark,
+                  displayColor: brandDark,
+                ),
+          ),
+          home: const JambarPayFlow(),
+        );
+      },
     );
   }
 }
@@ -55,7 +80,11 @@ class JambarPayFlow extends StatelessWidget {
         if (state is AuthPhoneInitial) {
           return _buildLoginScreen(context, state.phoneNumber);
         } else if (state is AuthPhoneInvalid) {
-          return _buildLoginScreen(context, state.phoneNumber);
+          return _buildLoginScreen(
+            context,
+            state.phoneNumber,
+            errorText: state.errorMessage,
+          );
         } else if (state is AuthPhoneValid) {
           return _buildLoginScreen(context, state.formattedPhone);
         } else if (state is AuthPhoneLoading) {
@@ -73,9 +102,9 @@ class JambarPayFlow extends StatelessWidget {
           return _buildHomeScreen(context, state.user);
         } else if (state is AuthFailure) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
             if (state.phoneNumber.isEmpty) {
               if (Navigator.of(context).canPop()) {
                 Navigator.of(context).popUntil((route) => route.isFirst);
@@ -83,20 +112,29 @@ class JambarPayFlow extends StatelessWidget {
             }
           });
           if (state.phoneNumber.isNotEmpty) {
-            return _buildPinScreen(context, state.phoneNumber);
+            return _buildPinScreen(
+              context,
+              state.phoneNumber,
+              '',
+              state.errorMessage,
+              state.pinLockedUntil,
+            );
           }
           return _buildLoginScreen(context, '');
         }
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );
   }
 
-  Widget _buildLoginScreen(BuildContext context, String phoneNumber) {
+  Widget _buildLoginScreen(
+    BuildContext context,
+    String phoneNumber, {
+    String? errorText,
+  }) {
     return LoginScreen(
       phoneNumber: phoneNumber,
+      errorText: errorText,
       onContinue: () {
         context.read<AuthBloc>().add(const PhoneNumberSubmitted());
       },
@@ -106,11 +144,17 @@ class JambarPayFlow extends StatelessWidget {
       onDigitTap: (digit) {
         context.read<AuthBloc>().add(PhoneNumberChanged(digit));
       },
-      canContinue: phoneNumber.replaceAll(RegExp(r'\s+'), '').length == 9,
+      canContinue: phoneNumber.replaceAll(RegExp(r'\s+'), '') == '771234567',
     );
   }
 
-  Widget _buildPinScreen(BuildContext context, String phoneNumber, [String pin = '']) {
+  Widget _buildPinScreen(
+    BuildContext context,
+    String phoneNumber, [
+    String pin = '',
+    String? errorText,
+    DateTime? pinLockedUntil,
+  ]) {
     return PinScreen(
       pin: pin,
       phoneNumber: phoneNumber,
@@ -124,7 +168,8 @@ class JambarPayFlow extends StatelessWidget {
         context.read<AuthBloc>().add(PinChanged(digit));
       },
       onResetPin: (newPin) {},
-      errorText: null,
+      errorText: errorText,
+      pinLockedUntil: pinLockedUntil,
     );
   }
 
@@ -152,9 +197,9 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     _appState = AppState.employeeDemo().copyWith(
       auth: AppState.employeeDemo().auth.copyWith(
-            isAuthenticated: true,
-            userId: widget.user.id,
-          ),
+        isAuthenticated: true,
+        userId: widget.user.id,
+      ),
       userProfile: UserProfileModel(
         id: widget.user.id,
         name: widget.user.name,
@@ -181,7 +226,10 @@ class _HomeShellState extends State<HomeShell> {
     return null;
   }
 
-  void _onPaymentCompleted(QRScanResultModel scanResult, PaymentResultModel result) {
+  void _onPaymentCompleted(
+    QRScanResultModel scanResult,
+    PaymentResultModel result,
+  ) {
     setState(() {
       _appState = _appState.copyWith(
         payment: _appState.payment.copyWith(
@@ -195,7 +243,7 @@ class _HomeShellState extends State<HomeShell> {
             amount: result.amount,
             label: scanResult.merchantName,
             date: result.date,
-            status: 'Valide',
+            status: AppLocalizations(const Locale('fr')).validated,
           ),
           ..._appState.transactions,
         ],

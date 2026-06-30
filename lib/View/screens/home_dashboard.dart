@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_state.dart';
 import '../models/mobile_employee_space.dart';
 import '../widgets/app_palette.dart';
 import '../widgets/balance_card.dart';
@@ -23,6 +28,7 @@ class HomeDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
+    final loc = AppLocalizations.of(context);
 
     return Column(
       children: [
@@ -79,9 +85,27 @@ class HomeDashboard extends StatelessWidget {
                     : Colors.transparent,
                 child: Column(
                   children: [
-                    const SectionHeader(
-                      title: 'Transaction Récentes',
-                      actionLabel: 'Voir tout',
+                    SectionHeader(
+                      title: loc.recentTransactions,
+                      actionLabel: loc.viewAll,
+                      onActionTap: () {
+                        final transactionBloc = context.read<TransactionBloc>();
+                        final transactionState = transactionBloc.state;
+
+                        if (transactionState is TransactionLoaded) {
+                          transactionBloc.add(const SearchCleared());
+                          transactionBloc.add(
+                            const TransactionsFilterChanged('all'),
+                          );
+                        } else {
+                          transactionBloc.add(
+                            const TransactionsLoadRequested(),
+                          );
+                        }
+
+                        onTabSelected(1);
+                      },
+                      isDarkMode: isDarkMode,
                     ),
                     Expanded(
                       child: TransactionsList(

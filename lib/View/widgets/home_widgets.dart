@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'app_palette.dart';
 
 class HomeBottomNavigation extends StatelessWidget {
@@ -16,11 +17,12 @@ class HomeBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
+    final loc = AppLocalizations.of(context);
     final items = <({IconData icon, String label})>[
-      (icon: Icons.home_outlined, label: 'Accueil'),
-      (icon: Icons.history, label: 'Historique'),
-      (icon: Icons.storefront_outlined, label: 'restaurants'),
-      (icon: Icons.person_outline, label: 'Profil'),
+      (icon: Icons.home_outlined, label: loc.home),
+      (icon: Icons.history, label: loc.history),
+      (icon: Icons.storefront_outlined, label: loc.restaurants),
+      (icon: Icons.person_outline, label: loc.profile),
     ];
 
     return Container(
@@ -75,11 +77,13 @@ class SectionHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.actionLabel,
+    this.onActionTap,
     this.isDarkMode = false,
   });
 
   final String title;
   final String? actionLabel;
+  final VoidCallback? onActionTap;
   final bool isDarkMode;
 
   @override
@@ -104,7 +108,7 @@ class SectionHeader extends StatelessWidget {
           ),
           if (actionLabel != null)
             TextButton(
-              onPressed: () {},
+              onPressed: onActionTap,
               style: TextButton.styleFrom(foregroundColor: palette.accent),
               child: Text(
                 actionLabel!,
@@ -171,7 +175,7 @@ class SubPageHeader extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Retour',
+                          AppLocalizations.of(context).back,
                           style: TextStyle(
                             color: palette.secondaryText,
                             fontSize: 13,

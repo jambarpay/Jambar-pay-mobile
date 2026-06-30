@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 import 'qr_widgets.dart';
@@ -82,7 +83,7 @@ class _BalanceInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Solde Disponible',
+          AppLocalizations.of(context).availableBalanceTitle,
           style: TextStyle(
             color: palette.primaryText,
             fontSize: 13,
@@ -115,7 +116,7 @@ class _BalanceInfo extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           wallet == null
-              ? 'Portefeuille indisponible'
+              ? AppLocalizations.of(context).walletUnavailable
               : '${wallet!.status} • ${wallet!.lastUpdated}',
           style: TextStyle(
             color: palette.primaryText.withValues(alpha: 0.72),
@@ -149,16 +150,16 @@ class _QrActionButton extends StatelessWidget {
           children: [
             const QrBlock(),
             const SizedBox(height: 10),
-            const FittedBox(
+            FittedBox(
               fit: BoxFit.scaleDown,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.photo_camera_outlined, size: 16),
-                  SizedBox(width: 4),
+                  const Icon(Icons.photo_camera_outlined, size: 16),
+                  const SizedBox(width: 4),
                   Text(
-                    'Scanner',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    AppLocalizations.of(context).scan,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),

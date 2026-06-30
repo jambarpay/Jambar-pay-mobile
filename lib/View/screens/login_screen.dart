@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/keypad_widgets.dart';
 
@@ -10,9 +11,11 @@ class LoginScreen extends StatelessWidget {
     required this.onBackspace,
     required this.onDigitTap,
     required this.canContinue,
+    this.errorText,
   });
 
   final String phoneNumber;
+  final String? errorText;
   final VoidCallback onContinue;
   final VoidCallback onBackspace;
   final ValueChanged<String> onDigitTap;
@@ -52,10 +55,10 @@ class LoginScreen extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const SizedBox(height: 12),
-                                const Center(
+                                Center(
                                   child: Text(
-                                    'Connexion',
-                                    style: TextStyle(
+                                    AppLocalizations.of(context).loginTitle,
+                                    style: const TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -64,7 +67,7 @@ class LoginScreen extends StatelessWidget {
                                 const SizedBox(height: 10),
                                 Center(
                                   child: Text(
-                                    'Entrez votre numero de telephone',
+                                    AppLocalizations.of(context).enterPhoneNumber,
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.black.withValues(alpha: 0.45),
@@ -73,7 +76,7 @@ class LoginScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
-                                  'Numero de telephone',
+                                  AppLocalizations.of(context).phoneNumberLabel,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.black.withValues(alpha: 0.55),
@@ -81,6 +84,17 @@ class LoginScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 14),
                                 PhoneField(phoneNumber: phoneNumber),
+                                if (errorText != null) ...[
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    errorText!,
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 18),
                                 SizedBox(
                                   height: keypadHeight.toDouble(),
@@ -107,9 +121,9 @@ class LoginScreen extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    child: const Text(
-                                      'Continuer',
-                                      style: TextStyle(
+                                    child: Text(
+                                      AppLocalizations.of(context).continueLabel,
+                                      style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
                                       ),

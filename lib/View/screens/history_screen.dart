@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_state.dart';
@@ -10,7 +11,8 @@ import '../widgets/transaction_widgets.dart';
 import '../widgets/home_widgets.dart';
 import '../models/mobile_employee_space.dart';
 
-TransactionItemModel _toTransactionItemModel(Transaction t) {
+TransactionItemModel _toTransactionItemModel(Transaction t, BuildContext context) {
+  final loc = AppLocalizations.of(context);
   return TransactionItemModel(
     id: t.id,
     type: t.type == TransactionType.credit ? 'CREDIT' : 'DEBIT',
@@ -21,36 +23,33 @@ TransactionItemModel _toTransactionItemModel(Transaction t) {
       symbol: 'F',
     ),
     label: t.label,
-    date: _formatDate(t.date),
+    date: _formatDate(t.date, context),
     status: t.status == TransactionStatus.validated
-        ? 'Valide'
+        ? loc.statusValidated
         : t.status == TransactionStatus.failed
-            ? 'Échoué'
-            : 'En attente',
+        ? loc.statusFailed
+        : loc.statusPending,
   );
 }
 
-String _formatDate(DateTime date) {
+String _formatDate(DateTime date, BuildContext context) {
+  final loc = AppLocalizations.of(context);
   final now = DateTime.now();
-  if (date.year == now.year &&
-      date.month == now.month &&
-      date.day == now.day) {
-    return "Aujourd'hui, ${date.hour}h${date.minute.toString().padLeft(2, '0')}";
+  final time = '${date.hour}h${date.minute.toString().padLeft(2, '0')}';
+  if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    return loc.todayAt(time);
   }
   final yesterday = now.subtract(const Duration(days: 1));
   if (date.year == yesterday.year &&
       date.month == yesterday.month &&
       date.day == yesterday.day) {
-    return 'Hier, ${date.hour}h${date.minute.toString().padLeft(2, '0')}';
+    return loc.yesterdayAt(time);
   }
-  return '${date.day}/${date.month}/${date.year}, ${date.hour}h${date.minute.toString().padLeft(2, '0')}';
+  return loc.dateTime('${date.day}/${date.month}/${date.year}', time);
 }
 
 class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({
-    super.key,
-    required this.isDarkMode,
-  });
+  const HistoryScreen({super.key, required this.isDarkMode});
 
   final bool isDarkMode;
 
@@ -60,8 +59,8 @@ class HistoryScreen extends StatelessWidget {
 
     return Column(
       children: [
-        const SubPageHeader(
-          title: 'Historique',
+        SubPageHeader(
+          title: AppLocalizations.of(context).history,
           onBackEnabled: false,
           subtitle: null,
         ),
@@ -80,8 +79,8 @@ class HistoryScreen extends StatelessWidget {
                       controller: TextEditingController(text: query),
                       onChanged: (value) {
                         context.read<TransactionBloc>().add(
-                              SearchQueryChanged(value),
-                            );
+                          SearchQueryChanged(value),
+                        );
                       },
                       isDarkMode: isDarkMode,
                     );
@@ -92,13 +91,13 @@ class HistoryScreen extends StatelessWidget {
                   builder: (context, state) {
                     final currentFilter = state is TransactionLoaded
                         ? state.currentFilter
-                        : 'Tous';
+                        : 'all';
                     return HistoryFilters(
                       selectedFilter: currentFilter,
                       onFilterSelected: (value) {
                         context.read<TransactionBloc>().add(
-                              TransactionsFilterChanged(value),
-                            );
+                          TransactionsFilterChanged(value),
+                        );
                       },
                       isDarkMode: isDarkMode,
                     );
@@ -112,12 +111,13 @@ class HistoryScreen extends StatelessWidget {
                       final count = state is TransactionLoaded
                           ? state.filteredTransactions.length
                           : 0;
-                      final hasMore = state is TransactionLoaded && state.hasMore;
-                      
+                      final hasMore =
+                          state is TransactionLoaded && state.hasMore;
+
                       return Row(
                         children: [
                           Text(
-                            '$count transaction(s)',
+                            AppLocalizations.of(context).transactionCount(count.toString()),
                             style: TextStyle(
                               color: isDarkMode
                                   ? palette.secondaryText
@@ -128,12 +128,16 @@ class HistoryScreen extends StatelessWidget {
                           ),
                           const Spacer(),
                           if (hasMore)
-                            Text(
-                              'Chargement progressif actif',
-                              style: TextStyle(
-                                color: palette.accent,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                            Flexible(
+                              child: Text(
+                                AppLocalizations.of(context).progressiveLoadingActive,
+                                textAlign: TextAlign.end,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: palette.accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                         ],
@@ -151,10 +155,13 @@ class HistoryScreen extends StatelessWidget {
                       0,
                     ),
                     child: Container(
-                      color: isDarkMode ? palette.sectionContainer : Colors.transparent,
+                      color: isDarkMode
+                          ? palette.sectionContainer
+                          : Colors.transparent,
                       child: BlocBuilder<TransactionBloc, TransactionState>(
                         builder: (context, state) {
-                          if (state is TransactionInitial || state is TransactionLoading) {
+                          if (state is TransactionInitial ||
+                              state is TransactionLoading) {
                             return const Center(
                               child: CircularProgressIndicator(),
                             );
@@ -163,11 +170,14 @@ class HistoryScreen extends StatelessWidget {
                           if (state is TransactionEmpty) {
                             return Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
                                 child: Text(
-                                  state.searchQuery != null && state.searchQuery!.isNotEmpty
-                                      ? 'Aucune transaction ne correspond à votre recherche.'
-                                      : 'Aucune transaction disponible.',
+                                  state.searchQuery != null &&
+                                          state.searchQuery!.isNotEmpty
+                                      ? AppLocalizations.of(context).noTransactionsMatchSearch
+                                      : AppLocalizations.of(context).noTransactionsAvailable,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: isDarkMode
@@ -184,7 +194,9 @@ class HistoryScreen extends StatelessWidget {
                           if (state is TransactionFailure) {
                             return Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -196,12 +208,12 @@ class HistoryScreen extends StatelessWidget {
                                     const SizedBox(height: 12),
                                     ElevatedButton.icon(
                                       onPressed: () {
-                                        context
-                                            .read<TransactionBloc>()
-                                            .add(const TransactionsLoadRequested());
+                                        context.read<TransactionBloc>().add(
+                                          const TransactionsLoadRequested(),
+                                        );
                                       },
                                       icon: const Icon(Icons.refresh),
-                                      label: const Text('Réessayer'),
+                                      label: Text(AppLocalizations.of(context).retry),
                                     ),
                                   ],
                                 ),
@@ -210,30 +222,22 @@ class HistoryScreen extends StatelessWidget {
                           }
 
                           if (state is TransactionLoaded) {
-                            final visibleTransactions = state.filteredTransactions
-                                .take(state.visibleCount)
-                                .map(_toTransactionItemModel)
+                            final allTransactions = state.filteredTransactions
+                                .map((t) => _toTransactionItemModel(t, context))
                                 .toList();
 
                             return TransactionsList(
-                              controller: ScrollController()
-                                ..addListener(() {
-                                  if (ScrollController().position.pixels >=
-                                      ScrollController().position.maxScrollExtent - 80) {
-                                    context.read<TransactionBloc>().add(
-                                          const TransactionsLoadMoreRequested(),
-                                        );
-                                  }
-                                }),
-                              transactions: visibleTransactions,
+                              transactions: allTransactions,
                               topPadding: isDarkMode ? 14 : 20,
                               showAmount: true,
                               isDarkMode: isDarkMode,
                               emptyState: Center(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
                                   child: Text(
-                                    'Aucune transaction ne correspond à votre recherche.',
+                                    AppLocalizations.of(context).noTransactionsMatchSearch,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: isDarkMode

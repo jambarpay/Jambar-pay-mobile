@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 
@@ -24,7 +25,7 @@ class TransactionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (transactions.isEmpty) {
       return emptyState ??
-          const Center(child: Text('Aucune transaction disponible.'));
+          Center(child: Text(AppLocalizations.of(context).noTransactionsAvailable));
     }
 
     return ListView.separated(
@@ -126,7 +127,7 @@ class TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  transaction.status,
+                  _statusText(transaction.status, context),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: _statusColor(transaction.status),
@@ -138,6 +139,21 @@ class TransactionTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _statusText(String status, BuildContext context) {
+    final normalized = status.toLowerCase();
+    final loc = AppLocalizations.of(context);
+    if (normalized.contains('pending') || normalized.contains('attente')) {
+      return loc.statusPending;
+    }
+    if (normalized.contains('failed') || normalized.contains('échec') || normalized.contains('échoué') || normalized.contains('refus')) {
+      return loc.statusFailed;
+    }
+    if (normalized.contains('validated') || normalized.contains('valid') || normalized.contains('valide') || normalized.contains('validé')) {
+      return loc.statusValidated;
+    }
+    return status;
   }
 
   Color _statusColor(String status) {

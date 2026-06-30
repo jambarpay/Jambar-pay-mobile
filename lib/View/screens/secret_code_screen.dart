@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 
 import '../widgets/app_palette.dart';
 import '../widgets/auth_widgets.dart';
@@ -100,7 +101,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      'Retour',
+                                      AppLocalizations.of(context).back,
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: hintTextColor,
@@ -112,8 +113,8 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 Center(
                                   child: Text(
                                     _isChangeMode
-                                        ? 'Modifier le code secret'
-                                        : 'Reinitialiser le code secret',
+                                        ? AppLocalizations.of(context).changeSecretCode
+                                        : AppLocalizations.of(context).resetSecretCode,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 24,
@@ -126,8 +127,8 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 Center(
                                   child: Text(
                                     widget.phoneNumber.isEmpty
-                                        ? 'Definissez votre nouveau code secret.'
-                                        : 'Compte $widget.phoneNumber',
+                                        ? AppLocalizations.of(context).setYourNewSecretCode
+                                        : AppLocalizations.of(context).accountForPhone(widget.phoneNumber),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 15,
@@ -283,7 +284,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
 
     if (newPin != confirmPin) {
       setState(() {
-        _errorMessage = 'Les deux codes ne correspondent pas.';
+        _errorMessage = AppLocalizations.of(context).codeMismatch;
         _confirmPin = '';
         _stepIndex = _totalSteps - 1;
       });
@@ -310,29 +311,31 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   }
 
   String _stepTitle() {
+    final loc = AppLocalizations.of(context);
     if (_isChangeMode) {
       return switch (_stepIndex) {
-        0 => 'Code secret actuel',
-        1 => 'Nouveau code secret',
-        _ => 'Confirmation',
+        0 => loc.currentSecretCode,
+        1 => loc.newSecretCode,
+        _ => loc.confirmation,
       };
     }
 
-    return _stepIndex == 0 ? 'Nouveau code secret' : 'Confirmez le code';
+    return _stepIndex == 0 ? loc.newSecretCode : loc.confirmCode;
   }
 
   String _stepDescription() {
+    final loc = AppLocalizations.of(context);
     if (_isChangeMode) {
       return switch (_stepIndex) {
-        0 => 'Entrez votre code actuel pour continuer.',
-        1 => 'Choisissez un code secret a 4 chiffres.',
-        _ => 'Saisissez a nouveau le nouveau code secret.',
+        0 => loc.enterYourCurrentCode,
+        1 => loc.chooseNewSecretCode,
+        _ => loc.enterNewSecretCodeAgain,
       };
     }
 
     return _stepIndex == 0
-        ? 'Choisissez votre nouveau code secret a 4 chiffres.'
-        : 'Saisissez a nouveau le code secret pour valider.';
+        ? loc.setYourNewSecretCode
+        : loc.enterCodeAgain;
   }
 }
 
@@ -352,9 +355,10 @@ class _StepProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
+    final loc = AppLocalizations.of(context);
     final labels = isChangeMode
-        ? const ['Actuel', 'Nouveau', 'Confirmation']
-        : const ['Nouveau', 'Confirmation'];
+        ? [loc.current, loc.newLabel, loc.confirmationShort]
+        : [loc.newLabel, loc.confirmationShort];
 
     return Row(
       children: List.generate(totalSteps, (index) {

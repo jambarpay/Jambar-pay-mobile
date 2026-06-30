@@ -223,22 +223,41 @@ class PhoneField extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 18,
-                  height: 12,
+                  width: 24,
+                  height: 16,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(3),
                     border: Border.all(color: const Color(0x22000000)),
                   ),
-                  child: Row(
-                    children: const [
-                      Expanded(child: ColoredBox(color: Color(0xFF078930))),
-                      Expanded(child: ColoredBox(color: Color(0xFFFCD116))),
-                      Expanded(child: ColoredBox(color: Color(0xFFCE1126))),
-                    ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Row(
+                          children: const [
+                            Expanded(
+                              child: ColoredBox(color: Color(0xFF078930)),
+                            ),
+                            Expanded(
+                              child: ColoredBox(color: Color(0xFFFCD116)),
+                            ),
+                            Expanded(
+                              child: ColoredBox(color: Color(0xFFCE1126)),
+                            ),
+                          ],
+                        ),
+                        const Icon(
+                          Icons.star,
+                          size: 8,
+                          color: Color(0xFF078930),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(width: 8),
-                Text(
+                const SizedBox(width: 8),
+                const Text(
                   '+221',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),

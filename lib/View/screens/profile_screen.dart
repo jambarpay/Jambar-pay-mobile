@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+import 'package:jambar_pay_mobile/language_controller.dart';
 import '../models/mobile_employee_space.dart';
 import 'secret_code_screen.dart';
 import '../widgets/app_palette.dart';
@@ -28,37 +30,51 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _selectedLanguage = 'Francais';
+  late Locale _selectedLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLanguage = LanguageController.localeNotifier.value;
+  }
 
   void _showLanguageDialog() {
+    final loc = AppLocalizations.of(context);
+
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Choisir la langue'),
+        title: Text(loc.chooseLanguage),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<String>(
-              title: const Text('Francais'),
-              value: 'Francais',
+            RadioListTile<Locale>(
+              title: Text(loc.french),
+              value: const Locale('fr'),
               groupValue: _selectedLanguage,
               onChanged: (value) {
-                setState(() => _selectedLanguage = value!);
+                if (value == null) return;
+                final newLocale = const Locale('fr');
+                LanguageController.localeNotifier.value = newLocale;
+                setState(() => _selectedLanguage = newLocale);
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Langue changee: Francais')),
+                  SnackBar(content: Text(AppLocalizations(newLocale).languageChangedFrench)),
                 );
               },
             ),
-            RadioListTile<String>(
-              title: const Text('English'),
-              value: 'English',
+            RadioListTile<Locale>(
+              title: Text(loc.english),
+              value: const Locale('en'),
               groupValue: _selectedLanguage,
               onChanged: (value) {
-                setState(() => _selectedLanguage = value!);
+                if (value == null) return;
+                final newLocale = const Locale('en');
+                LanguageController.localeNotifier.value = newLocale;
+                setState(() => _selectedLanguage = newLocale);
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Language changed: English')),
+                  SnackBar(content: Text(AppLocalizations(newLocale).languageChangedEnglish)),
                 );
               },
             ),
@@ -69,23 +85,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _contactSupport() {
+    final loc = AppLocalizations.of(context);
+
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Contact Support'),
-        content: const Column(
+        title: Text(loc.contactSupport),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Email: support@jambarpay.com'),
-            SizedBox(height: 8),
-            Text('Phone: +221 33 123 45 67'),
+            Text(loc.email),
+            const SizedBox(height: 8),
+            Text(loc.phone),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(loc.ok),
           ),
         ],
       ),
@@ -116,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 ProfileActionTile(
                   icon: Icons.shield_outlined,
-                  label: 'Modifiez votre code secret',
+                  label: AppLocalizations.of(context).changeSecretCode,
                   isDarkMode: widget.isDarkMode,
                   onTap: () async {
                     final didChange = await Navigator.of(context).push<bool>(
@@ -132,8 +150,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     if (didChange == true && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Code secret modifie avec succes.'),
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context).secretCodeChanged),
                         ),
                       );
                     }
@@ -142,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 18),
                 ProfileSwitchTile(
                   icon: Icons.contrast,
-                  label: widget.isDarkMode ? 'Sombre' : 'Claire',
+                  label: widget.isDarkMode ? AppLocalizations.of(context).darkMode : AppLocalizations.of(context).lightMode,
                   value: widget.isDarkMode,
                   onChanged: widget.onDarkModeChanged,
                   isDarkMode: widget.isDarkMode,
@@ -150,40 +168,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 12),
                 ProfileActionTile(
                   icon: Icons.language,
-                  label: _selectedLanguage,
+                  label: _selectedLanguage.languageCode == 'fr'
+                      ? AppLocalizations.of(context).french
+                      : AppLocalizations.of(context).english,
                   isDarkMode: widget.isDarkMode,
                   onTap: _showLanguageDialog,
                 ),
                 const SizedBox(height: 32),
                 ProfileActionTile(
                   icon: Icons.headset_mic_outlined,
-                  label: 'Contactez le support',
+                  label: AppLocalizations.of(context).contactSupport,
                   isDarkMode: widget.isDarkMode,
                   onTap: _contactSupport,
                 ),
                 const SizedBox(height: 18),
                 ProfileActionTile(
                   icon: Icons.logout,
-                  label: 'Deconnexion',
+                  label: AppLocalizations.of(context).logout,
                   color: Colors.red,
                   isDarkMode: widget.isDarkMode,
                   onTap: () {
                     showDialog<void>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Deconnexion'),
-                        content: const Text('Voulez-vous vraiment vous deconnecter?'),
+                        title: Text(AppLocalizations.of(context).logout),
+                        content: Text(AppLocalizations.of(context).logoutConfirm),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Annuler'),
+                            child: Text(AppLocalizations.of(context).cancel),
                           ),
                           TextButton(
                             onPressed: () {
                               Navigator.of(context).pop();
                               widget.onLogout();
                             },
-                            child: const Text('Deconnexion', style: TextStyle(color: Colors.red)),
+                            child: Text(
+                              AppLocalizations.of(context).logoutButton,
+                              style: const TextStyle(color: Colors.red),
+                            ),
                           ),
                         ],
                       ),

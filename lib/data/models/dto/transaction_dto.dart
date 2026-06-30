@@ -23,9 +23,11 @@ class TransactionDto {
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       type: json['type']?.toString() ?? 'DEBIT',
       amount: MoneyDto.fromJson(json['montant'] as Map<String, dynamic>? ?? {}),
-      label: json['label']?.toString() ?? json['merchantName']?.toString() ?? '',
+      label:
+          json['label']?.toString() ?? json['merchantName']?.toString() ?? '',
       date: json['createdAt']?.toString() ?? json['date']?.toString() ?? '',
-      status: json['statut']?.toString() ?? json['status']?.toString() ?? 'pending',
+      status:
+          json['statut']?.toString() ?? json['status']?.toString() ?? 'pending',
     );
   }
 
@@ -44,10 +46,10 @@ class TransactionDto {
     final txType = type.toUpperCase() == 'CREDIT'
         ? TransactionType.credit
         : TransactionType.debit;
-    
+
     final txStatus = _parseStatus(status);
     final parsedDate = _parseDate(date);
-    
+
     return Transaction(
       id: id,
       type: txType,
@@ -59,43 +61,47 @@ class TransactionDto {
   }
 
   TransactionStatus _parseStatus(String status) {
-    switch (status.toLowerCase()) {
-      case 'valide':
-      case 'validated':
-      case 'success':
-        return TransactionStatus.validated;
-      case 'en attente':
-      case 'pending':
-        return TransactionStatus.pending;
-      case 'echoue':
-      case 'failed':
-        return TransactionStatus.failed;
-      default:
-        return TransactionStatus.pending;
+    final normalized = status.toLowerCase();
+    if (normalized.contains('validated') || normalized.contains('valide') || normalized.contains('success')) {
+      return TransactionStatus.validated;
     }
+    if (normalized.contains('attente') || normalized.contains('pending')) {
+      return TransactionStatus.pending;
+    }
+    if (normalized.contains('failed') || normalized.contains('echoue') || normalized.contains('échec')) {
+      return TransactionStatus.failed;
+    }
+    return TransactionStatus.pending;
   }
 
   DateTime _parseDate(String rawDate) {
     final now = DateTime.now();
     final normalized = rawDate.trim().toLowerCase();
 
+    final isoDate = DateTime.tryParse(rawDate);
+    if (isoDate != null) {
+      return isoDate.toLocal();
+    }
+
     if (normalized.contains("aujourd'hui")) {
-      return DateTime(now.year, now.month, now.day);
+      return _parseRelativeDate(rawDate, now);
     }
 
     if (normalized.contains('hier')) {
       final yesterday = now.subtract(const Duration(days: 1));
-      return DateTime(yesterday.year, yesterday.month, yesterday.day);
+      return _parseRelativeDate(rawDate, yesterday);
     }
 
     try {
-      final parts = normalized.split(',').first.trim().split('/');
+      final sections = rawDate.split(',');
+      final parts = sections.first.trim().split('/');
       if (parts.length == 3) {
         final day = int.tryParse(parts[0]);
         final month = int.tryParse(parts[1]);
         final year = int.tryParse(parts[2]);
         if (day != null && month != null && year != null) {
-          return DateTime(year, month, day);
+          final time = sections.length > 1 ? _parseTime(sections[1]) : null;
+          return DateTime(year, month, day, time?.hour ?? 0, time?.minute ?? 0);
         }
       }
     } catch (_) {
@@ -103,5 +109,32 @@ class TransactionDto {
     }
 
     return DateTime.now();
+  }
+
+  DateTime _parseRelativeDate(String rawDate, DateTime baseDate) {
+    final parts = rawDate.split(',');
+    final time = parts.length > 1 ? _parseTime(parts[1]) : null;
+    return DateTime(
+      baseDate.year,
+      baseDate.month,
+      baseDate.day,
+      time?.hour ?? 0,
+      time?.minute ?? 0,
+    );
+  }
+
+  DateTime? _parseTime(String rawTime) {
+    final match = RegExp(r'(\d{1,2})h(\d{1,2})').firstMatch(rawTime);
+    if (match == null) {
+      return null;
+    }
+
+    final hour = int.tryParse(match.group(1)!);
+    final minute = int.tryParse(match.group(2)!);
+    if (hour == null || minute == null) {
+      return null;
+    }
+
+    return DateTime(0, 1, 1, hour, minute);
   }
 }

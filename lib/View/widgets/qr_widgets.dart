@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 
@@ -84,8 +85,8 @@ class ScannerPreview extends StatelessWidget {
                 bottom: 24,
                 child: Text(
                   lastScannedValue == null
-                      ? 'Scannez un code QR'
-                      : 'QR détecté: $lastScannedValue',
+                      ? AppLocalizations.of(context).scanQrCode
+                      : AppLocalizations.of(context).qrDetected(lastScannedValue!),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -146,7 +147,7 @@ class LargeQrCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                scanResult?.token ?? 'QR employe',
+                scanResult?.token ?? AppLocalizations.of(context).employeeQr,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 11, color: palette.secondaryText),
@@ -193,13 +194,13 @@ class QrDetailsCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            scanResult?.merchantName ?? 'QR employe actif',
+            scanResult?.merchantName ?? AppLocalizations.of(context).activeEmployeeQr,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             paymentResult == null
-                ? 'Pret pour le scan et la confirmation du paiement.'
+                ? AppLocalizations.of(context).readyForScan
                 : '${paymentResult!.amount.formatted} • ${paymentResult!.date}',
             style: const TextStyle(
               fontSize: 12.5,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 
@@ -31,7 +32,7 @@ class ProfileHeaderCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              'Retour',
+              AppLocalizations.of(context).back,
               style: TextStyle(color: subtitleColor, fontSize: 13),
             ),
           ],
