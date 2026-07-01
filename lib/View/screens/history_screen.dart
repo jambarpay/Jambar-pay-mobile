@@ -11,7 +11,10 @@ import '../widgets/transaction_widgets.dart';
 import '../widgets/home_widgets.dart';
 import '../models/mobile_employee_space.dart';
 
-TransactionItemModel _toTransactionItemModel(Transaction t, BuildContext context) {
+TransactionItemModel _toTransactionItemModel(
+  Transaction t,
+  BuildContext context,
+) {
   final loc = AppLocalizations.of(context);
   return TransactionItemModel(
     id: t.id,
@@ -76,7 +79,7 @@ class HistoryScreen extends StatelessWidget {
                         ? state.searchQuery ?? ''
                         : '';
                     return HistorySearchField(
-                      controller: TextEditingController(text: query),
+                      query: query,
                       onChanged: (value) {
                         context.read<TransactionBloc>().add(
                           SearchQueryChanged(value),
@@ -117,7 +120,9 @@ class HistoryScreen extends StatelessWidget {
                       return Row(
                         children: [
                           Text(
-                            AppLocalizations.of(context).transactionCount(count.toString()),
+                            AppLocalizations.of(
+                              context,
+                            ).transactionCount(count.toString()),
                             style: TextStyle(
                               color: isDarkMode
                                   ? palette.secondaryText
@@ -130,7 +135,9 @@ class HistoryScreen extends StatelessWidget {
                           if (hasMore)
                             Flexible(
                               child: Text(
-                                AppLocalizations.of(context).progressiveLoadingActive,
+                                AppLocalizations.of(
+                                  context,
+                                ).progressiveLoadingActive,
                                 textAlign: TextAlign.end,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -176,8 +183,12 @@ class HistoryScreen extends StatelessWidget {
                                 child: Text(
                                   state.searchQuery != null &&
                                           state.searchQuery!.isNotEmpty
-                                      ? AppLocalizations.of(context).noTransactionsMatchSearch
-                                      : AppLocalizations.of(context).noTransactionsAvailable,
+                                      ? AppLocalizations.of(
+                                          context,
+                                        ).noTransactionsMatchSearch
+                                      : AppLocalizations.of(
+                                          context,
+                                        ).noTransactionsAvailable,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: isDarkMode
@@ -213,7 +224,9 @@ class HistoryScreen extends StatelessWidget {
                                         );
                                       },
                                       icon: const Icon(Icons.refresh),
-                                      label: Text(AppLocalizations.of(context).retry),
+                                      label: Text(
+                                        AppLocalizations.of(context).retry,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -237,7 +250,9 @@ class HistoryScreen extends StatelessWidget {
                                     horizontal: 24,
                                   ),
                                   child: Text(
-                                    AppLocalizations.of(context).noTransactionsMatchSearch,
+                                    AppLocalizations.of(
+                                      context,
+                                    ).noTransactionsMatchSearch,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: isDarkMode

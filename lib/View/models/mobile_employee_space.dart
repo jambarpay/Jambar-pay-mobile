@@ -273,6 +273,8 @@ class RestaurantPartnerModel {
   final String distance;
   final String updatedAt;
   final bool isOpen;
+  final double latitude;
+  final double longitude;
 
   const RestaurantPartnerModel({
     required this.id,
@@ -280,6 +282,8 @@ class RestaurantPartnerModel {
     required this.distance,
     required this.updatedAt,
     required this.isOpen,
+    required this.latitude,
+    required this.longitude,
   });
 }
 
@@ -435,6 +439,8 @@ class AppState {
           distance: '0.3 km',
           updatedAt: "Aujourd'hui, 13h22",
           isOpen: true,
+          latitude: 14.7165,
+          longitude: -17.4672,
         ),
         RestaurantPartnerModel(
           id: 'rest_2',
@@ -442,6 +448,8 @@ class AppState {
           distance: '0.2 km',
           updatedAt: "Aujourd'hui, 11h05",
           isOpen: true,
+          latitude: 14.7174,
+          longitude: -17.4660,
         ),
         RestaurantPartnerModel(
           id: 'rest_3',
@@ -449,6 +457,8 @@ class AppState {
           distance: '0.4 km',
           updatedAt: 'Hier, 12h15',
           isOpen: false,
+          latitude: 14.7153,
+          longitude: -17.4690,
         ),
         RestaurantPartnerModel(
           id: 'rest_4',
@@ -456,6 +466,8 @@ class AppState {
           distance: '0.5 km',
           updatedAt: "Aujourd'hui, 08h30",
           isOpen: true,
+          latitude: 14.7184,
+          longitude: -17.4684,
         ),
         RestaurantPartnerModel(
           id: 'rest_5',
@@ -463,6 +475,8 @@ class AppState {
           distance: '0.7 km',
           updatedAt: '05/05/2026, 13h01',
           isOpen: false,
+          latitude: 14.7145,
+          longitude: -17.4658,
         ),
       ],
     );

@@ -16,6 +16,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.2.2
   mobile_scanner: ^7.1.3
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   
   # State Management - BLoC
   flutter_bloc: ^8.1.3

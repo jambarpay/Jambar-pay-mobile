@@ -13,8 +13,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   TransactionBloc({
     required GetTransactions getTransactions,
     required FilterTransactions filterTransactions,
-  })  : _getTransactions = getTransactions,
-        super(const TransactionInitial()) {
+  }) : _getTransactions = getTransactions,
+       super(const TransactionInitial()) {
     on<TransactionsLoadRequested>(_onLoadRequested);
     on<TransactionsRefreshRequested>(_onRefreshRequested);
     on<TransactionsLoadMoreRequested>(_onLoadMoreRequested);
@@ -33,15 +33,17 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       if (all.isEmpty) {
         emit(const TransactionEmpty());
       } else {
-        final filtered = _applyFilter(all, 'Tous', null);
-        emit(TransactionLoaded(
-          allTransactions: all,
-          filteredTransactions: filtered,
-          currentFilter: 'Tous',
-          searchQuery: null,
-          hasMore: filtered.length > _pageSize,
-          visibleCount: _pageSize,
-        ));
+        final filtered = _applyFilter(all, 'all', null);
+        emit(
+          TransactionLoaded(
+            allTransactions: all,
+            filteredTransactions: filtered,
+            currentFilter: 'all',
+            searchQuery: null,
+            hasMore: filtered.length > _pageSize,
+            visibleCount: _pageSize,
+          ),
+        );
       }
     } catch (e) {
       // Log error to help debugging network/backend issues
@@ -56,17 +58,23 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) async {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
-    
+
     emit(const TransactionLoading());
     try {
       final all = await _getTransactions();
-      final filtered = _applyFilter(all, current.currentFilter, current.searchQuery);
-      emit(current.copyWith(
-        allTransactions: all,
-        filteredTransactions: filtered,
-        hasMore: filtered.length > _pageSize,
-        visibleCount: _pageSize,
-      ));
+      final filtered = _applyFilter(
+        all,
+        current.currentFilter,
+        current.searchQuery,
+      );
+      emit(
+        current.copyWith(
+          allTransactions: all,
+          filteredTransactions: filtered,
+          hasMore: filtered.length > _pageSize,
+          visibleCount: _pageSize,
+        ),
+      );
     } catch (e) {
       print('TransactionBloc ERROR (refresh): $e');
       emit(TransactionFailure('Erreur: ${e.toString()}'));
@@ -79,12 +87,14 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
-    
+
     final newCount = current.visibleCount + _pageSize;
-    emit(current.copyWith(
-      visibleCount: newCount.clamp(0, current.filteredTransactions.length),
-      hasMore: newCount < current.filteredTransactions.length,
-    ));
+    emit(
+      current.copyWith(
+        visibleCount: newCount.clamp(0, current.filteredTransactions.length),
+        hasMore: newCount < current.filteredTransactions.length,
+      ),
+    );
   }
 
   void _onFilterChanged(
@@ -93,16 +103,22 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
-    
-    final filtered = _applyFilter(current.allTransactions, event.filter, current.searchQuery);
-    emit(TransactionLoaded(
-      allTransactions: current.allTransactions,
-      filteredTransactions: filtered,
-      currentFilter: event.filter,
-      searchQuery: current.searchQuery,
-      hasMore: filtered.length > _pageSize,
-      visibleCount: _pageSize,
-    ));
+
+    final filtered = _applyFilter(
+      current.allTransactions,
+      event.filter,
+      current.searchQuery,
+    );
+    emit(
+      TransactionLoaded(
+        allTransactions: current.allTransactions,
+        filteredTransactions: filtered,
+        currentFilter: event.filter,
+        searchQuery: current.searchQuery,
+        hasMore: filtered.length > _pageSize,
+        visibleCount: _pageSize,
+      ),
+    );
   }
 
   void _onSearchQueryChanged(
@@ -111,34 +127,43 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
-    
-    final filtered = _applyFilter(current.allTransactions, current.currentFilter, event.query);
-    emit(TransactionLoaded(
-      allTransactions: current.allTransactions,
-      filteredTransactions: filtered,
-      currentFilter: current.currentFilter,
-      searchQuery: event.query,
-      hasMore: filtered.length > _pageSize,
-      visibleCount: _pageSize,
-    ));
+
+    final filtered = _applyFilter(
+      current.allTransactions,
+      current.currentFilter,
+      event.query,
+    );
+    emit(
+      TransactionLoaded(
+        allTransactions: current.allTransactions,
+        filteredTransactions: filtered,
+        currentFilter: current.currentFilter,
+        searchQuery: event.query,
+        hasMore: filtered.length > _pageSize,
+        visibleCount: _pageSize,
+      ),
+    );
   }
 
-  void _onSearchCleared(
-    SearchCleared event,
-    Emitter<TransactionState> emit,
-  ) {
+  void _onSearchCleared(SearchCleared event, Emitter<TransactionState> emit) {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
-    
-    final filtered = _applyFilter(current.allTransactions, current.currentFilter, null);
-    emit(TransactionLoaded(
-      allTransactions: current.allTransactions,
-      filteredTransactions: filtered,
-      currentFilter: current.currentFilter,
-      searchQuery: null,
-      hasMore: filtered.length > _pageSize,
-      visibleCount: _pageSize,
-    ));
+
+    final filtered = _applyFilter(
+      current.allTransactions,
+      current.currentFilter,
+      null,
+    );
+    emit(
+      TransactionLoaded(
+        allTransactions: current.allTransactions,
+        filteredTransactions: filtered,
+        currentFilter: current.currentFilter,
+        searchQuery: null,
+        hasMore: filtered.length > _pageSize,
+        visibleCount: _pageSize,
+      ),
+    );
   }
 
   List<Transaction> _applyFilter(
@@ -157,13 +182,23 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         }).toList();
         break;
       case 'thisWeek':
-        final startOfWeek = DateTime(now.year, now.month, now.day)
-            .subtract(Duration(days: now.weekday - 1));
+        final startOfWeek = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: now.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 7));
-        result = result.where((t) => !t.date.isBefore(startOfWeek) && t.date.isBefore(endOfWeek)).toList();
+        result = result
+            .where(
+              (t) =>
+                  !t.date.isBefore(startOfWeek) && t.date.isBefore(endOfWeek),
+            )
+            .toList();
         break;
       case 'thisMonth':
-        result = result.where((t) => t.date.year == now.year && t.date.month == now.month).toList();
+        result = result
+            .where((t) => t.date.year == now.year && t.date.month == now.month)
+            .toList();
         break;
       default:
         break;

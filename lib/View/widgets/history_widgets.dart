@@ -45,24 +45,54 @@ class HistoryFilters extends StatelessWidget {
   }
 }
 
-class HistorySearchField extends StatelessWidget {
+class HistorySearchField extends StatefulWidget {
   const HistorySearchField({
     super.key,
-    required this.controller,
+    required this.query,
     required this.onChanged,
     this.isDarkMode = false,
   });
 
-  final TextEditingController controller;
+  final String query;
   final ValueChanged<String> onChanged;
   final bool isDarkMode;
 
   @override
+  State<HistorySearchField> createState() => _HistorySearchFieldState();
+}
+
+class _HistorySearchFieldState extends State<HistorySearchField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.query);
+  }
+
+  @override
+  void didUpdateWidget(covariant HistorySearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.query != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.query,
+        selection: TextSelection.collapsed(offset: widget.query.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final fillColor = isDarkMode
+    final fillColor = widget.isDarkMode
         ? const Color(0xFF262342)
         : const Color(0xFFEAE9FF);
-    final hintColor = isDarkMode
+    final hintColor = widget.isDarkMode
         ? const Color(0xFF9B97BC)
         : const Color(0xFF88879A);
     final loc = AppLocalizations.of(context);
@@ -70,8 +100,8 @@ class HistorySearchField extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: TextField(
-        controller: controller,
-        onChanged: onChanged,
+        controller: _controller,
+        onChanged: widget.onChanged,
         decoration: InputDecoration(
           prefixIcon: Icon(Icons.search, color: hintColor),
           hintText: loc.searchTransactions,

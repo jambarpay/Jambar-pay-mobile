@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
+import '../utils/localized_view_data.dart';
 
 class TransactionsList extends StatelessWidget {
   const TransactionsList({
@@ -25,7 +26,9 @@ class TransactionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (transactions.isEmpty) {
       return emptyState ??
-          Center(child: Text(AppLocalizations.of(context).noTransactionsAvailable));
+          Center(
+            child: Text(AppLocalizations.of(context).noTransactionsAvailable),
+          );
     }
 
     return ListView.separated(
@@ -91,7 +94,7 @@ class TransactionTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction.label,
+                  localizeTransactionLabel(context, transaction.label),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -100,7 +103,7 @@ class TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  transaction.date,
+                  localizeRelativeDate(context, transaction.date),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: isDarkMode
@@ -147,10 +150,16 @@ class TransactionTile extends StatelessWidget {
     if (normalized.contains('pending') || normalized.contains('attente')) {
       return loc.statusPending;
     }
-    if (normalized.contains('failed') || normalized.contains('échec') || normalized.contains('échoué') || normalized.contains('refus')) {
+    if (normalized.contains('failed') ||
+        normalized.contains('échec') ||
+        normalized.contains('échoué') ||
+        normalized.contains('refus')) {
       return loc.statusFailed;
     }
-    if (normalized.contains('validated') || normalized.contains('valid') || normalized.contains('valide') || normalized.contains('validé')) {
+    if (normalized.contains('validated') ||
+        normalized.contains('valid') ||
+        normalized.contains('valide') ||
+        normalized.contains('validé')) {
       return loc.statusValidated;
     }
     return status;
@@ -158,10 +167,13 @@ class TransactionTile extends StatelessWidget {
 
   Color _statusColor(String status) {
     final normalized = status.toLowerCase();
-    if (normalized.contains('attente')) {
+    if (normalized.contains('attente') || normalized.contains('pending')) {
       return const Color(0xFFF5A623);
     }
-    if (normalized.contains('echec') || normalized.contains('refus')) {
+    if (normalized.contains('echec') ||
+        normalized.contains('échoué') ||
+        normalized.contains('failed') ||
+        normalized.contains('refus')) {
       return Colors.red;
     }
     return const Color(0xFF11B777);

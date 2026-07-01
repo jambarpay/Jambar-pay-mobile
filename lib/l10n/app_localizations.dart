@@ -6,17 +6,18 @@ class AppLocalizations {
   AppLocalizations(this.locale);
 
   static AppLocalizations of(BuildContext context) {
-    final localizations = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final localizations = Localizations.of<AppLocalizations>(
+      context,
+      AppLocalizations,
+    );
     assert(localizations != null, 'No AppLocalizations found in context');
     return localizations!;
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
-  static const supportedLocales = <Locale>[
-    Locale('fr'),
-    Locale('en'),
-  ];
+  static const supportedLocales = <Locale>[Locale('fr'), Locale('en')];
 
   static const Map<String, Map<String, String>> _translations = {
     'fr': {
@@ -52,11 +53,13 @@ class AppLocalizations {
       'invalidAmount': 'Veuillez saisir un montant valide.',
       'insufficientBalance': 'Solde insuffisant pour ce paiement.',
       'paymentSuccess': 'Paiement réussi',
-      'paymentSuccessBody': 'Votre paiement de {amount} chez {merchantName} a été confirmé.',
+      'paymentSuccessBody':
+          'Votre paiement de {amount} chez {merchantName} a été confirmé.',
       'finish': 'Terminer',
       'retry': 'Réessayer',
       'noTransactionsAvailable': 'Aucune transaction disponible.',
-      'noTransactionsMatchSearch': 'Aucune transaction ne correspond à votre recherche.',
+      'noTransactionsMatchSearch':
+          'Aucune transaction ne correspond à votre recherche.',
       'filterAll': 'Tous',
       'filterToday': "Aujourd'hui",
       'filterThisWeek': 'Cette semaine',
@@ -80,7 +83,8 @@ class AppLocalizations {
       'enterYourCurrentCode': 'Entrez votre code actuel pour continuer.',
       'chooseNewSecretCode': 'Choisissez un code secret à 4 chiffres.',
       'enterNewSecretCodeAgain': 'Saisissez à nouveau le nouveau code secret.',
-      'setYourNewSecretCode': 'Choisissez votre nouveau code secret à 4 chiffres.',
+      'setYourNewSecretCode':
+          'Choisissez votre nouveau code secret à 4 chiffres.',
       'enterCodeAgain': 'Saisissez à nouveau le code secret pour valider.',
       'codeMismatch': 'Les deux codes ne correspondent pas.',
       'current': 'Actuel',
@@ -116,7 +120,8 @@ class AppLocalizations {
       'phoneAuthorizedOnly': 'Numero autorise uniquement: 77 123 45 67',
       'phoneTooLong': 'Numero trop long',
       'invalidPhoneNumber': 'Numero de telephone invalide',
-      'incorrectSecretCode': 'Code secret incorrect. Il vous reste {count} {attemptLabel}.',
+      'incorrectSecretCode':
+          'Code secret incorrect. Il vous reste {count} {attemptLabel}.',
       'youCanRetryNow': 'Vous pouvez réessayer maintenant.',
       'validated': 'Valide',
       'active': 'Actif',
@@ -127,6 +132,7 @@ class AppLocalizations {
       'paymentConfirmedBody': 'Votre paiement chez {merchant} a ete confirme.',
       'balanceUpdated': 'Solde mis a jour',
       'walletSynced': 'Votre portefeuille a ete synchronise avec succes.',
+      'employerTopUp': 'Recharge employeur',
     },
     'en': {
       'appTitle': 'Jambar Pay Mobile',
@@ -161,7 +167,8 @@ class AppLocalizations {
       'invalidAmount': 'Please enter a valid amount.',
       'insufficientBalance': 'Insufficient balance for this payment.',
       'paymentSuccess': 'Payment successful',
-      'paymentSuccessBody': 'Your payment of {amount} at {merchantName} has been confirmed.',
+      'paymentSuccessBody':
+          'Your payment of {amount} at {merchantName} has been confirmed.',
       'finish': 'Finish',
       'retry': 'Retry',
       'noTransactionsAvailable': 'No transactions available.',
@@ -225,7 +232,8 @@ class AppLocalizations {
       'phoneAuthorizedOnly': 'Only authorized number: 77 123 45 67',
       'phoneTooLong': 'Phone number too long',
       'invalidPhoneNumber': 'Invalid phone number',
-      'incorrectSecretCode': 'Incorrect secret code. {count} {attemptLabel} remaining.',
+      'incorrectSecretCode':
+          'Incorrect secret code. {count} {attemptLabel} remaining.',
       'youCanRetryNow': 'You can retry now.',
       'validated': 'Validated',
       'active': 'Active',
@@ -236,11 +244,13 @@ class AppLocalizations {
       'paymentConfirmedBody': 'Your payment at {merchant} has been confirmed.',
       'balanceUpdated': 'Balance updated',
       'walletSynced': 'Your wallet has been synced successfully.',
+      'employerTopUp': 'Employer top-up',
     },
   };
 
   String _translate(String key) {
-    final localeMap = _translations[locale.languageCode] ?? _translations['en']!;
+    final localeMap =
+        _translations[locale.languageCode] ?? _translations['en']!;
     return localeMap[key] ?? _translations['en']![key]!;
   }
 
@@ -278,17 +288,23 @@ class AppLocalizations {
   String get accountPage => _translate('accountPage');
   String get enterAmountToPay => _translate('enterAmountToPay');
   String get availableBalanceTitle => _translate('availableBalanceTitle');
-  String availableBalance(String amount) => _translateWithArgs('availableBalance', {'amount': amount});
+  String availableBalance(String amount) =>
+      _translateWithArgs('availableBalance', {'amount': amount});
   String get amount => _translate('amount');
   String get pay => _translate('pay');
   String get invalidAmount => _translate('invalidAmount');
   String get insufficientBalance => _translate('insufficientBalance');
   String get paymentSuccess => _translate('paymentSuccess');
-  String paymentSuccessBody(String amount, String merchantName) => _translateWithArgs('paymentSuccessBody', {'amount': amount, 'merchantName': merchantName});
+  String paymentSuccessBody(String amount, String merchantName) =>
+      _translateWithArgs('paymentSuccessBody', {
+        'amount': amount,
+        'merchantName': merchantName,
+      });
   String get finish => _translate('finish');
   String get retry => _translate('retry');
   String get noTransactionsAvailable => _translate('noTransactionsAvailable');
-  String get noTransactionsMatchSearch => _translate('noTransactionsMatchSearch');
+  String get noTransactionsMatchSearch =>
+      _translate('noTransactionsMatchSearch');
   String get filterAll => _translate('filterAll');
   String get filterToday => _translate('filterToday');
   String get filterThisWeek => _translate('filterThisWeek');
@@ -303,8 +319,12 @@ class AppLocalizations {
   String get viewAll => _translate('viewAll');
   String get map => _translate('map');
   String get list => _translate('list');
-  String restaurantsNearby(String count) => _translateWithArgs('restaurantsNearby', {'count': count});
-  String paymentSuccessMessage(String merchantName) => _translateWithArgs('paymentSuccessMessage', {'merchantName': merchantName});
+  String restaurantsNearby(String count) =>
+      _translateWithArgs('restaurantsNearby', {'count': count});
+  String paymentSuccessMessage(String merchantName) => _translateWithArgs(
+    'paymentSuccessMessage',
+    {'merchantName': merchantName},
+  );
   String get partnerRestaurant => _translate('partnerRestaurant');
   String get currentSecretCode => _translate('currentSecretCode');
   String get newSecretCode => _translate('newSecretCode');
@@ -320,7 +340,8 @@ class AppLocalizations {
   String get confirmationShort => _translate('confirmationShort');
   String get pinCode => _translate('pinCode');
   String get enterYourPinCode => _translate('enterYourPinCode');
-  String retryIn(String duration) => _translateWithArgs('retryIn', {'duration': duration});
+  String retryIn(String duration) =>
+      _translateWithArgs('retryIn', {'duration': duration});
   String get secretCodeResetSuccess => _translate('secretCodeResetSuccess');
   String get forgotPin => _translate('forgotPin');
   String get testQr => _translate('testQr');
@@ -329,47 +350,61 @@ class AppLocalizations {
   String get enterPhoneNumber => _translate('enterPhoneNumber');
   String get phoneNumberLabel => _translate('phoneNumberLabel');
   String get resetSecretCode => _translate('resetSecretCode');
-  String accountForPhone(String phone) => _translateWithArgs('accountForPhone', {'phone': phone});
+  String accountForPhone(String phone) =>
+      _translateWithArgs('accountForPhone', {'phone': phone});
   String get confirmCode => _translate('confirmCode');
   String get scan => _translate('scan');
   String get myQr => _translate('myQr');
   String get invalidQrCode => _translate('invalidQrCode');
-  String transactionCount(String count) => _translateWithArgs('transactionCount', {'count': count});
+  String transactionCount(String count) =>
+      _translateWithArgs('transactionCount', {'count': count});
   String get progressiveLoadingActive => _translate('progressiveLoadingActive');
   String get searchRestaurant => _translate('searchRestaurant');
   String get open => _translate('open');
   String get closed => _translate('closed');
   String get walletUnavailable => _translate('walletUnavailable');
   String get scanQrCode => _translate('scanQrCode');
-  String qrDetected(String value) => _translateWithArgs('qrDetected', {'value': value});
+  String qrDetected(String value) =>
+      _translateWithArgs('qrDetected', {'value': value});
   String get employeeQr => _translate('employeeQr');
   String get activeEmployeeQr => _translate('activeEmployeeQr');
   String get readyForScan => _translate('readyForScan');
   String get phoneAuthorizedOnly => _translate('phoneAuthorizedOnly');
   String get phoneTooLong => _translate('phoneTooLong');
   String get invalidPhoneNumber => _translate('invalidPhoneNumber');
-  String incorrectSecretCode(int count, String attemptLabel) => _translateWithArgs('incorrectSecretCode', {'count': count.toString(), 'attemptLabel': attemptLabel});
+  String incorrectSecretCode(int count, String attemptLabel) =>
+      _translateWithArgs('incorrectSecretCode', {
+        'count': count.toString(),
+        'attemptLabel': attemptLabel,
+      });
   String get youCanRetryNow => _translate('youCanRetryNow');
   String get validated => _translate('validated');
   String get active => _translate('active');
   String todayAt(String time) => _translateWithArgs('todayAt', {'time': time});
-  String yesterdayAt(String time) => _translateWithArgs('yesterdayAt', {'time': time});
-  String dateTime(String date, String time) => _translateWithArgs('dateTime', {'date': date, 'time': time});
+  String yesterdayAt(String time) =>
+      _translateWithArgs('yesterdayAt', {'time': time});
+  String dateTime(String date, String time) =>
+      _translateWithArgs('dateTime', {'date': date, 'time': time});
   String get paymentConfirmed => _translate('paymentConfirmed');
-  String paymentConfirmedBody(String merchant) => _translateWithArgs('paymentConfirmedBody', {'merchant': merchant});
+  String paymentConfirmedBody(String merchant) =>
+      _translateWithArgs('paymentConfirmedBody', {'merchant': merchant});
   String get balanceUpdated => _translate('balanceUpdated');
   String get walletSynced => _translate('walletSynced');
+  String get employerTopUp => _translate('employerTopUp');
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
   bool isSupported(Locale locale) => ['fr', 'en'].contains(locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) async => AppLocalizations(locale);
+  Future<AppLocalizations> load(Locale locale) async =>
+      AppLocalizations(locale);
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) => false;
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
+      false;
 }

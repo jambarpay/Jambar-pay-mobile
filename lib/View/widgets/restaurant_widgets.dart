@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 import 'home_widgets.dart';
+import '../utils/localized_view_data.dart';
 
 class RestaurantsListView extends StatefulWidget {
   const RestaurantsListView({
@@ -43,16 +46,23 @@ class _RestaurantsListViewState extends State<RestaurantsListView> {
         ),
         const SizedBox(height: 18),
         Container(
-          color: widget.isDarkMode ? palette.sectionContainer : Colors.transparent,
+          color: widget.isDarkMode
+              ? palette.sectionContainer
+              : Colors.transparent,
           padding: EdgeInsets.all(widget.isDarkMode ? 12 : 0),
           child: Column(
             children: [
-              for (var index = 0; index < widget.restaurants.length; index++) ...[
+              for (
+                var index = 0;
+                index < widget.restaurants.length;
+                index++
+              ) ...[
                 RestaurantCard(
                   restaurant: widget.restaurants[index],
                   isDarkMode: widget.isDarkMode,
                 ),
-                if (index != widget.restaurants.length - 1) const SizedBox(height: 14),
+                if (index != widget.restaurants.length - 1)
+                  const SizedBox(height: 14),
               ],
             ],
           ),
@@ -79,7 +89,7 @@ class RestaurantsMapView extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        const FakeMap(),
+        RestaurantMap(restaurants: restaurants, isDarkMode: isDarkMode),
         const SizedBox(height: 14),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -88,7 +98,11 @@ class RestaurantsMapView extends StatelessWidget {
             padding: EdgeInsets.all(isDarkMode ? 12 : 0),
             child: Column(
               children: [
-                SectionHeader(title: AppLocalizations.of(context).restaurantsNearby('0')),
+                SectionHeader(
+                  title: AppLocalizations.of(
+                    context,
+                  ).restaurantsNearby(restaurants.length.toString()),
+                ),
                 for (
                   var index = 0;
                   index < restaurants.take(2).length;
@@ -106,6 +120,132 @@ class RestaurantsMapView extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class RestaurantMap extends StatelessWidget {
+  const RestaurantMap({
+    super.key,
+    required this.restaurants,
+    required this.isDarkMode,
+  });
+
+  final List<RestaurantPartnerModel> restaurants;
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette(isDarkMode);
+
+    if (restaurants.isEmpty) {
+      return Container(
+        height: 360,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? palette.sectionContainer
+              : const Color(0xFFF3F2FB),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          AppLocalizations.of(context).noTransactionsAvailable,
+          style: TextStyle(
+            color: palette.secondaryText,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    final center = _averagePosition(restaurants);
+
+    return Container(
+      height: 360,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF343254) : const Color(0xFFE1DFF3),
+        ),
+      ),
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 15.2,
+              minZoom: 12,
+              maxZoom: 18.5,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.jambarpay.jambar_pay_mobile',
+              ),
+              MarkerLayer(
+                markers: [
+                  for (final restaurant in restaurants)
+                    Marker(
+                      point: LatLng(restaurant.latitude, restaurant.longitude),
+                      width: 124,
+                      height: 72,
+                      child: _RestaurantMapMarker(
+                        restaurant: restaurant,
+                        isDarkMode: isDarkMode,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            left: 12,
+            right: 12,
+            top: 12,
+            child: _MapOverlayHeader(
+              restaurants: restaurants,
+              isDarkMode: isDarkMode,
+            ),
+          ),
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Text(
+                  '© OpenStreetMap',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3A3952),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  LatLng _averagePosition(List<RestaurantPartnerModel> restaurants) {
+    final totalLat = restaurants.fold<double>(
+      0,
+      (sum, restaurant) => sum + restaurant.latitude,
+    );
+    final totalLng = restaurants.fold<double>(
+      0,
+      (sum, restaurant) => sum + restaurant.longitude,
+    );
+
+    return LatLng(totalLat / restaurants.length, totalLng / restaurants.length);
   }
 }
 
@@ -149,14 +289,18 @@ class _SearchBarState extends State<SearchBar> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? palette.tileBackground : const Color(0xFFEAE9FF),
+        color: widget.isDarkMode
+            ? palette.tileBackground
+            : const Color(0xFFEAE9FF),
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextField(
         controller: _controller,
         onChanged: widget.onChanged,
         style: TextStyle(
-          color: widget.isDarkMode ? palette.primaryText : const Color(0xFF1C1A33),
+          color: widget.isDarkMode
+              ? palette.primaryText
+              : const Color(0xFF1C1A33),
           fontSize: 13.5,
         ),
         decoration: InputDecoration(
@@ -233,7 +377,7 @@ class RestaurantCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  restaurant.updatedAt,
+                  localizeRelativeDate(context, restaurant.updatedAt),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: isDarkMode
@@ -257,7 +401,9 @@ class RestaurantCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                restaurant.isOpen ? AppLocalizations.of(context).open : AppLocalizations.of(context).closed,
+                restaurant.isOpen
+                    ? AppLocalizations.of(context).open
+                    : AppLocalizations.of(context).closed,
                 style: TextStyle(
                   color: restaurant.isOpen
                       ? const Color(0xFF11B777)
@@ -274,76 +420,109 @@ class RestaurantCard extends StatelessWidget {
   }
 }
 
-class FakeMap extends StatelessWidget {
-  const FakeMap();
+class _RestaurantMapMarker extends StatelessWidget {
+  const _RestaurantMapMarker({
+    required this.restaurant,
+    required this.isDarkMode,
+  });
+
+  final RestaurantPartnerModel restaurant;
+  final bool isDarkMode;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 360,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFF4E9D8), Color(0xFFE7DBC4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: MapPainter())),
-          const Positioned(
-            top: 150,
-            right: 90,
-            child: Icon(Icons.location_on, color: Color(0xFF4CA5F5), size: 42),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1E1A35) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                blurRadius: 12,
+                offset: Offset(0, 6),
+              ),
+            ],
           ),
-        ],
-      ),
+          child: Text(
+            restaurant.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: isDarkMode ? Colors.white : const Color(0xFF1C1A33),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -2),
+          child: Icon(
+            Icons.location_on,
+            size: 34,
+            color: restaurant.isOpen
+                ? const Color(0xFFF57C21)
+                : const Color(0xFFB84A62),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class MapPainter extends CustomPainter {
+class _MapOverlayHeader extends StatelessWidget {
+  const _MapOverlayHeader({
+    required this.restaurants,
+    required this.isDarkMode,
+  });
+
+  final List<RestaurantPartnerModel> restaurants;
+  final bool isDarkMode;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final roadPaint = Paint()
-      ..color = const Color(0xFFD5BE92)
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke;
-    final smallRoadPaint = Paint()
-      ..color = const Color(0xFFF7F0E0)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+  Widget build(BuildContext context) {
+    final palette = AppPalette(isDarkMode);
+    final openCount = restaurants
+        .where((restaurant) => restaurant.isOpen)
+        .length;
 
-    final mainRoads = [
-      [Offset(0, 40), Offset(size.width, 20)],
-      [Offset(0, 120), Offset(size.width, 170)],
-      [Offset(0, 220), Offset(size.width, 250)],
-      [Offset(40, 0), Offset(120, size.height)],
-      [Offset(180, 0), Offset(250, size.height)],
-      [Offset(300, 0), Offset(size.width - 20, size.height)],
-    ];
-
-    for (final road in mainRoads) {
-      canvas.drawLine(road.first, road.last, roadPaint);
-    }
-
-    for (var i = 0; i < 8; i++) {
-      canvas.drawLine(
-        Offset(0, 24.0 + (i * 42)),
-        Offset(size.width, 34.0 + (i * 42)),
-        smallRoadPaint,
-      );
-    }
-
-    for (var i = 0; i < 7; i++) {
-      canvas.drawLine(
-        Offset(20.0 + (i * 52), 0),
-        Offset(24.0 + (i * 52), size.height),
-        smallRoadPaint,
-      );
-    }
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? const Color(0xD91E1A35)
+                  : const Color(0xEFFFFFFF),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.storefront, size: 18, color: palette.accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${restaurants.length} • $openCount ${AppLocalizations.of(context).open.toLowerCase()}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isDarkMode
+                          ? Colors.white
+                          : const Color(0xFF1C1A33),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -50,18 +50,19 @@ class JambarPayApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: true,
             scaffoldBackgroundColor: softBackground,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: brandOrange,
-              brightness: Brightness.light,
-            ).copyWith(
-              primary: brandOrange,
-              secondary: brandGreen,
-              surface: Colors.white,
-            ),
-            textTheme: ThemeData.light().textTheme.apply(
-                  bodyColor: brandDark,
-                  displayColor: brandDark,
+            colorScheme:
+                ColorScheme.fromSeed(
+                  seedColor: brandOrange,
+                  brightness: Brightness.light,
+                ).copyWith(
+                  primary: brandOrange,
+                  secondary: brandGreen,
+                  surface: Colors.white,
                 ),
+            textTheme: ThemeData.light().textTheme.apply(
+              bodyColor: brandDark,
+              displayColor: brandDark,
+            ),
           ),
           home: const JambarPayFlow(),
         );
@@ -243,7 +244,7 @@ class _HomeShellState extends State<HomeShell> {
             amount: result.amount,
             label: scanResult.merchantName,
             date: result.date,
-            status: AppLocalizations(const Locale('fr')).validated,
+            status: AppLocalizations.of(context).statusValidated,
           ),
           ..._appState.transactions,
         ],

@@ -3,8 +3,9 @@ import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 import 'qr_widgets.dart';
+import '../utils/localized_view_data.dart';
 
-class BalanceCard extends StatelessWidget {
+class BalanceCard extends StatefulWidget {
   const BalanceCard({
     super.key,
     required this.onQrTap,
@@ -17,18 +18,29 @@ class BalanceCard extends StatelessWidget {
   final bool isDarkMode;
 
   @override
+  State<BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<BalanceCard> {
+  bool _isBalanceVisible = false;
+
+  @override
   Widget build(BuildContext context) {
-    final palette = AppPalette(isDarkMode);
+    final palette = AppPalette(widget.isDarkMode);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 350;
-        final qrWidth = (constraints.maxWidth * 0.3).clamp(104.0, 118.0).toDouble();
+        final qrWidth = (constraints.maxWidth * 0.3)
+            .clamp(104.0, 118.0)
+            .toDouble();
 
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDarkMode ? palette.sectionContainer : const Color(0xFF242140),
+            color: widget.isDarkMode
+                ? palette.sectionContainer
+                : const Color(0xFF242140),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
@@ -37,15 +49,17 @@ class BalanceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _BalanceInfo(
-                      wallet: wallet,
+                      wallet: widget.wallet,
                       palette: palette,
+                      isBalanceVisible: _isBalanceVisible,
+                      onToggleVisibility: _toggleBalanceVisibility,
                     ),
                     const SizedBox(height: 14),
                     Align(
                       alignment: Alignment.centerRight,
                       child: _QrActionButton(
                         width: qrWidth,
-                        onTap: onQrTap,
+                        onTap: widget.onQrTap,
                       ),
                     ),
                   ],
@@ -54,28 +68,40 @@ class BalanceCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _BalanceInfo(
-                        wallet: wallet,
+                        wallet: widget.wallet,
                         palette: palette,
+                        isBalanceVisible: _isBalanceVisible,
+                        onToggleVisibility: _toggleBalanceVisibility,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _QrActionButton(
-                      width: qrWidth,
-                      onTap: onQrTap,
-                    ),
+                    _QrActionButton(width: qrWidth, onTap: widget.onQrTap),
                   ],
                 ),
         );
       },
     );
   }
+
+  void _toggleBalanceVisibility() {
+    setState(() {
+      _isBalanceVisible = !_isBalanceVisible;
+    });
+  }
 }
 
 class _BalanceInfo extends StatelessWidget {
-  const _BalanceInfo({required this.wallet, required this.palette});
+  const _BalanceInfo({
+    required this.wallet,
+    required this.palette,
+    required this.isBalanceVisible,
+    required this.onToggleVisibility,
+  });
 
   final WalletSummaryModel? wallet;
   final AppPalette palette;
+  final bool isBalanceVisible;
+  final VoidCallback onToggleVisibility;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +121,9 @@ class _BalanceInfo extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                wallet?.balance.formatted ?? '0 Fcfa',
+                isBalanceVisible
+                    ? wallet?.balance.formatted ?? '0 Fcfa'
+                    : '•••••• Fcfa',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -106,10 +134,19 @@ class _BalanceInfo extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.remove_red_eye_outlined,
-              size: 16,
-              color: palette.primaryText.withValues(alpha: 0.92),
+            InkWell(
+              onTap: onToggleVisibility,
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  isBalanceVisible
+                      ? Icons.visibility_off_outlined
+                      : Icons.remove_red_eye_outlined,
+                  size: 16,
+                  color: palette.primaryText.withValues(alpha: 0.92),
+                ),
+              ),
             ),
           ],
         ),
@@ -117,7 +154,8 @@ class _BalanceInfo extends StatelessWidget {
         Text(
           wallet == null
               ? AppLocalizations.of(context).walletUnavailable
-              : '${wallet!.status} • ${wallet!.lastUpdated}',
+              : '${localizeWalletStatus(context, wallet!.status)} • '
+                    '${localizeRelativeDate(context, wallet!.lastUpdated)}',
           style: TextStyle(
             color: palette.primaryText.withValues(alpha: 0.72),
             fontSize: 11,
@@ -148,7 +186,7 @@ class _QrActionButton extends StatelessWidget {
         ),
         child: Column(
           children: [
-            const QrBlock(),
+            const QrBlock(data: 'JAMBAR|BALANCE|ENTRY', borderRadius: 10),
             const SizedBox(height: 10),
             FittedBox(
               fit: BoxFit.scaleDown,
@@ -159,7 +197,10 @@ class _QrActionButton extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     AppLocalizations.of(context).scan,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
