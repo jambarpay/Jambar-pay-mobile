@@ -17,6 +17,7 @@ import 'domain/repositories/payment_repository.dart';
 import 'domain/use_cases/auth/send_otp.dart';
 import 'domain/use_cases/auth/verify_otp.dart';
 import 'domain/use_cases/auth/change_pin.dart';
+import 'domain/use_cases/auth/logout.dart';
 import 'domain/use_cases/transactions/get_transactions.dart';
 import 'domain/use_cases/transactions/filter_transactions.dart';
 import 'domain/use_cases/transactions/get_transaction_by_id.dart';
@@ -25,6 +26,8 @@ import 'domain/use_cases/payment/confirm_payment.dart';
 import 'domain/use_cases/wallet/get_wallet.dart';
 import 'domain/use_cases/wallet/refresh_wallet.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
+import 'presentation/bloc/auth/auth_message_provider.dart';
+import 'presentation/bloc/auth/localized_auth_message_provider.dart';
 import 'presentation/bloc/transactions/transaction_bloc.dart';
 import 'presentation/bloc/payment/payment_bloc.dart';
 import 'presentation/bloc/profile/profile_bloc.dart';
@@ -77,11 +80,13 @@ void init() {
   sl.registerFactory(() => SendOtp(sl<AuthRepository>()));
   sl.registerFactory(() => VerifyOtp(sl<AuthRepository>()));
   sl.registerFactory(() => ChangePin());
+  sl.registerFactory(() => Logout(sl<AuthRepository>()));
+  sl.registerLazySingleton<AuthMessageProvider>(
+    () => LocalizedAuthMessageProvider(),
+  );
 
   sl.registerLazySingleton(() => GetTransactions(sl<TransactionRepository>()));
-  sl.registerLazySingleton(
-    () => FilterTransactions(sl<TransactionRepository>()),
-  );
+  sl.registerLazySingleton(() => const FilterTransactions());
   sl.registerLazySingleton(
     () => GetTransactionById(sl<TransactionRepository>()),
   );
@@ -96,7 +101,8 @@ void init() {
     () => AuthBloc(
       sendOtp: sl<SendOtp>(),
       verifyOtp: sl<VerifyOtp>(),
-      changePin: sl<ChangePin>(),
+      logout: sl<Logout>(),
+      messages: sl<AuthMessageProvider>(),
     ),
   );
   sl.registerFactory<TransactionBloc>(
@@ -109,9 +115,6 @@ void init() {
     () => PaymentBloc(confirmPayment: sl<ConfirmPayment>()),
   );
   sl.registerFactory<ProfileBloc>(
-    () => ProfileBloc(
-      changePin: sl<ChangePin>(),
-      authRepository: sl<AuthRepository>(),
-    ),
+    () => ProfileBloc(changePin: sl<ChangePin>(), logout: sl<Logout>()),
   );
 }

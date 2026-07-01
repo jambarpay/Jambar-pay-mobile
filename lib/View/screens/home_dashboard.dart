@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_event.dart';
@@ -10,6 +11,50 @@ import '../widgets/balance_card.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/transaction_widgets.dart';
 import '../screens/qr_screen.dart';
+
+TransactionItemModel _toTransactionItemModel(
+  Transaction transaction,
+  BuildContext context,
+) {
+  final loc = AppLocalizations.of(context);
+
+  return TransactionItemModel(
+    id: transaction.id,
+    type: transaction.type == TransactionType.credit ? 'CREDIT' : 'DEBIT',
+    amount: MoneyModel(
+      amount: transaction.amount.amount,
+      currency: transaction.amount.currency,
+      formatted: transaction.amount.formatted,
+      symbol: 'F',
+    ),
+    label: transaction.label,
+    date: _formatTransactionDate(transaction.date, context),
+    status: transaction.status == TransactionStatus.validated
+        ? loc.statusValidated
+        : transaction.status == TransactionStatus.failed
+        ? loc.statusFailed
+        : loc.statusPending,
+  );
+}
+
+String _formatTransactionDate(DateTime date, BuildContext context) {
+  final loc = AppLocalizations.of(context);
+  final now = DateTime.now();
+  final time = '${date.hour}h${date.minute.toString().padLeft(2, '0')}';
+
+  if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    return loc.todayAt(time);
+  }
+
+  final yesterday = now.subtract(const Duration(days: 1));
+  if (date.year == yesterday.year &&
+      date.month == yesterday.month &&
+      date.day == yesterday.day) {
+    return loc.yesterdayAt(time);
+  }
+
+  return loc.dateTime('${date.day}/${date.month}/${date.year}', time);
+}
 
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({
@@ -108,10 +153,26 @@ class HomeDashboard extends StatelessWidget {
                       isDarkMode: isDarkMode,
                     ),
                     Expanded(
-                      child: TransactionsList(
-                        transactions: appState.transactions.take(6).toList(),
-                        showAmount: true,
-                        isDarkMode: isDarkMode,
+                      child: BlocBuilder<TransactionBloc, TransactionState>(
+                        builder: (context, state) {
+                          final recentTransactions = state is TransactionLoaded
+                              ? state.allTransactions
+                                    .take(6)
+                                    .map(
+                                      (transaction) => _toTransactionItemModel(
+                                        transaction,
+                                        context,
+                                      ),
+                                    )
+                                    .toList()
+                              : appState.transactions.take(6).toList();
+
+                          return TransactionsList(
+                            transactions: recentTransactions,
+                            showAmount: true,
+                            isDarkMode: isDarkMode,
+                          );
+                        },
                       ),
                     ),
                   ],

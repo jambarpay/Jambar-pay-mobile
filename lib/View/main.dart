@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
 import 'package:jambar_pay_mobile/domain/entities/user.dart';
+import 'package:jambar_pay_mobile/domain/value_objects/money.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/language_controller.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
@@ -231,23 +233,30 @@ class _HomeShellState extends State<HomeShell> {
     QRScanResultModel scanResult,
     PaymentResultModel result,
   ) {
+    final transaction = Transaction(
+      id: result.paymentId,
+      type: TransactionType.debit,
+      amount: Money(
+        amount: result.amount.amount,
+        currency: result.amount.currency,
+      ),
+      label: scanResult.merchantName,
+      date: DateTime.now(),
+      status: TransactionStatus.validated,
+    );
+
+    try {
+      context.read<TransactionBloc>().add(
+        LocalTransactionRegistered(transaction),
+      );
+    } catch (_) {}
+
     setState(() {
       _appState = _appState.copyWith(
         payment: _appState.payment.copyWith(
           scanResult: scanResult,
           currentPayment: result,
         ),
-        transactions: [
-          TransactionItemModel(
-            id: result.paymentId,
-            type: 'DEBIT',
-            amount: result.amount,
-            label: scanResult.merchantName,
-            date: result.date,
-            status: AppLocalizations.of(context).statusValidated,
-          ),
-          ..._appState.transactions,
-        ],
       );
       _currentIndex = 0;
     });

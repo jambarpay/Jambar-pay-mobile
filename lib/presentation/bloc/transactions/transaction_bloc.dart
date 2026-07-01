@@ -3,10 +3,10 @@ import 'transaction_event.dart';
 import 'transaction_state.dart';
 import '../../../domain/use_cases/transactions/get_transactions.dart';
 import '../../../domain/use_cases/transactions/filter_transactions.dart';
-import '../../../domain/entities/transaction.dart';
 
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   final GetTransactions _getTransactions;
+  final FilterTransactions _filterTransactions;
 
   static const int _pageSize = 4;
 
@@ -14,6 +14,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     required GetTransactions getTransactions,
     required FilterTransactions filterTransactions,
   }) : _getTransactions = getTransactions,
+       _filterTransactions = filterTransactions,
        super(const TransactionInitial()) {
     on<TransactionsLoadRequested>(_onLoadRequested);
     on<TransactionsRefreshRequested>(_onRefreshRequested);
@@ -21,6 +22,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     on<TransactionsFilterChanged>(_onFilterChanged);
     on<SearchQueryChanged>(_onSearchQueryChanged);
     on<SearchCleared>(_onSearchCleared);
+    on<LocalTransactionRegistered>(_onLocalTransactionRegistered);
   }
 
   Future<void> _onLoadRequested(
@@ -33,7 +35,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       if (all.isEmpty) {
         emit(const TransactionEmpty());
       } else {
-        final filtered = _applyFilter(all, 'all', null);
+        final filtered = _filterTransactions(transactions: all, filter: 'all');
         emit(
           TransactionLoaded(
             allTransactions: all,
@@ -62,10 +64,10 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     emit(const TransactionLoading());
     try {
       final all = await _getTransactions();
-      final filtered = _applyFilter(
-        all,
-        current.currentFilter,
-        current.searchQuery,
+      final filtered = _filterTransactions(
+        transactions: all,
+        filter: current.currentFilter,
+        query: current.searchQuery,
       );
       emit(
         current.copyWith(
@@ -104,10 +106,10 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
 
-    final filtered = _applyFilter(
-      current.allTransactions,
-      event.filter,
-      current.searchQuery,
+    final filtered = _filterTransactions(
+      transactions: current.allTransactions,
+      filter: event.filter,
+      query: current.searchQuery,
     );
     emit(
       TransactionLoaded(
@@ -128,10 +130,10 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
 
-    final filtered = _applyFilter(
-      current.allTransactions,
-      current.currentFilter,
-      event.query,
+    final filtered = _filterTransactions(
+      transactions: current.allTransactions,
+      filter: current.currentFilter,
+      query: event.query,
     );
     emit(
       TransactionLoaded(
@@ -149,10 +151,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
 
-    final filtered = _applyFilter(
-      current.allTransactions,
-      current.currentFilter,
-      null,
+    final filtered = _filterTransactions(
+      transactions: current.allTransactions,
+      filter: current.currentFilter,
     );
     emit(
       TransactionLoaded(
@@ -166,54 +167,44 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     );
   }
 
-  List<Transaction> _applyFilter(
-    List<Transaction> transactions,
-    String filter,
-    String? query,
+  void _onLocalTransactionRegistered(
+    LocalTransactionRegistered event,
+    Emitter<TransactionState> emit,
   ) {
-    var result = transactions;
-
-    final now = DateTime.now();
-    switch (filter) {
-      case 'today':
-        result = result.where((t) {
-          final d = t.date;
-          return d.year == now.year && d.month == now.month && d.day == now.day;
-        }).toList();
-        break;
-      case 'thisWeek':
-        final startOfWeek = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).subtract(Duration(days: now.weekday - 1));
-        final endOfWeek = startOfWeek.add(const Duration(days: 7));
-        result = result
-            .where(
-              (t) =>
-                  !t.date.isBefore(startOfWeek) && t.date.isBefore(endOfWeek),
-            )
-            .toList();
-        break;
-      case 'thisMonth':
-        result = result
-            .where((t) => t.date.year == now.year && t.date.month == now.month)
-            .toList();
-        break;
-      default:
-        break;
+    if (state is TransactionInitial || state is TransactionEmpty) {
+      emit(
+        TransactionLoaded(
+          allTransactions: [event.transaction],
+          filteredTransactions: [event.transaction],
+          currentFilter: 'all',
+          searchQuery: null,
+          hasMore: false,
+          visibleCount: 1,
+        ),
+      );
+      return;
     }
 
-    if (query != null && query.isNotEmpty) {
-      final q = query.toLowerCase();
-      result = result.where((t) {
-        return t.label.toLowerCase().contains(q) ||
-            t.status.toString().toLowerCase().contains(q) ||
-            t.signedAmount.signedAmount.toLowerCase().contains(q) ||
-            '${t.date.day}/${t.date.month}/${t.date.year}'.contains(q);
-      }).toList();
-    }
+    if (state is! TransactionLoaded) return;
+    final current = state as TransactionLoaded;
 
-    return result;
+    final updatedAllTransactions = [
+      event.transaction,
+      ...current.allTransactions,
+    ];
+    final updatedFilteredTransactions = _filterTransactions(
+      transactions: updatedAllTransactions,
+      filter: current.currentFilter,
+      query: current.searchQuery,
+    );
+
+    emit(
+      current.copyWith(
+        allTransactions: updatedAllTransactions,
+        filteredTransactions: updatedFilteredTransactions,
+        hasMore: updatedFilteredTransactions.length > _pageSize,
+        visibleCount: _pageSize,
+      ),
+    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../domain/entities/transaction.dart';
 
 abstract class TransactionEvent extends Equatable {
   const TransactionEvent();
@@ -15,13 +16,12 @@ class TransactionsRefreshRequested extends TransactionEvent {
   const TransactionsRefreshRequested();
 }
 
-
 class TransactionsLoadMoreRequested extends TransactionEvent {
   const TransactionsLoadMoreRequested();
 }
 
 class TransactionsFilterChanged extends TransactionEvent {
-  final String filter; 
+  final String filter;
   final String? searchQuery;
 
   const TransactionsFilterChanged(this.filter, {this.searchQuery});
@@ -41,4 +41,13 @@ class SearchQueryChanged extends TransactionEvent {
 
 class SearchCleared extends TransactionEvent {
   const SearchCleared();
+}
+
+class LocalTransactionRegistered extends TransactionEvent {
+  final Transaction transaction;
+
+  const LocalTransactionRegistered(this.transaction);
+
+  @override
+  List<Object?> get props => [transaction];
 }

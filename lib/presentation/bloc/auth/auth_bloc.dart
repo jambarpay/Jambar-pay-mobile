@@ -1,13 +1,11 @@
-import 'dart:ui';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
+import 'auth_message_provider.dart';
 import '../../../domain/value_objects/phone_number.dart';
 import '../../../domain/use_cases/auth/send_otp.dart';
 import '../../../domain/use_cases/auth/verify_otp.dart';
-import '../../../domain/use_cases/auth/change_pin.dart';
+import '../../../domain/use_cases/auth/logout.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   static const int _maxPinAttempts = 5;
@@ -15,22 +13,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   final SendOtp _sendOtp;
   final VerifyOtp _verifyOtp;
-  final ChangePin _changePin;
+  final Logout _logout;
+  final AuthMessageProvider _messages;
 
   String _currentPhone = '';
   String _currentPin = '';
   int _failedPinAttempts = 0;
   DateTime? _pinLockedUntil;
 
-  AppLocalizations get _localizations => AppLocalizations(const Locale('fr'));
-
   AuthBloc({
     required SendOtp sendOtp,
     required VerifyOtp verifyOtp,
-    required ChangePin changePin,
+    required Logout logout,
+    required AuthMessageProvider messages,
   }) : _sendOtp = sendOtp,
        _verifyOtp = verifyOtp,
-       _changePin = changePin,
+       _logout = logout,
+       _messages = messages,
        super(const AuthPhoneInitial()) {
     on<PhoneNumberChanged>(_onPhoneNumberChanged);
     on<PhoneNumberBackspace>(_onPhoneNumberBackspace);
@@ -67,15 +66,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (phone.isValid) {
         emit(AuthPhoneValid(phone.formatted));
       } else {
-        emit(
-          AuthPhoneInvalid(
-            _localizations.phoneAuthorizedOnly,
-            _currentPhone,
-          ),
-        );
+        emit(AuthPhoneInvalid(_messages.phoneAuthorizedOnly, _currentPhone));
       }
-    } else if (phone.digits.length > 9) {
-      emit(AuthPhoneInvalid(_localizations.phoneTooLong, _currentPhone));
+    } else if (phone.digits.length >= 9) {
+      emit(AuthPhoneInvalid(_messages.phoneTooLong, _currentPhone));
     } else {
       emit(AuthPhoneInitial(_currentPhone));
     }
@@ -105,7 +99,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     final phone = PhoneNumber(_currentPhone);
     if (!phone.isValid) {
-      emit(AuthPhoneInvalid(_localizations.invalidPhoneNumber, _currentPhone));
+      emit(AuthPhoneInvalid(_messages.invalidPhoneNumber, _currentPhone));
       return;
     }
 
@@ -227,7 +221,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      await _changePin(currentPin: '', newPin: '');
+      await _logout();
     } catch (_) {}
     _failedPinAttempts = 0;
     _pinLockedUntil = null;
@@ -265,11 +259,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
 
     final remainingAttempts = _maxPinAttempts - _failedPinAttempts;
-    final attemptLabel = remainingAttempts > 1 ? 'tentatives' : 'tentative';
-
     emit(
       AuthFailure(
-        _localizations.incorrectSecretCode(remainingAttempts, attemptLabel),
+        _messages.incorrectSecretCode(remainingAttempts),
         _formattedCurrentPhone,
       ),
     );
@@ -278,26 +270,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   String _pinLockMessage() {
     final lockedUntil = _pinLockedUntil;
     if (lockedUntil == null) {
-      return _localizations.retryIn('2:00');
+      return _messages.retryInDuration(_pinLockDuration);
     }
 
     final remaining = lockedUntil.difference(DateTime.now());
     if (remaining.inMilliseconds <= 0) {
-      return _localizations.youCanRetryNow;
+      return _messages.youCanRetryNow;
     }
 
-    final totalSeconds = (remaining.inMilliseconds / 1000).ceil();
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-
-    if (minutes > 0) {
-      if (seconds == 0) {
-        final minuteLabel = minutes > 1 ? 'minutes' : 'minute';
-        return _localizations.retryIn('$minutes $minuteLabel');
-      }
-      return _localizations.retryIn('${minutes} min ${seconds}s');
-    }
-
-    return _localizations.retryIn('${seconds}s');
+    return _messages.retryInDuration(
+      Duration(seconds: (remaining.inMilliseconds / 1000).ceil()),
+    );
   }
 }

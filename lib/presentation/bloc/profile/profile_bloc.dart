@@ -2,20 +2,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
 import '../../../domain/use_cases/auth/change_pin.dart';
-import '../../../domain/repositories/auth_repository.dart';
+import '../../../domain/use_cases/auth/logout.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/value_objects/phone_number.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ChangePin _changePin;
-  final AuthRepository _authRepository;
+  final Logout _logout;
 
-  ProfileBloc({
-    required ChangePin changePin,
-    required AuthRepository authRepository,
-  })  : _changePin = changePin,
-        _authRepository = authRepository,
-        super(const ProfileInitial()) {
+  ProfileBloc({required ChangePin changePin, required Logout logout})
+    : _changePin = changePin,
+      _logout = logout,
+      super(const ProfileInitial()) {
     on<ProfileLoadRequested>(_onProfileLoadRequested);
     on<DarkModeChanged>(_onDarkModeChanged);
     on<PinChangeRequested>(_onPinChangeRequested);
@@ -28,17 +26,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(const ProfileLoading());
-    emit(const ProfileLoaded(
-      user: User(id: '', name: '', phone: PhoneNumber('')),
-      wallet: null,
-      isDarkMode: false,
-    ));
+    emit(
+      const ProfileLoaded(
+        user: User(id: '', name: '', phone: PhoneNumber('')),
+        wallet: null,
+        isDarkMode: false,
+      ),
+    );
   }
 
-  void _onDarkModeChanged(
-    DarkModeChanged event,
-    Emitter<ProfileState> emit,
-  ) {
+  void _onDarkModeChanged(DarkModeChanged event, Emitter<ProfileState> emit) {
     if (state is! ProfileLoaded) return;
     final current = state as ProfileLoaded;
     emit(current.copyWith(isDarkMode: event.isDarkMode));
@@ -50,20 +47,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     emit(const PinChangeInProgress());
     try {
-      await _changePin(
-        currentPin: event.currentPin,
-        newPin: event.newPin,
-      );
+      await _changePin(currentPin: event.currentPin, newPin: event.newPin);
       add(const PinChanged());
     } catch (e) {
       emit(PinChangeFailure(e.toString()));
     }
   }
 
-  void _onPinChanged(
-    PinChanged event,
-    Emitter<ProfileState> emit,
-  ) {
+  void _onPinChanged(PinChanged event, Emitter<ProfileState> emit) {
     emit(const PinChangeSuccess());
   }
 
@@ -73,10 +64,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     emit(const LogoutInProgress());
     try {
-      await _authRepository.logout();
+      await _logout();
       emit(const LogoutComplete());
     } catch (e) {
-      emit(const LogoutComplete()); 
+      emit(const LogoutComplete());
     }
   }
 }
