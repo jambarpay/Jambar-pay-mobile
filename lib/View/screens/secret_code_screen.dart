@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 
@@ -20,8 +22,8 @@ class SecretCodeScreen extends StatefulWidget {
   final SecretCodeFlowMode mode;
   final String phoneNumber;
   final bool isDarkMode;
-  final String? Function(String currentPin, String newPin)? onChangePin;
-  final ValueChanged<String>? onResetPin;
+  final Future<String?> Function(String currentPin, String newPin)? onChangePin;
+  final Future<String?> Function(String newPin)? onResetPin;
 
   @override
   State<SecretCodeScreen> createState() => _SecretCodeScreenState();
@@ -35,6 +37,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   String _newPin = '';
   String _confirmPin = '';
   String? _errorMessage;
+  bool _isSubmitting = false;
 
   bool get _isChangeMode => widget.mode == SecretCodeFlowMode.change;
 
@@ -90,7 +93,8 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       icon: Icon(
                                         Icons.arrow_back,
                                         size: 22,
@@ -113,8 +117,12 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 Center(
                                   child: Text(
                                     _isChangeMode
-                                        ? AppLocalizations.of(context).changeSecretCode
-                                        : AppLocalizations.of(context).resetSecretCode,
+                                        ? AppLocalizations.of(
+                                            context,
+                                          ).changeSecretCode
+                                        : AppLocalizations.of(
+                                            context,
+                                          ).resetSecretCode,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 24,
@@ -127,8 +135,12 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 Center(
                                   child: Text(
                                     widget.phoneNumber.isEmpty
-                                        ? AppLocalizations.of(context).setYourNewSecretCode
-                                        : AppLocalizations.of(context).accountForPhone(widget.phoneNumber),
+                                        ? AppLocalizations.of(
+                                            context,
+                                          ).setYourNewSecretCode
+                                        : AppLocalizations.of(
+                                            context,
+                                          ).accountForPhone(widget.phoneNumber),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 15,
@@ -162,7 +174,9 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 ),
                                 const SizedBox(height: 24),
                                 Center(
-                                  child: PinDots(length: _activePinValue.length),
+                                  child: PinDots(
+                                    length: _activePinValue.length,
+                                  ),
                                 ),
                                 const SizedBox(height: 18),
                                 if (_errorMessage != null)
@@ -178,14 +192,28 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                       ),
                                     ),
                                   ),
-                                SizedBox(
-                                  height: keypadHeight.toDouble(),
-                                  child: NumericKeypad(
-                                    onDigitTap: _onDigitTap,
-                                    onBackspace: _onBackspace,
-                                    foregroundColor: bodyTextColor,
+                                IgnorePointer(
+                                  ignoring: _isSubmitting,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 180),
+                                    opacity: _isSubmitting ? 0.45 : 1,
+                                    child: SizedBox(
+                                      height: keypadHeight.toDouble(),
+                                      child: NumericKeypad(
+                                        onDigitTap: _onDigitTap,
+                                        onBackspace: _onBackspace,
+                                        foregroundColor: bodyTextColor,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                if (_isSubmitting)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.only(top: 8),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -251,7 +279,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
       return;
     }
 
-    _submit();
+    unawaited(_submit());
   }
 
   void _onBackspace() {
@@ -278,7 +306,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
     });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final newPin = _newPin;
     final confirmPin = _confirmPin;
 
@@ -291,20 +319,36 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
       return;
     }
 
-    if (_isChangeMode) {
-      final error = widget.onChangePin?.call(_currentPin, newPin);
-      if (error != null) {
-        setState(() {
-          _errorMessage = error;
+    setState(() => _isSubmitting = true);
+
+    String? error;
+    try {
+      if (_isChangeMode) {
+        error = await widget.onChangePin?.call(_currentPin, newPin);
+      } else {
+        error = await widget.onResetPin?.call(newPin);
+      }
+    } catch (exception) {
+      error = exception.toString();
+    }
+
+    if (!mounted) return;
+
+    if (error != null) {
+      setState(() {
+        _isSubmitting = false;
+        _errorMessage = error;
+        if (_isChangeMode) {
           _currentPin = '';
           _newPin = '';
           _confirmPin = '';
           _stepIndex = 0;
-        });
-        return;
-      }
-    } else {
-      widget.onResetPin?.call(newPin);
+        } else {
+          _confirmPin = '';
+          _stepIndex = _totalSteps - 1;
+        }
+      });
+      return;
     }
 
     Navigator.of(context).pop(true);
@@ -333,9 +377,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
       };
     }
 
-    return _stepIndex == 0
-        ? loc.setYourNewSecretCode
-        : loc.enterCodeAgain;
+    return _stepIndex == 0 ? loc.setYourNewSecretCode : loc.enterCodeAgain;
   }
 }
 

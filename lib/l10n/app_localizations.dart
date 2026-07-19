@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class AppLocalizations {
@@ -58,6 +59,7 @@ class AppLocalizations {
       'finish': 'Terminer',
       'retry': 'Réessayer',
       'noTransactionsAvailable': 'Aucune transaction disponible.',
+      'noRestaurantsAvailable': 'Aucun restaurant disponible.',
       'noTransactionsMatchSearch':
           'Aucune transaction ne correspond à votre recherche.',
       'filterAll': 'Tous',
@@ -106,8 +108,11 @@ class AppLocalizations {
       'scan': 'Scanner',
       'myQr': 'Mon QR',
       'invalidQrCode': 'Code QR invalide.',
+      'cameraUnavailable':
+          'La caméra est indisponible. Vérifiez les autorisations.',
       'transactionCount': '{count} transaction(s)',
       'progressiveLoadingActive': 'Chargement progressif actif',
+      'loadMore': 'Charger plus',
       'searchRestaurant': 'rechercher un restaurant',
       'open': 'Ouvert',
       'closed': 'Ferme',
@@ -172,6 +177,7 @@ class AppLocalizations {
       'finish': 'Finish',
       'retry': 'Retry',
       'noTransactionsAvailable': 'No transactions available.',
+      'noRestaurantsAvailable': 'No restaurants available.',
       'noTransactionsMatchSearch': 'No transactions match your search.',
       'filterAll': 'All',
       'filterToday': 'Today',
@@ -218,8 +224,10 @@ class AppLocalizations {
       'scan': 'Scan',
       'myQr': 'My QR',
       'invalidQrCode': 'Invalid QR code.',
+      'cameraUnavailable': 'The camera is unavailable. Check permissions.',
       'transactionCount': '{count} transaction(s)',
       'progressiveLoadingActive': 'Progressive loading active',
+      'loadMore': 'Load more',
       'searchRestaurant': 'search for a restaurant',
       'open': 'Open',
       'closed': 'Closed',
@@ -303,6 +311,7 @@ class AppLocalizations {
   String get finish => _translate('finish');
   String get retry => _translate('retry');
   String get noTransactionsAvailable => _translate('noTransactionsAvailable');
+  String get noRestaurantsAvailable => _translate('noRestaurantsAvailable');
   String get noTransactionsMatchSearch =>
       _translate('noTransactionsMatchSearch');
   String get filterAll => _translate('filterAll');
@@ -356,9 +365,11 @@ class AppLocalizations {
   String get scan => _translate('scan');
   String get myQr => _translate('myQr');
   String get invalidQrCode => _translate('invalidQrCode');
+  String get cameraUnavailable => _translate('cameraUnavailable');
   String transactionCount(String count) =>
       _translateWithArgs('transactionCount', {'count': count});
   String get progressiveLoadingActive => _translate('progressiveLoadingActive');
+  String get loadMore => _translate('loadMore');
   String get searchRestaurant => _translate('searchRestaurant');
   String get open => _translate('open');
   String get closed => _translate('closed');
@@ -401,8 +412,8 @@ class _AppLocalizationsDelegate
   bool isSupported(Locale locale) => ['fr', 'en'].contains(locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) async =>
-      AppLocalizations(locale);
+  Future<AppLocalizations> load(Locale locale) =>
+      SynchronousFuture<AppLocalizations>(AppLocalizations(locale));
 
   @override
   bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>

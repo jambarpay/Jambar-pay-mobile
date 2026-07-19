@@ -22,7 +22,7 @@ class Transaction {
   });
 
   bool get isCredit => type == TransactionType.credit;
-  
+
   Money get signedAmount => isCredit ? amount : amount.negate;
 
   Transaction copyWith({

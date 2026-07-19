@@ -48,9 +48,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         );
       }
     } catch (e) {
-      // Log error to help debugging network/backend issues
-      print('TransactionBloc ERROR (load): $e');
-      emit(TransactionFailure('Erreur: ${e.toString()}'));
+      emit(TransactionFailure(e.toString()));
     }
   }
 
@@ -78,8 +76,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         ),
       );
     } catch (e) {
-      print('TransactionBloc ERROR (refresh): $e');
-      emit(TransactionFailure('Erreur: ${e.toString()}'));
+      emit(TransactionFailure(e.toString()));
     }
   }
 

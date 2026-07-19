@@ -111,7 +111,7 @@ class _BalanceInfo extends StatelessWidget {
         Text(
           AppLocalizations.of(context).availableBalanceTitle,
           style: TextStyle(
-            color: palette.primaryText,
+            color: palette.onHeader,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -127,7 +127,7 @@ class _BalanceInfo extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: palette.primaryText,
+                  color: palette.onHeader,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -144,7 +144,7 @@ class _BalanceInfo extends StatelessWidget {
                       ? Icons.visibility_off_outlined
                       : Icons.remove_red_eye_outlined,
                   size: 16,
-                  color: palette.primaryText.withValues(alpha: 0.92),
+                  color: palette.onHeader.withValues(alpha: 0.92),
                 ),
               ),
             ),
@@ -157,7 +157,7 @@ class _BalanceInfo extends StatelessWidget {
               : '${localizeWalletStatus(context, wallet!.status)} • '
                     '${localizeRelativeDate(context, wallet!.lastUpdated)}',
           style: TextStyle(
-            color: palette.primaryText.withValues(alpha: 0.72),
+            color: palette.onHeader.withValues(alpha: 0.72),
             fontSize: 11,
           ),
         ),

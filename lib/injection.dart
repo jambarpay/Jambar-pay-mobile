@@ -1,23 +1,27 @@
 import 'package:get_it/get_it.dart';
-import '../ApiService/ApiService.dart';
-import '../ApiService/MockApiService.dart';
-import '../di.dart' as di;
+import 'core/network/api_service.dart';
+import 'core/network/mock_api_service.dart';
+import 'core/storage/secure_session_storage.dart';
 import 'data/datasources/remote/auth_remote_datasource.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
 import 'data/datasources/remote/transaction_remote_datasource.dart';
 import 'data/datasources/remote/wallet_remote_datasource.dart';
+import 'data/datasources/remote/restaurant_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/transaction_repository_impl.dart';
 import 'data/repositories/wallet_repository_impl.dart';
 import 'data/repositories/payment_repository_impl.dart';
+import 'data/repositories/restaurant_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/transaction_repository.dart';
 import 'domain/repositories/wallet_repository.dart';
 import 'domain/repositories/payment_repository.dart';
+import 'domain/repositories/restaurant_repository.dart';
 import 'domain/use_cases/auth/send_otp.dart';
 import 'domain/use_cases/auth/verify_otp.dart';
 import 'domain/use_cases/auth/change_pin.dart';
 import 'domain/use_cases/auth/logout.dart';
+import 'domain/use_cases/auth/reset_pin.dart';
 import 'domain/use_cases/transactions/get_transactions.dart';
 import 'domain/use_cases/transactions/filter_transactions.dart';
 import 'domain/use_cases/transactions/get_transaction_by_id.dart';
@@ -25,34 +29,44 @@ import 'domain/use_cases/payment/initiate_payment.dart';
 import 'domain/use_cases/payment/confirm_payment.dart';
 import 'domain/use_cases/wallet/get_wallet.dart';
 import 'domain/use_cases/wallet/refresh_wallet.dart';
+import 'domain/use_cases/restaurants/get_restaurants.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/auth/auth_message_provider.dart';
 import 'presentation/bloc/auth/localized_auth_message_provider.dart';
 import 'presentation/bloc/transactions/transaction_bloc.dart';
 import 'presentation/bloc/payment/payment_bloc.dart';
 import 'presentation/bloc/profile/profile_bloc.dart';
+import 'presentation/bloc/wallet/wallet_bloc.dart';
+import 'presentation/bloc/restaurants/restaurant_bloc.dart';
 
 final GetIt sl = GetIt.instance;
 
-void init() {
+Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   if (sl.isRegistered<ApiService>()) {
-    try {
-      sl.reset();
-    } catch (_) {}
+    await sl.reset();
   }
-  const useMockApi = String.fromEnvironment('USE_MOCK_API') == 'true';
-  const useLocalAuth =
-      useMockApi || String.fromEnvironment('USE_LOCAL_AUTH') == 'true';
-  print(
-    '🔧 [Injection] Initializing with useMockApi=$useMockApi, useLocalAuth=$useLocalAuth',
-  );
+
+  const configuredMockApi = bool.fromEnvironment('USE_MOCK_API');
+  const configuredLocalAuth = bool.fromEnvironment('USE_LOCAL_AUTH');
+  final shouldUseMockApi = useMockApi ?? configuredMockApi;
+  final shouldUseLocalAuth =
+      useLocalAuth ?? (shouldUseMockApi || configuredLocalAuth);
+  final sessionStorage = SecureSessionStorage();
+  final persistedAccessToken = shouldUseMockApi
+      ? null
+      : await sessionStorage.readAccessToken();
+
+  sl.registerSingleton<SecureSessionStorage>(sessionStorage);
 
   sl.registerLazySingleton<ApiService>(
-    () => useMockApi ? MockApiService() : di.apiService,
+    () => shouldUseMockApi
+        ? MockApiService()
+        : ApiService(token: persistedAccessToken),
+    dispose: (service) => service.dispose(),
   );
 
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSource(sl<ApiService>()),
+    () => AuthRemoteDataSource(sl<ApiService>(), sl<SecureSessionStorage>()),
   );
   sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());
   sl.registerLazySingleton<TransactionRemoteDataSource>(
@@ -61,12 +75,15 @@ void init() {
   sl.registerLazySingleton<WalletRemoteDataSource>(
     () => WalletRemoteDataSource(sl<ApiService>()),
   );
+  sl.registerLazySingleton<RestaurantRemoteDataSource>(
+    () => RestaurantRemoteDataSource(sl<ApiService>()),
+  );
 
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       sl<AuthRemoteDataSource>(),
       sl<AuthLocalDataSource>(),
-      useLocalAuth: useLocalAuth,
+      useLocalAuth: shouldUseLocalAuth,
     ),
   );
   sl.registerLazySingleton<TransactionRepository>(
@@ -75,11 +92,17 @@ void init() {
   sl.registerLazySingleton<WalletRepository>(
     () => WalletRepositoryImpl(sl<WalletRemoteDataSource>()),
   );
-  sl.registerLazySingleton<PaymentRepository>(() => PaymentRepositoryImpl());
+  sl.registerLazySingleton<PaymentRepository>(
+    () => PaymentRepositoryImpl(sl<ApiService>()),
+  );
+  sl.registerLazySingleton<RestaurantRepository>(
+    () => RestaurantRepositoryImpl(sl<RestaurantRemoteDataSource>()),
+  );
 
   sl.registerFactory(() => SendOtp(sl<AuthRepository>()));
   sl.registerFactory(() => VerifyOtp(sl<AuthRepository>()));
-  sl.registerFactory(() => ChangePin());
+  sl.registerFactory(() => ChangePin(sl<AuthRepository>()));
+  sl.registerFactory(() => ResetPin(sl<AuthRepository>()));
   sl.registerFactory(() => Logout(sl<AuthRepository>()));
   sl.registerLazySingleton<AuthMessageProvider>(
     () => LocalizedAuthMessageProvider(),
@@ -96,12 +119,14 @@ void init() {
 
   sl.registerLazySingleton(() => GetWallet(sl<WalletRepository>()));
   sl.registerLazySingleton(() => RefreshWallet(sl<WalletRepository>()));
+  sl.registerLazySingleton(() => GetRestaurants(sl<RestaurantRepository>()));
 
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
       sendOtp: sl<SendOtp>(),
       verifyOtp: sl<VerifyOtp>(),
       logout: sl<Logout>(),
+      resetPin: sl<ResetPin>(),
       messages: sl<AuthMessageProvider>(),
     ),
   );
@@ -112,9 +137,21 @@ void init() {
     ),
   );
   sl.registerFactory<PaymentBloc>(
-    () => PaymentBloc(confirmPayment: sl<ConfirmPayment>()),
+    () => PaymentBloc(
+      initiatePayment: sl<InitiatePayment>(),
+      confirmPayment: sl<ConfirmPayment>(),
+    ),
   );
   sl.registerFactory<ProfileBloc>(
     () => ProfileBloc(changePin: sl<ChangePin>(), logout: sl<Logout>()),
+  );
+  sl.registerFactory<WalletBloc>(
+    () => WalletBloc(
+      getWallet: sl<GetWallet>(),
+      refreshWallet: sl<RefreshWallet>(),
+    ),
+  );
+  sl.registerFactory<RestaurantBloc>(
+    () => RestaurantBloc(getRestaurants: sl<GetRestaurants>()),
   );
 }

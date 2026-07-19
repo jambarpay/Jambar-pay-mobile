@@ -41,6 +41,16 @@ class PinSubmitted extends AuthEvent {
   const PinSubmitted();
 }
 
+class PinResetRequested extends AuthEvent {
+  const PinResetRequested({required this.phoneNumber, required this.newPin});
+
+  final String phoneNumber;
+  final String newPin;
+
+  @override
+  List<Object?> get props => [phoneNumber, newPin];
+}
+
 class BackToPhoneRequested extends AuthEvent {
   const BackToPhoneRequested();
 }

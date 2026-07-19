@@ -3,16 +3,28 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../Config/Config.dart';
-import 'BaseUrl.dart';
+import '../config/api_messages.dart';
+import 'base_url.dart';
 
+class ApiException implements Exception {
+  const ApiException(this.message, {this.statusCode});
+
+  final String message;
+  final int? statusCode;
+
+  @override
+  String toString() => message;
+}
+
+/// Small authenticated JSON client used by remote data sources.
 class ApiService {
   final String baseUrl;
   final http.Client _client;
   String? token;
 
-  ApiService({this.baseUrl = BaseUrl.defaultApiBase, http.Client? client, this.token})
-    : _client = client ?? http.Client();
+  ApiService({String? baseUrl, http.Client? client, this.token})
+    : baseUrl = baseUrl ?? BaseUrl.base,
+      _client = client ?? http.Client();
 
   void setToken(String? t) => token = t;
 
@@ -54,18 +66,24 @@ class ApiService {
         return await _decodeBody(response);
       }
 
-      print('ApiService ERROR ${response.statusCode}: ${response.body}');
-
       if (response.body.contains('twilio') ||
           response.body.contains('unverified')) {
-        throw Exception(ApiMessages.smsError);
+        throw ApiException(
+          ApiMessages.smsError,
+          statusCode: response.statusCode,
+        );
       }
 
-      throw Exception(ApiMessages.http('HTTP', response.statusCode));
+      throw ApiException(
+        ApiMessages.http('HTTP', response.statusCode),
+        statusCode: response.statusCode,
+      );
     } on TimeoutException {
-      throw Exception('${ApiMessages.network}: timeout');
-    } catch (e) {
-      throw Exception('${ApiMessages.network}: $e');
+      throw ApiException('${ApiMessages.network}: timeout');
+    } on ApiException {
+      rethrow;
+    } on http.ClientException catch (error) {
+      throw ApiException('${ApiMessages.network}: ${error.message}');
     }
   }
 
@@ -76,7 +94,6 @@ class ApiService {
     Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint, queryParameters);
-    print('ApiService: GET $uri');
     final merged = {..._defaultHeaders, ...?headers};
     return _request(_client.get(uri, headers: merged).timeout(timeout));
   }
@@ -88,7 +105,6 @@ class ApiService {
     Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint);
-    print('ApiService: POST $uri');
     final merged = {..._defaultHeaders, ...?headers};
     return _request(
       _client

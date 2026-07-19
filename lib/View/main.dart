@@ -1,72 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:jambar_pay_mobile/app/router/app_router.dart';
+import 'package:jambar_pay_mobile/design_system/theme/app_theme.dart';
+import 'package:jambar_pay_mobile/design_system/theme/theme_controller.dart';
 import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
 import 'package:jambar_pay_mobile/domain/entities/user.dart';
 import 'package:jambar_pay_mobile/domain/value_objects/money.dart';
+import 'package:jambar_pay_mobile/domain/value_objects/phone_number.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/language_controller.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_state.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_bloc.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_event.dart'
+    show PinChangeRequested;
+import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_state.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_bloc.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_state.dart';
 import 'screens/login_screen.dart';
 import 'screens/pin_screen.dart';
 import 'screens/home_screen.dart';
 import 'models/mobile_employee_space.dart';
 
-class JambarPayApp extends StatelessWidget {
+class JambarPayApp extends StatefulWidget {
   const JambarPayApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const brandDark = Color(0xFF1C1A33);
-    const brandOrange = Color(0xFFF57C21);
-    const brandGreen = Color(0xFF11B777);
-    const softBackground = Color(0xFFF6F5FB);
+  State<JambarPayApp> createState() => _JambarPayAppState();
+}
 
+class _JambarPayAppState extends State<JambarPayApp> {
+  late final GoRouter _router = AppRouter.create();
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder<Locale>(
       valueListenable: LanguageController.localeNotifier,
       builder: (context, locale, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: AppLocalizations(locale).appTitle,
-          locale: locale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          localeResolutionCallback: (deviceLocale, supportedLocales) {
-            if (deviceLocale == null) return supportedLocales.first;
-            for (final supported in supportedLocales) {
-              if (supported.languageCode == deviceLocale.languageCode) {
-                return supported;
-              }
-            }
-            return supportedLocales.first;
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.themeMode,
+          builder: (context, themeMode, child) {
+            return MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              title: AppLocalizations(locale).appTitle,
+              locale: locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              localeResolutionCallback: (deviceLocale, supportedLocales) {
+                if (deviceLocale == null) return supportedLocales.first;
+                for (final supported in supportedLocales) {
+                  if (supported.languageCode == deviceLocale.languageCode) {
+                    return supported;
+                  }
+                }
+                return supportedLocales.first;
+              },
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: themeMode,
+              routerConfig: _router,
+            );
           },
-          theme: ThemeData(
-            useMaterial3: true,
-            scaffoldBackgroundColor: softBackground,
-            colorScheme:
-                ColorScheme.fromSeed(
-                  seedColor: brandOrange,
-                  brightness: Brightness.light,
-                ).copyWith(
-                  primary: brandOrange,
-                  secondary: brandGreen,
-                  surface: Colors.white,
-                ),
-            textTheme: ThemeData.light().textTheme.apply(
-              bodyColor: brandDark,
-              displayColor: brandDark,
-            ),
-          ),
-          home: const JambarPayFlow(),
         );
       },
     );
@@ -95,6 +108,10 @@ class JambarPayFlow extends StatelessWidget {
         } else if (state is AuthPinEntry) {
           return _buildPinScreen(context, state.phoneNumber, state.currentPin);
         } else if (state is AuthPinLoading) {
+          return _buildPinScreen(context, state.phoneNumber, '');
+        } else if (state is AuthPinResetInProgress) {
+          return _buildPinScreen(context, state.phoneNumber, '');
+        } else if (state is AuthPinResetSuccess) {
           return _buildPinScreen(context, state.phoneNumber, '');
         } else if (state is AuthAuthenticated) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -147,7 +164,7 @@ class JambarPayFlow extends StatelessWidget {
       onDigitTap: (digit) {
         context.read<AuthBloc>().add(PhoneNumberChanged(digit));
       },
-      canContinue: phoneNumber.replaceAll(RegExp(r'\s+'), '') == '771234567',
+      canContinue: PhoneNumber(phoneNumber).isValid,
     );
   }
 
@@ -170,10 +187,23 @@ class JambarPayFlow extends StatelessWidget {
       onDigitTap: (digit) {
         context.read<AuthBloc>().add(PinChanged(digit));
       },
-      onResetPin: (newPin) {},
+      onResetPin: (newPin) => _resetPin(context, phoneNumber, newPin),
       errorText: errorText,
       pinLockedUntil: pinLockedUntil,
     );
+  }
+
+  Future<String?> _resetPin(
+    BuildContext context,
+    String phoneNumber,
+    String newPin,
+  ) async {
+    final bloc = context.read<AuthBloc>();
+    bloc.add(PinResetRequested(phoneNumber: phoneNumber, newPin: newPin));
+    final result = await bloc.stream.firstWhere(
+      (state) => state is AuthPinResetSuccess || state is AuthFailure,
+    );
+    return result is AuthFailure ? result.errorMessage : null;
   }
 
   Widget _buildHomeScreen(BuildContext context, User user) {
@@ -192,17 +222,14 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
-  bool _isDarkMode = false;
+  late bool _isDarkMode;
   late AppState _appState;
 
   @override
   void initState() {
     super.initState();
-    _appState = AppState.employeeDemo().copyWith(
-      auth: AppState.employeeDemo().auth.copyWith(
-        isAuthenticated: true,
-        userId: widget.user.id,
-      ),
+    _isDarkMode = ThemeController.themeMode.value == ThemeMode.dark;
+    _appState = AppState(
       userProfile: UserProfileModel(
         id: widget.user.id,
         name: widget.user.name,
@@ -211,9 +238,9 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        context.read<TransactionBloc>().add(const TransactionsLoadRequested());
-      } catch (_) {}
+      context.read<TransactionBloc>().add(const TransactionsLoadRequested());
+      context.read<WalletBloc>().add(const WalletLoadRequested());
+      context.read<RestaurantBloc>().add(const RestaurantsLoadRequested());
     });
   }
 
@@ -222,11 +249,17 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void _onDarkModeChanged(bool value) {
+    ThemeController.setDarkMode(value);
     setState(() => _isDarkMode = value);
   }
 
-  String? _onChangeSecretCode(String currentPin, String newPin) {
-    return null;
+  Future<String?> _onChangeSecretCode(String currentPin, String newPin) async {
+    final bloc = context.read<ProfileBloc>();
+    bloc.add(PinChangeRequested(currentPin: currentPin, newPin: newPin));
+    final result = await bloc.stream.firstWhere(
+      (state) => state is PinChangeSuccess || state is PinChangeFailure,
+    );
+    return result is PinChangeFailure ? result.errorMessage : null;
   }
 
   void _onPaymentCompleted(
@@ -245,11 +278,9 @@ class _HomeShellState extends State<HomeShell> {
       status: TransactionStatus.validated,
     );
 
-    try {
-      context.read<TransactionBloc>().add(
-        LocalTransactionRegistered(transaction),
-      );
-    } catch (_) {}
+    context.read<TransactionBloc>().add(
+      LocalTransactionRegistered(transaction),
+    );
 
     setState(() {
       _appState = _appState.copyWith(
@@ -260,6 +291,11 @@ class _HomeShellState extends State<HomeShell> {
       );
       _currentIndex = 0;
     });
+    context.read<WalletBloc>().add(
+      WalletDebitApplied(
+        Money(amount: result.amount.amount, currency: result.amount.currency),
+      ),
+    );
   }
 
   void _onLogout() {
@@ -268,15 +304,44 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    return HomeScreen(
-      currentIndex: _currentIndex,
-      onTabSelected: _onTabSelected,
-      isDarkMode: _isDarkMode,
-      onDarkModeChanged: _onDarkModeChanged,
-      appState: _appState,
-      onChangeSecretCode: _onChangeSecretCode,
-      onPaymentCompleted: _onPaymentCompleted,
-      onLogout: _onLogout,
+    return BlocBuilder<WalletBloc, WalletState>(
+      builder: (context, walletState) {
+        final wallet = walletState is WalletLoaded
+            ? WalletSummaryModel(
+                walletId: walletState.wallet.walletId,
+                balance: MoneyModel(
+                  amount: walletState.wallet.balance.amount.toDouble(),
+                  currency: walletState.wallet.balance.currency,
+                  formatted: walletState.wallet.balance.formatted,
+                  symbol: 'F',
+                ),
+                status: walletState.wallet.status.name,
+                lastUpdated: _formatWalletDate(walletState.wallet.lastUpdated),
+              )
+            : null;
+
+        return HomeScreen(
+          currentIndex: _currentIndex,
+          onTabSelected: _onTabSelected,
+          isDarkMode: _isDarkMode,
+          onDarkModeChanged: _onDarkModeChanged,
+          appState: _appState.copyWith(
+            wallet: wallet,
+            clearWallet: wallet == null,
+          ),
+          onChangeSecretCode: _onChangeSecretCode,
+          onPaymentCompleted: _onPaymentCompleted,
+          onLogout: _onLogout,
+        );
+      },
     );
+  }
+
+  String _formatWalletDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}, ${hour}h$minute';
   }
 }

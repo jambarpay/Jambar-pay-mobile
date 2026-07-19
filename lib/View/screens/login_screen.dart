@@ -67,10 +67,14 @@ class LoginScreen extends StatelessWidget {
                                 const SizedBox(height: 10),
                                 Center(
                                   child: Text(
-                                    AppLocalizations.of(context).enterPhoneNumber,
+                                    AppLocalizations.of(
+                                      context,
+                                    ).enterPhoneNumber,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.black.withValues(alpha: 0.45),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.45,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -122,7 +126,9 @@ class LoginScreen extends StatelessWidget {
                                       ),
                                     ),
                                     child: Text(
-                                      AppLocalizations.of(context).continueLabel,
+                                      AppLocalizations.of(
+                                        context,
+                                      ).continueLabel,
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,

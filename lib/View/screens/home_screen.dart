@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/design_system/tokens/app_breakpoints.dart';
 import '../models/mobile_employee_space.dart';
 import '../widgets/app_palette.dart';
 import '../widgets/home_widgets.dart';
@@ -25,51 +26,76 @@ class HomeScreen extends StatelessWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final AppState appState;
-  final String? Function(String currentPin, String newPin) onChangeSecretCode;
+  final Future<String?> Function(String currentPin, String newPin)
+  onChangeSecretCode;
   final void Function(QRScanResultModel, PaymentResultModel) onPaymentCompleted;
   final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
-
-    return Scaffold(
-      backgroundColor: palette.pageBackground,
-      body: switch (currentIndex) {
-        0 => HomeDashboard(
-            onTabSelected: onTabSelected,
-            isDarkMode: isDarkMode,
-            appState: appState,
-            onPaymentCompleted: onPaymentCompleted,
-          ),
-        1 => HistoryScreen(
-            isDarkMode: isDarkMode,
-          ),
-        2 => RestaurantsScreen(
-            onBackHome: () => onTabSelected(0),
-            isDarkMode: isDarkMode,
-            restaurants: appState.restaurants,
-          ),
-        3 => ProfileScreen(
-            onBackHome: () => onTabSelected(0),
-            isDarkMode: isDarkMode,
-            onDarkModeChanged: onDarkModeChanged,
-            userProfile: appState.userProfile,
-            onChangeSecretCode: onChangeSecretCode,
-            onLogout: onLogout,
-          ),
-        _ => HomeDashboard(
-            onTabSelected: onTabSelected,
-            isDarkMode: isDarkMode,
-            appState: appState,
-            onPaymentCompleted: onPaymentCompleted,
-          ),
-      },
-      bottomNavigationBar: HomeBottomNavigation(
-        currentIndex: currentIndex,
-        onTap: onTabSelected,
+    final pages = <Widget>[
+      HomeDashboard(
+        onTabSelected: onTabSelected,
+        isDarkMode: isDarkMode,
+        appState: appState,
+        onPaymentCompleted: onPaymentCompleted,
+      ),
+      HistoryScreen(isDarkMode: isDarkMode),
+      RestaurantsScreen(
+        onBackHome: () => onTabSelected(0),
         isDarkMode: isDarkMode,
       ),
+      ProfileScreen(
+        onBackHome: () => onTabSelected(0),
+        isDarkMode: isDarkMode,
+        onDarkModeChanged: onDarkModeChanged,
+        userProfile: appState.userProfile,
+        onChangeSecretCode: onChangeSecretCode,
+        onLogout: onLogout,
+      ),
+    ];
+
+    final selectedIndex = currentIndex.clamp(0, pages.length - 1);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final content = IndexedStack(index: selectedIndex, children: pages);
+        if (constraints.maxWidth < AppBreakpoints.medium) {
+          return Scaffold(
+            backgroundColor: palette.pageBackground,
+            body: content,
+            bottomNavigationBar: HomeBottomNavigation(
+              currentIndex: selectedIndex,
+              onTap: onTabSelected,
+              isDarkMode: isDarkMode,
+            ),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: palette.pageBackground,
+          body: Row(
+            children: [
+              HomeNavigationRail(
+                currentIndex: selectedIndex,
+                onTap: onTabSelected,
+                isDarkMode: isDarkMode,
+              ),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppBreakpoints.maxContentWidth,
+                    ),
+                    child: content,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,5 +1,5 @@
-import '../../../ApiService/ApiService.dart';
-import '../../../ApiService/BaseUrl.dart';
+import '../../../core/network/api_service.dart';
+import '../../../core/network/base_url.dart';
 
 class TransactionRemoteDataSource {
   final ApiService apiService;

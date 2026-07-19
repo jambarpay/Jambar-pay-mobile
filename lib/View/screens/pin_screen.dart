@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:jambar_pay_mobile/app/router/app_router.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'secret_code_screen.dart';
 import '../widgets/auth_widgets.dart';
@@ -24,7 +26,7 @@ class PinScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onBackspace;
   final ValueChanged<String> onDigitTap;
-  final ValueChanged<String> onResetPin;
+  final Future<String?> Function(String newPin) onResetPin;
   final String? errorText;
   final DateTime? pinLockedUntil;
 
@@ -204,7 +206,9 @@ class _PinScreenState extends State<PinScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        '${AppLocalizations.of(context).retryIn('$countdownLabel')}',
+                                        AppLocalizations.of(
+                                          context,
+                                        ).retryIn(countdownLabel),
                                         style: const TextStyle(
                                           color: Color(0xFFF57C21),
                                           fontSize: 13,
@@ -233,23 +237,14 @@ class _PinScreenState extends State<PinScreen> {
                                 Center(
                                   child: TextButton(
                                     onPressed: () async {
-                                      final didReset =
-                                          await Navigator.of(
-                                            context,
-                                          ).push<bool>(
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  SecretCodeScreen(
-                                                    mode: SecretCodeFlowMode
-                                                        .reset,
-                                                    phoneNumber:
-                                                        widget.phoneNumber,
-                                                    isDarkMode: false,
-                                                    onResetPin:
-                                                        widget.onResetPin,
-                                                  ),
-                                            ),
-                                          );
+                                      final didReset = await context.push<bool>(
+                                        AppRoutes.secretCode,
+                                        extra: SecretCodeRouteArgs(
+                                          mode: SecretCodeFlowMode.reset,
+                                          phoneNumber: widget.phoneNumber,
+                                          onResetPin: widget.onResetPin,
+                                        ),
+                                      );
 
                                       if (didReset == true && context.mounted) {
                                         ScaffoldMessenger.of(
@@ -257,7 +252,9 @@ class _PinScreenState extends State<PinScreen> {
                                         ).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              AppLocalizations.of(context).secretCodeResetSuccess,
+                                              AppLocalizations.of(
+                                                context,
+                                              ).secretCodeResetSuccess,
                                             ),
                                           ),
                                         );

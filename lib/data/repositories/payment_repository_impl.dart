@@ -1,22 +1,46 @@
+import '../../core/network/api_service.dart';
+import '../../core/network/base_url.dart';
 import '../../domain/repositories/payment_repository.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/value_objects/money.dart';
+import '../models/dto/transaction_dto.dart';
+
 class PaymentRepositoryImpl implements PaymentRepository {
-  PaymentRepositoryImpl();
+  PaymentRepositoryImpl(this._apiService);
+
+  final ApiService _apiService;
 
   @override
   Future<PaymentInitiation> initiatePayment({
     required String qrToken,
     required Money amount,
   }) async {
+    final response = await _apiService.post(BaseUrl.comptesQr(), {
+      'qrToken': qrToken,
+      'amount': amount.amount,
+      'currency': amount.currency,
+    });
+    if (response is! Map) {
+      throw const ApiException('Réponse de paiement invalide.');
+    }
+    final data = Map<String, dynamic>.from(response);
+    final responseAmount = data['amount'];
+    final parsedAmount = responseAmount is Map
+        ? Money(
+            amount:
+                (responseAmount['montant'] as num?)?.toDouble() ??
+                amount.amount,
+            currency: responseAmount['currency']?.toString() ?? amount.currency,
+          )
+        : amount;
 
-    await Future.delayed(const Duration(milliseconds: 500));
-    
     return PaymentInitiation(
-      token: qrToken,
-      merchantName: 'Marchand',
-      amount: amount,
-      expiresAt: DateTime.now().add(const Duration(minutes: 15)),
+      token: data['token']?.toString() ?? qrToken,
+      merchantName: data['merchantName']?.toString() ?? 'Marchand',
+      amount: parsedAmount,
+      expiresAt:
+          DateTime.tryParse(data['expiresAt']?.toString() ?? '') ??
+          DateTime.now().add(const Duration(minutes: 15)),
     );
   }
 
@@ -25,28 +49,23 @@ class PaymentRepositoryImpl implements PaymentRepository {
     required String paymentToken,
     required String pin,
   }) async {
-    // PIN verification should be done via backend API
-    // This is a placeholder implementation
-    // TODO: Replace with actual backend verification
     if (pin.length != 4) {
-      throw Exception('Code secret doit contenir 4 chiffres');
+      throw const ApiException('Le code secret doit contenir 4 chiffres.');
     }
-
-    final now = DateTime.now();
-    final transaction = Transaction(
-      id: 'trx_${now.millisecondsSinceEpoch}',
-      type: TransactionType.debit,
-      amount: Money(amount: 3500, currency: 'XOF'),
-      label: 'Paiement marchand',
-      date: now,
-      status: TransactionStatus.validated,
-    );
-
-    return transaction;
+    final response = await _apiService.post(BaseUrl.comptesPayer(), {
+      'paymentToken': paymentToken,
+      'pin': pin,
+    });
+    if (response is! Map) {
+      throw const ApiException('Réponse de confirmation invalide.');
+    }
+    return TransactionDto.fromJson(
+      Map<String, dynamic>.from(response),
+    ).toDomain();
   }
 
   @override
   Future<void> cancelPayment(String paymentId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await _apiService.delete('${BaseUrl.comptesPayer()}/$paymentId');
   }
 }

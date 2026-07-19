@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:jambar_pay_mobile/app/router/app_router.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/language_controller.dart';
 import '../models/mobile_employee_space.dart';
@@ -22,7 +26,8 @@ class ProfileScreen extends StatefulWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final UserProfileModel userProfile;
-  final String? Function(String currentPin, String newPin) onChangeSecretCode;
+  final Future<String?> Function(String currentPin, String newPin)
+  onChangeSecretCode;
   final VoidCallback onLogout;
 
   @override
@@ -41,71 +46,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showLanguageDialog() {
     final loc = AppLocalizations.of(context);
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(loc.chooseLanguage),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<Locale>(
-              title: Text(loc.french),
-              value: const Locale('fr'),
-              groupValue: _selectedLanguage,
-              onChanged: (value) {
-                if (value == null) return;
-                final newLocale = const Locale('fr');
-                LanguageController.localeNotifier.value = newLocale;
-                setState(() => _selectedLanguage = newLocale);
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations(newLocale).languageChangedFrench)),
-                );
-              },
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(loc.chooseLanguage),
+          content: RadioGroup<Locale>(
+            groupValue: _selectedLanguage,
+            onChanged: (value) {
+              if (value != null) {
+                _changeLanguage(value);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<Locale>(
+                  title: Text(loc.french),
+                  value: const Locale('fr'),
+                ),
+                RadioListTile<Locale>(
+                  title: Text(loc.english),
+                  value: const Locale('en'),
+                ),
+              ],
             ),
-            RadioListTile<Locale>(
-              title: Text(loc.english),
-              value: const Locale('en'),
-              groupValue: _selectedLanguage,
-              onChanged: (value) {
-                if (value == null) return;
-                final newLocale = const Locale('en');
-                LanguageController.localeNotifier.value = newLocale;
-                setState(() => _selectedLanguage = newLocale);
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations(newLocale).languageChangedEnglish)),
-                );
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
+  void _changeLanguage(Locale locale) {
+    LanguageController.localeNotifier.value = locale;
+    setState(() => _selectedLanguage = locale);
+    Navigator.of(context).pop();
+
+    final message = locale.languageCode == 'fr'
+        ? AppLocalizations(locale).languageChangedFrench
+        : AppLocalizations(locale).languageChangedEnglish;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   void _contactSupport() {
     final loc = AppLocalizations.of(context);
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(loc.contactSupport),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(loc.email),
-            const SizedBox(height: 8),
-            Text(loc.phone),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(loc.contactSupport),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(loc.email),
+              const SizedBox(height: 8),
+              Text(loc.phone),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(loc.ok),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(loc.ok),
-          ),
-        ],
       ),
     );
   }
@@ -137,21 +145,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   label: AppLocalizations.of(context).changeSecretCode,
                   isDarkMode: widget.isDarkMode,
                   onTap: () async {
-                    final didChange = await Navigator.of(context).push<bool>(
-                      MaterialPageRoute(
-                        builder: (context) => SecretCodeScreen(
-                          mode: SecretCodeFlowMode.change,
-                          phoneNumber: widget.userProfile.phone,
-                          isDarkMode: widget.isDarkMode,
-                          onChangePin: widget.onChangeSecretCode,
-                        ),
+                    final didChange = await context.push<bool>(
+                      AppRoutes.secretCode,
+                      extra: SecretCodeRouteArgs(
+                        mode: SecretCodeFlowMode.change,
+                        phoneNumber: widget.userProfile.phone,
+                        isDarkMode: widget.isDarkMode,
+                        onChangePin: widget.onChangeSecretCode,
                       ),
                     );
 
                     if (didChange == true && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(AppLocalizations.of(context).secretCodeChanged),
+                          content: Text(
+                            AppLocalizations.of(context).secretCodeChanged,
+                          ),
                         ),
                       );
                     }
@@ -160,7 +169,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 18),
                 ProfileSwitchTile(
                   icon: Icons.contrast,
-                  label: widget.isDarkMode ? AppLocalizations.of(context).darkMode : AppLocalizations.of(context).lightMode,
+                  label: widget.isDarkMode
+                      ? AppLocalizations.of(context).darkMode
+                      : AppLocalizations.of(context).lightMode,
                   value: widget.isDarkMode,
                   onChanged: widget.onDarkModeChanged,
                   isDarkMode: widget.isDarkMode,
@@ -188,27 +199,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.red,
                   isDarkMode: widget.isDarkMode,
                   onTap: () {
-                    showDialog<void>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(AppLocalizations.of(context).logout),
-                        content: Text(AppLocalizations.of(context).logoutConfirm),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(AppLocalizations.of(context).cancel),
+                    unawaited(
+                      showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(AppLocalizations.of(context).logout),
+                          content: Text(
+                            AppLocalizations.of(context).logoutConfirm,
                           ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              widget.onLogout();
-                            },
-                            child: Text(
-                              AppLocalizations.of(context).logoutButton,
-                              style: const TextStyle(color: Colors.red),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(AppLocalizations.of(context).cancel),
                             ),
-                          ),
-                        ],
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                widget.onLogout();
+                              },
+                              child: Text(
+                                AppLocalizations.of(context).logoutButton,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

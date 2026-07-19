@@ -24,20 +24,11 @@ class UserDto {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'name': name,
-      'phone': phone,
-      'avatarUrl': avatarUrl,
-    };
+    return {'_id': id, 'name': name, 'phone': phone, 'avatarUrl': avatarUrl};
   }
 
-  User toDomain() => User(
-        id: id,
-        name: name,
-        phone: PhoneNumber(phone),
-        avatarUrl: avatarUrl,
-      );
+  User toDomain() =>
+      User(id: id, name: name, phone: PhoneNumber(phone), avatarUrl: avatarUrl);
 
   factory UserDto.fromDomain(User user) {
     return UserDto(

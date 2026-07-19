@@ -1,13 +1,11 @@
 class Money {
-  final double amount;
+  final int amount;
   final String currency;
 
-  const Money({
-    required this.amount,
-    required this.currency,
-  });
+  Money({required num amount, required this.currency})
+    : amount = amount.round();
 
-  factory Money.xof(double amount) => Money(amount: amount, currency: 'XOF');
+  factory Money.xof(num amount) => Money(amount: amount, currency: 'XOF');
 
   String get formatted {
     final digits = amount.abs().toStringAsFixed(0);
@@ -32,23 +30,30 @@ class Money {
   Money get negate => Money(amount: -amount, currency: currency);
 
   Money operator +(Money other) {
-    assert(currency == other.currency, 'Cannot add different currencies');
+    _requireSameCurrency(other);
     return Money(amount: amount + other.amount, currency: currency);
   }
 
   Money operator -(Money other) {
-    assert(currency == other.currency, 'Cannot subtract different currencies');
+    _requireSameCurrency(other);
     return Money(amount: amount - other.amount, currency: currency);
   }
 
-  Money copyWith({
-    double? amount,
-    String? currency,
-  }) {
+  Money copyWith({int? amount, String? currency}) {
     return Money(
       amount: amount ?? this.amount,
       currency: currency ?? this.currency,
     );
+  }
+
+  void _requireSameCurrency(Money other) {
+    if (currency != other.currency) {
+      throw ArgumentError.value(
+        other.currency,
+        'other.currency',
+        'Cannot operate on $currency and ${other.currency}',
+      );
+    }
   }
 
   @override

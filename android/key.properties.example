@@ -1,0 +1,5 @@
+# Copy this file to android/key.properties. Never commit the real file.
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=jambar-pay
+storeFile=/absolute/path/to/jambar-pay-release.jks

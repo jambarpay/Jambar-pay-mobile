@@ -62,13 +62,17 @@ class TransactionDto {
 
   TransactionStatus _parseStatus(String status) {
     final normalized = status.toLowerCase();
-    if (normalized.contains('validated') || normalized.contains('valide') || normalized.contains('success')) {
+    if (normalized.contains('validated') ||
+        normalized.contains('valide') ||
+        normalized.contains('success')) {
       return TransactionStatus.validated;
     }
     if (normalized.contains('attente') || normalized.contains('pending')) {
       return TransactionStatus.pending;
     }
-    if (normalized.contains('failed') || normalized.contains('echoue') || normalized.contains('échec')) {
+    if (normalized.contains('failed') ||
+        normalized.contains('echoue') ||
+        normalized.contains('échec')) {
       return TransactionStatus.failed;
     }
     return TransactionStatus.pending;

@@ -46,18 +46,14 @@ class HomeBottomNavigation extends StatelessWidget {
                     children: [
                       Icon(
                         item.icon,
-                        color: isSelected
-                            ? palette.accent
-                            : palette.primaryText,
+                        color: isSelected ? palette.accent : palette.onHeader,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         item.label,
                         style: TextStyle(
                           fontSize: 11,
-                          color: isSelected
-                              ? palette.accent
-                              : palette.primaryText,
+                          color: isSelected ? palette.accent : palette.onHeader,
                         ),
                       ),
                     ],
@@ -68,6 +64,57 @@ class HomeBottomNavigation extends StatelessWidget {
           }),
         ),
       ),
+    );
+  }
+}
+
+class HomeNavigationRail extends StatelessWidget {
+  const HomeNavigationRail({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    this.isDarkMode = false,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette(isDarkMode);
+    final loc = AppLocalizations.of(context);
+    return NavigationRail(
+      selectedIndex: currentIndex,
+      onDestinationSelected: onTap,
+      backgroundColor: palette.headerBackground,
+      indicatorColor: palette.accent.withValues(alpha: 0.18),
+      selectedIconTheme: IconThemeData(color: palette.accent),
+      unselectedIconTheme: IconThemeData(color: palette.onHeader),
+      selectedLabelTextStyle: TextStyle(
+        color: palette.accent,
+        fontWeight: FontWeight.w700,
+      ),
+      unselectedLabelTextStyle: TextStyle(color: palette.onHeader),
+      labelType: NavigationRailLabelType.all,
+      destinations: [
+        NavigationRailDestination(
+          icon: const Icon(Icons.home_outlined),
+          label: Text(loc.home),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(Icons.history),
+          label: Text(loc.history),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(Icons.storefront_outlined),
+          label: Text(loc.restaurants),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(Icons.person_outline),
+          label: Text(loc.profile),
+        ),
+      ],
     );
   }
 }
@@ -167,7 +214,7 @@ class SubPageHeader extends StatelessWidget {
                           onPressed: onBack,
                           icon: Icon(
                             Icons.arrow_back,
-                            color: palette.primaryText,
+                            color: palette.onHeader,
                             size: 20,
                           ),
                           padding: EdgeInsets.zero,
@@ -177,7 +224,7 @@ class SubPageHeader extends StatelessWidget {
                         Text(
                           AppLocalizations.of(context).back,
                           style: TextStyle(
-                            color: palette.secondaryText,
+                            color: palette.onHeaderMuted,
                             fontSize: 13,
                           ),
                         ),
@@ -195,7 +242,7 @@ class SubPageHeader extends StatelessWidget {
                               Text(
                                 title,
                                 style: TextStyle(
-                                  color: palette.primaryText,
+                                  color: palette.onHeader,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -214,7 +261,7 @@ class SubPageHeader extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (trailing != null) trailing!,
+                      ?trailing,
                     ],
                   ),
                 ],

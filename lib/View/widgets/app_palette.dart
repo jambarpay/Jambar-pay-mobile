@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
 
 class AppPalette {
   const AppPalette(this.isDarkMode);
@@ -6,16 +7,19 @@ class AppPalette {
   final bool isDarkMode;
 
   Color get pageBackground =>
-      isDarkMode ? const Color(0xFF17162B) : const Color(0xFFF7F7FB);
-  Color get headerBackground => const Color(0xFF1C1A33);
+      isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
+  Color get headerBackground => AppColors.darkHeader;
   Color get sectionContainer =>
-      isDarkMode ? const Color(0xFF22203C) : Colors.white;
+      isDarkMode ? AppColors.darkSurface : AppColors.lightSurface;
   Color get tileBackground =>
-      isDarkMode ? const Color(0xFF121123) : const Color(0xFFEFEFFF);
-  Color get primaryText => Colors.white;
+      isDarkMode ? AppColors.darkTile : AppColors.lightSurfaceVariant;
+  Color get primaryText =>
+      isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+  Color get onHeader => AppColors.darkPrimaryText;
+  Color get onHeaderMuted => AppColors.darkSecondaryText;
   Color get secondaryText =>
-      isDarkMode ? const Color(0xFFD5D4DE) : const Color(0xFFD5D4DE);
+      isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
   Color get mutedText =>
-      isDarkMode ? const Color(0xFF787392) : const Color(0xFF1C1A33);
-  Color get accent => const Color(0xFFF57C21);
+      isDarkMode ? AppColors.darkMutedText : AppColors.lightMutedText;
+  Color get accent => AppColors.brand;
 }

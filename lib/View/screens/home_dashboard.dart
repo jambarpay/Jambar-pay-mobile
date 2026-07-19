@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:jambar_pay_mobile/app/router/app_router.dart';
 import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
@@ -10,7 +14,6 @@ import '../widgets/app_palette.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/transaction_widgets.dart';
-import '../screens/qr_screen.dart';
 
 TransactionItemModel _toTransactionItemModel(
   Transaction transaction,
@@ -22,7 +25,7 @@ TransactionItemModel _toTransactionItemModel(
     id: transaction.id,
     type: transaction.type == TransactionType.credit ? 'CREDIT' : 'DEBIT',
     amount: MoneyModel(
-      amount: transaction.amount.amount,
+      amount: transaction.amount.amount.toDouble(),
       currency: transaction.amount.currency,
       formatted: transaction.amount.formatted,
       symbol: 'F',
@@ -87,7 +90,7 @@ class HomeDashboard extends StatelessWidget {
               Text(
                 appState.userProfile.name,
                 style: TextStyle(
-                  color: palette.primaryText,
+                  color: palette.onHeader,
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
                 ),
@@ -97,9 +100,10 @@ class HomeDashboard extends StatelessWidget {
                 isDarkMode: isDarkMode,
                 wallet: appState.wallet,
                 onQrTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (context) => QrScreen(
+                  unawaited(
+                    context.push<void>(
+                      AppRoutes.qr,
+                      extra: QrRouteArgs(
                         onTabSelected: onTabSelected,
                         isDarkMode: isDarkMode,
                         userProfile: appState.userProfile,
@@ -165,7 +169,7 @@ class HomeDashboard extends StatelessWidget {
                                       ),
                                     )
                                     .toList()
-                              : appState.transactions.take(6).toList();
+                              : const <TransactionItemModel>[];
 
                           return TransactionsList(
                             transactions: recentTransactions,

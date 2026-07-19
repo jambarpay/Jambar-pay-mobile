@@ -1,5 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:jambar_pay_mobile/app/router/app_router.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'payment_simulation_screen.dart';
@@ -36,23 +41,7 @@ class _QrScreenState extends State<QrScreen> {
   bool _isOpeningPayment = false;
   late QRScanResultModel? _scanResult;
   late PaymentResultModel? _paymentResult;
-  int _qrAttemptCount = 0;
-  DateTime? _qrLockoutEnd;
   String? _qrErrorMessage;
-
-  bool get _isQrLockedOut {
-    return _qrLockoutEnd != null && DateTime.now().isBefore(_qrLockoutEnd!);
-  }
-
-  String get _qrLockoutRemaining {
-    if (_qrLockoutEnd == null) return '00:00';
-    final remaining = _qrLockoutEnd!.difference(DateTime.now());
-    if (remaining.isNegative) return '00:00';
-    final minutes = remaining.inMinutes;
-    final seconds = remaining.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
 
   void _clearQrError() {
     _qrErrorMessage = null;
@@ -74,18 +63,11 @@ class _QrScreenState extends State<QrScreen> {
 
   @override
   void dispose() {
-    _scannerController.dispose();
+    unawaited(_scannerController.dispose());
     super.dispose();
   }
 
   Future<void> _setScannerMode(bool value) async {
-    if (value && _isQrLockedOut) {
-      setState(() {
-        _qrErrorMessage = AppLocalizations.of(context).retryIn(_qrLockoutRemaining);
-      });
-      return;
-    }
-
     setState(() {
       _showScanner = value;
       _lastScannedValue = value ? _lastScannedValue : null;
@@ -98,31 +80,36 @@ class _QrScreenState extends State<QrScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
           await _scannerController.start();
-        } catch (_) {
-          // Ignore start errors (already starting/started)
+        } catch (error) {
+          _showScannerError(error);
         }
       });
       return;
     }
 
+    await _stopScanner();
+  }
+
+  Future<void> _selectBottomTab(int index) async {
+    await _stopScanner();
+    if (!mounted) return;
+    widget.onTabSelected(index);
+    context.pop();
+  }
+
+  Future<void> _stopScanner() async {
     try {
       await _scannerController.stop();
-    } catch (_) {
-      // Ignore stop errors
+    } catch (error) {
+      _showScannerError(error);
     }
   }
 
-  void _selectBottomTab(int index) {
-    try {
-      _scannerController.stop();
-    } catch (_) {}
-    widget.onTabSelected(index);
-    if (index == 0) {
-      Navigator.of(context).pop();
-      return;
-    }
-
-    Navigator.of(context).pop();
+  void _showScannerError(Object error) {
+    if (!mounted) return;
+    setState(() {
+      _qrErrorMessage = AppLocalizations.of(context).cameraUnavailable;
+    });
   }
 
   @override
@@ -139,7 +126,7 @@ class _QrScreenState extends State<QrScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: context.pop,
                     icon: Icon(Icons.arrow_back, color: palette.primaryText),
                   ),
                   Text(
@@ -179,7 +166,7 @@ class _QrScreenState extends State<QrScreen> {
                                     setState(() {
                                       _lastScannedValue = value;
                                     });
-                                    _openPaymentFlow(value);
+                                    unawaited(_openPaymentFlow(value));
                                   },
                                 )
                               : LargeQrCard(
@@ -193,33 +180,38 @@ class _QrScreenState extends State<QrScreen> {
                     ),
                     if (_showScanner) ...[
                       const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: () => _openPaymentFlow('1234'),
-                        icon: Icon(
-                          Icons.flash_on_outlined,
-                          size: 16,
-                          color: widget.isDarkMode ? palette.primaryText : palette.mutedText,
-                        ),
-                        label: Text(
-                          AppLocalizations.of(context).testQr,
-                          style: TextStyle(
-                            color: widget.isDarkMode ? palette.primaryText : palette.mutedText,
+                      if (kDebugMode)
+                        OutlinedButton.icon(
+                          onPressed: () => _openPaymentFlow('1234'),
+                          icon: Icon(
+                            Icons.flash_on_outlined,
+                            size: 16,
+                            color: widget.isDarkMode
+                                ? palette.primaryText
+                                : palette.mutedText,
+                          ),
+                          label: Text(
+                            AppLocalizations.of(context).testQr,
+                            style: TextStyle(
+                              color: widget.isDarkMode
+                                  ? palette.primaryText
+                                  : palette.mutedText,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: palette.accent.withValues(alpha: 0.4),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: palette.accent.withValues(alpha: 0.4),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                       if (_qrErrorMessage != null) ...[
                         const SizedBox(height: 14),
                         Text(
@@ -270,54 +262,28 @@ class _QrScreenState extends State<QrScreen> {
       return;
     }
 
-    if (_isQrLockedOut) {
-      setState(() {
-        _qrErrorMessage = AppLocalizations.of(context).retryIn(_qrLockoutRemaining);
-      });
-      return;
-    }
-
     final code = rawValue.trim();
-    if (code != '1234') {
-      if (_lastScannedValue != code) {
-        _qrAttemptCount += 1;
-      }
-
-      if (_qrAttemptCount >= 5) {
-        _qrLockoutEnd = DateTime.now().add(const Duration(minutes: 5));
-        setState(() {
-          _qrErrorMessage = AppLocalizations.of(context).retryIn('05:00');
-          _lastScannedValue = code;
-        });
-      } else {
-        final remaining = 5 - _qrAttemptCount;
-        setState(() {
-          _qrErrorMessage = AppLocalizations.of(context).invalidQrCode + ' ${AppLocalizations.of(context).retryIn('$remaining')}';
-          _lastScannedValue = code;
-        });
-      }
+    if (code.isEmpty) {
       return;
     }
 
     _qrErrorMessage = null;
-    _qrAttemptCount = 0;
-    _qrLockoutEnd = null;
     _isOpeningPayment = true;
-    final navigator = Navigator.of(context);
+    final merchantName = _merchantNameFromScan(code, context);
     try {
       await _scannerController.stop();
     } catch (_) {
       // ignore stop errors
     }
+    if (!mounted) return;
 
-    final result = await navigator.push<PaymentSimulationResult>(
-      MaterialPageRoute(
-        builder: (context) => PaymentSimulationScreen(
-          isDarkMode: widget.isDarkMode,
-          qrToken: rawValue,
-          merchantName: _merchantNameFromScan(rawValue, context),
-          availableBalance: widget.wallet?.balance,
-        ),
+    final result = await context.push<PaymentSimulationResult>(
+      AppRoutes.payment,
+      extra: PaymentRouteArgs(
+        isDarkMode: widget.isDarkMode,
+        qrToken: code,
+        merchantName: merchantName,
+        availableBalance: widget.wallet?.balance,
       ),
     );
 
@@ -339,7 +305,9 @@ class _QrScreenState extends State<QrScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context).paymentSuccessMessage(result.scanResult.merchantName),
+            AppLocalizations.of(
+              context,
+            ).paymentSuccessMessage(result.scanResult.merchantName),
           ),
         ),
       );

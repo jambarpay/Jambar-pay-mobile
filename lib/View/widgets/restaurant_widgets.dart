@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:latlong2/latlong.dart';
-import '../models/mobile_employee_space.dart';
+import 'package:jambar_pay_mobile/domain/entities/restaurant.dart';
 import 'app_palette.dart';
 import 'home_widgets.dart';
-import '../utils/localized_view_data.dart';
+
+String _formatUpdatedAt(BuildContext context, DateTime date) {
+  final now = DateTime.now();
+  final time = '${date.hour}h${date.minute.toString().padLeft(2, '0')}';
+  final loc = AppLocalizations.of(context);
+  if (DateUtils.isSameDay(date, now)) return loc.todayAt(time);
+  if (DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))) {
+    return loc.yesterdayAt(time);
+  }
+  return loc.dateTime('${date.day}/${date.month}/${date.year}', time);
+}
 
 class RestaurantsListView extends StatefulWidget {
   const RestaurantsListView({
@@ -16,7 +26,7 @@ class RestaurantsListView extends StatefulWidget {
   });
 
   final bool isDarkMode;
-  final List<RestaurantPartnerModel> restaurants;
+  final List<Restaurant> restaurants;
   final ValueChanged<String>? onSearchChanged;
 
   @override
@@ -34,40 +44,31 @@ class _RestaurantsListViewState extends State<RestaurantsListView> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppPalette(widget.isDarkMode);
-
-    return ListView(
+    return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      children: [
-        SearchBar(
+      itemCount: widget.restaurants.isEmpty ? 2 : widget.restaurants.length + 1,
+      separatorBuilder: (context, index) => const SizedBox(height: 14),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return SearchBar(
+            isDarkMode: widget.isDarkMode,
+            controller: _searchController,
+            onChanged: widget.onSearchChanged,
+          );
+        }
+        if (widget.restaurants.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Text(AppLocalizations.of(context).noRestaurantsAvailable),
+            ),
+          );
+        }
+        return RestaurantCard(
+          restaurant: widget.restaurants[index - 1],
           isDarkMode: widget.isDarkMode,
-          controller: _searchController,
-          onChanged: widget.onSearchChanged,
-        ),
-        const SizedBox(height: 18),
-        Container(
-          color: widget.isDarkMode
-              ? palette.sectionContainer
-              : Colors.transparent,
-          padding: EdgeInsets.all(widget.isDarkMode ? 12 : 0),
-          child: Column(
-            children: [
-              for (
-                var index = 0;
-                index < widget.restaurants.length;
-                index++
-              ) ...[
-                RestaurantCard(
-                  restaurant: widget.restaurants[index],
-                  isDarkMode: widget.isDarkMode,
-                ),
-                if (index != widget.restaurants.length - 1)
-                  const SizedBox(height: 14),
-              ],
-            ],
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -80,7 +81,7 @@ class RestaurantsMapView extends StatelessWidget {
   });
 
   final bool isDarkMode;
-  final List<RestaurantPartnerModel> restaurants;
+  final List<Restaurant> restaurants;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +131,7 @@ class RestaurantMap extends StatelessWidget {
     required this.isDarkMode,
   });
 
-  final List<RestaurantPartnerModel> restaurants;
+  final List<Restaurant> restaurants;
   final bool isDarkMode;
 
   @override
@@ -235,7 +236,7 @@ class RestaurantMap extends StatelessWidget {
     );
   }
 
-  LatLng _averagePosition(List<RestaurantPartnerModel> restaurants) {
+  LatLng _averagePosition(List<Restaurant> restaurants) {
     final totalLat = restaurants.fold<double>(
       0,
       (sum, restaurant) => sum + restaurant.latitude,
@@ -332,7 +333,7 @@ class RestaurantCard extends StatelessWidget {
     this.isDarkMode = false,
   });
 
-  final RestaurantPartnerModel restaurant;
+  final Restaurant restaurant;
   final bool isDarkMode;
 
   @override
@@ -377,7 +378,7 @@ class RestaurantCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  localizeRelativeDate(context, restaurant.updatedAt),
+                  _formatUpdatedAt(context, restaurant.updatedAt),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: isDarkMode
@@ -392,7 +393,7 @@ class RestaurantCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                restaurant.distance,
+                '${restaurant.distanceKm.toStringAsFixed(1)} km',
                 style: const TextStyle(
                   color: Color(0xFFF57C21),
                   fontSize: 12.5,
@@ -426,7 +427,7 @@ class _RestaurantMapMarker extends StatelessWidget {
     required this.isDarkMode,
   });
 
-  final RestaurantPartnerModel restaurant;
+  final Restaurant restaurant;
   final bool isDarkMode;
 
   @override
@@ -479,7 +480,7 @@ class _MapOverlayHeader extends StatelessWidget {
     required this.isDarkMode,
   });
 
-  final List<RestaurantPartnerModel> restaurants;
+  final List<Restaurant> restaurants;
   final bool isDarkMode;
 
   @override

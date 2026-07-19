@@ -24,10 +24,7 @@ class PinChangeRequested extends ProfileEvent {
   final String currentPin;
   final String newPin;
 
-  const PinChangeRequested({
-    required this.currentPin,
-    required this.newPin,
-  });
+  const PinChangeRequested({required this.currentPin, required this.newPin});
 
   @override
   List<Object?> get props => [currentPin, newPin];
@@ -36,7 +33,6 @@ class PinChangeRequested extends ProfileEvent {
 class PinChanged extends ProfileEvent {
   const PinChanged();
 }
-
 
 class LogoutRequested extends ProfileEvent {
   const LogoutRequested();

@@ -53,13 +53,13 @@ class TransactionLoaded extends TransactionState {
 
   @override
   List<Object?> get props => [
-        allTransactions,
-        filteredTransactions,
-        currentFilter,
-        searchQuery,
-        hasMore,
-        visibleCount,
-      ];
+    allTransactions,
+    filteredTransactions,
+    currentFilter,
+    searchQuery,
+    hasMore,
+    visibleCount,
+  ];
 }
 
 class TransactionEmpty extends TransactionState {

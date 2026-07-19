@@ -139,6 +139,7 @@ class ProfileActionTile extends StatelessWidget {
 
 class ProfileSwitchTile extends StatefulWidget {
   const ProfileSwitchTile({
+    super.key,
     required this.icon,
     required this.label,
     required this.value,
@@ -200,51 +201,6 @@ class _ProfileSwitchTileState extends State<ProfileSwitchTile> {
                 ? const Color(0xFF69668D)
                 : const Color(0xFFD9D9E8),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class ProfileDropdownTile extends StatelessWidget {
-  const ProfileDropdownTile({
-    required this.icon,
-    required this.label,
-    this.isDarkMode = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool isDarkMode;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = AppPalette(isDarkMode);
-    final contentColor = isDarkMode
-        ? palette.primaryText
-        : const Color(0xFF1C1A33);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      decoration: BoxDecoration(
-        color: isDarkMode ? palette.tileBackground : const Color(0xFFEAE9FF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: contentColor, size: 24),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: contentColor,
-              ),
-            ),
-          ),
-          Icon(Icons.arrow_drop_down, size: 30, color: palette.mutedText),
         ],
       ),
     );

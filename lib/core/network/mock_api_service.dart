@@ -1,9 +1,8 @@
-import 'dart:async';
-import 'package:http/http.dart' as http;
-import 'ApiService.dart';
+import 'api_service.dart';
 
-class MockApiService extends ApiService {
+final class MockApiService extends ApiService {
   late final Map<String, dynamic> _mockResponses = _buildMockResponses();
+  final Map<String, Map<String, dynamic>> _pendingPayments = {};
 
   MockApiService({String baseUrl = ''}) : super(baseUrl: baseUrl);
 
@@ -24,7 +23,12 @@ class MockApiService extends ApiService {
         'refreshToken': 'mock_refresh_token',
         'user': {'id': '123', 'phone': '777453164', 'name': 'Abdoulaye Diallo'},
       },
-      '/wallet': {'balance': 50000.0, 'currency': 'CFA'},
+      '/wallet': {
+        'walletId': 'wallet-test-123',
+        'balance': {'amount': 50000.0, 'currency': 'XOF'},
+        'status': 'active',
+        'lastUpdated': now.toIso8601String(),
+      },
       '/transactions': [
         {
           '_id': 'trx_1',
@@ -81,11 +85,40 @@ class MockApiService extends ApiService {
           'statut': 'valide',
         },
       ],
+      '/restaurants': [
+        {
+          '_id': 'rest_1',
+          'name': 'Le FOOD',
+          'distanceKm': 0.3,
+          'updatedAt': atTime(today, 13, 22).toIso8601String(),
+          'isOpen': true,
+          'latitude': 14.7165,
+          'longitude': -17.4672,
+        },
+        {
+          '_id': 'rest_2',
+          'name': 'Keur Delice',
+          'distanceKm': 0.2,
+          'updatedAt': atTime(today, 11, 5).toIso8601String(),
+          'isOpen': true,
+          'latitude': 14.7174,
+          'longitude': -17.466,
+        },
+        {
+          '_id': 'rest_3',
+          'name': 'Chez Binta',
+          'distanceKm': 0.4,
+          'updatedAt': atTime(yesterday, 12, 15).toIso8601String(),
+          'isOpen': false,
+          'latitude': 14.7153,
+          'longitude': -17.469,
+        },
+      ],
       '/utilisateurs/refresh': {
         'token': 'mock_new_token',
         'refreshToken': 'mock_refresh_token',
       },
-      '/logout': {'success': true},
+      '/utilisateurs/logout': {'success': true},
     };
   }
 
@@ -96,7 +129,6 @@ class MockApiService extends ApiService {
     Map<String, String>? queryParameters,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    print('🧪 [MockApiService] GET $endpoint');
     await Future.delayed(Duration(milliseconds: 500)); // Simulate delay
 
     final mockResponse = _mockResponses[endpoint];
@@ -114,8 +146,45 @@ class MockApiService extends ApiService {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    print('🧪 [MockApiService] POST $endpoint - Data: $data');
     await Future.delayed(Duration(milliseconds: 800)); // Simulate delay
+
+    if (endpoint == '/comptes/qr') {
+      final token = data['qrToken']?.toString() ?? '';
+      final amount = (data['amount'] as num?)?.toDouble() ?? 0;
+      final payment = {
+        'token': token,
+        'merchantName': 'Restaurant partenaire',
+        'amount': {
+          'montant': amount,
+          'currency': data['currency']?.toString() ?? 'XOF',
+        },
+        'expiresAt': DateTime.now()
+            .add(const Duration(minutes: 15))
+            .toIso8601String(),
+      };
+      _pendingPayments[token] = payment;
+      return payment;
+    }
+
+    if (endpoint == '/comptes/payer') {
+      if (data['pin']?.toString() != '1234') {
+        throw const ApiException('Code secret incorrect.');
+      }
+      final token = data['paymentToken']?.toString() ?? '';
+      final payment = _pendingPayments[token];
+      if (payment == null) {
+        throw const ApiException('Paiement introuvable ou expiré.');
+      }
+      final now = DateTime.now();
+      return {
+        '_id': 'trx_${now.millisecondsSinceEpoch}',
+        'type': 'DEBIT',
+        'montant': payment['amount'],
+        'label': payment['merchantName'],
+        'createdAt': now.toIso8601String(),
+        'statut': 'valide',
+      };
+    }
 
     final mockResponse = _mockResponses[endpoint];
     if (mockResponse != null) {
@@ -132,7 +201,6 @@ class MockApiService extends ApiService {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    print('🧪 [MockApiService] PUT $endpoint - Data: $data');
     await Future.delayed(Duration(milliseconds: 500));
 
     final mockResponse = _mockResponses[endpoint];
@@ -150,7 +218,6 @@ class MockApiService extends ApiService {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    print('🧪 [MockApiService] PATCH $endpoint - Data: $data');
     await Future.delayed(Duration(milliseconds: 500));
 
     final mockResponse = _mockResponses[endpoint];
@@ -167,7 +234,6 @@ class MockApiService extends ApiService {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    print('🧪 [MockApiService] DELETE $endpoint');
     await Future.delayed(Duration(milliseconds: 500));
 
     final mockResponse = _mockResponses[endpoint];

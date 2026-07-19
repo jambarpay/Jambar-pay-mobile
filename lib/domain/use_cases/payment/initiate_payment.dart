@@ -10,9 +10,6 @@ class InitiatePayment {
     required String qrToken,
     required Money amount,
   }) {
-    return _paymentRepository.initiatePayment(
-      qrToken: qrToken,
-      amount: amount,
-    );
+    return _paymentRepository.initiatePayment(qrToken: qrToken, amount: amount);
   }
 }

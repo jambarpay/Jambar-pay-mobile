@@ -7,10 +7,7 @@ class VerifyOtp {
 
   VerifyOtp(this._authRepository);
 
-  Future<User> call({
-    required PhoneNumber phone,
-    required String otp,
-  }) {
+  Future<User> call({required PhoneNumber phone, required String otp}) {
     return _authRepository.verifyOtp(phone: phone, otp: otp);
   }
 }

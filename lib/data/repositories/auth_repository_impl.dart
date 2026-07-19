@@ -36,14 +36,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       final response = _useLocalAuth
-          ? await _localDataSource.verifyOtp(
-              phone: phone.digits,
-              otp: otp,
-            )
-          : await _remoteDataSource.verifyOtp(
-              phone: phone.digits,
-              otp: otp,
-            );
+          ? await _localDataSource.verifyOtp(phone: phone.digits, otp: otp)
+          : await _remoteDataSource.verifyOtp(phone: phone.digits, otp: otp);
       final userDto = UserDto.fromJson(response);
       return userDto.toDomain();
     } catch (e) {
@@ -59,6 +53,30 @@ class AuthRepositoryImpl implements AuthRepository {
           : await _remoteDataSource.refreshToken(refreshToken);
     } catch (e) {
       throw Exception('Impossible de rafraîchir le token: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> changePin({
+    required String currentPin,
+    required String newPin,
+  }) async {
+    if (_useLocalAuth) {
+      await _localDataSource.changePin(currentPin: currentPin, newPin: newPin);
+    } else {
+      await _remoteDataSource.changePin(currentPin: currentPin, newPin: newPin);
+    }
+  }
+
+  @override
+  Future<void> resetPin({
+    required PhoneNumber phone,
+    required String newPin,
+  }) async {
+    if (_useLocalAuth) {
+      await _localDataSource.resetPin(phone: phone.digits, newPin: newPin);
+    } else {
+      await _remoteDataSource.resetPin(phone: phone.digits, newPin: newPin);
     }
   }
 

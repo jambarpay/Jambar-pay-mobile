@@ -6,6 +6,7 @@ import '../../../domain/value_objects/phone_number.dart';
 import '../../../domain/use_cases/auth/send_otp.dart';
 import '../../../domain/use_cases/auth/verify_otp.dart';
 import '../../../domain/use_cases/auth/logout.dart';
+import '../../../domain/use_cases/auth/reset_pin.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   static const int _maxPinAttempts = 5;
@@ -14,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SendOtp _sendOtp;
   final VerifyOtp _verifyOtp;
   final Logout _logout;
+  final ResetPin _resetPin;
   final AuthMessageProvider _messages;
 
   String _currentPhone = '';
@@ -25,10 +27,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required SendOtp sendOtp,
     required VerifyOtp verifyOtp,
     required Logout logout,
+    required ResetPin resetPin,
     required AuthMessageProvider messages,
   }) : _sendOtp = sendOtp,
        _verifyOtp = verifyOtp,
        _logout = logout,
+       _resetPin = resetPin,
        _messages = messages,
        super(const AuthPhoneInitial()) {
     on<PhoneNumberChanged>(_onPhoneNumberChanged);
@@ -37,6 +41,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<PinChanged>(_onPinChanged);
     on<PinBackspace>(_onPinBackspace);
     on<PinSubmitted>(_onPinSubmitted);
+    on<PinResetRequested>(_onPinResetRequested);
     on<BackToPhoneRequested>(_onBackToPhoneRequested);
     on<LogoutRequested>(_onLogoutRequested);
   }
@@ -114,9 +119,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _sendOtp(phone);
       emit(AuthPinEntry(phone.formatted));
     } catch (e) {
-      // If sending OTP fails (network/test environment), allow user to continue to PIN entry
-      // so local flows and tests can proceed.
-      emit(AuthPinEntry(phone.formatted));
+      emit(AuthPhoneInvalid(e.toString(), _currentPhone));
     }
   }
 
@@ -137,14 +140,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final combined = _currentPin + incoming;
     _currentPin = combined.length > 4 ? combined.substring(0, 4) : combined;
 
-    print(
-      '🔐 [AuthBloc] PIN update: current="$_currentPin" (length=${_currentPin.length})',
-    );
-
     if (_currentPin.length == 4) {
-      // update state so the UI shows 4 dots before submitting
       emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
-      print('🔐 [AuthBloc] PIN complete, submitting: "$_currentPin"');
       add(const PinSubmitted());
       return;
     }
@@ -185,15 +182,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final phone = PhoneNumber(_currentPhone);
 
-      print(
-        '🔐 [AuthBloc] Submitting PIN: "$_currentPin" for phone: ${phone.digits}',
-      );
-
-      // PIN verification is handled by verifyOtp use case
-      // No hardcoded PINs allowed - security requirement
-
       final user = await _verifyOtp(phone: phone, otp: _currentPin);
-      print('✅ [AuthBloc] Authentication successful');
       emit(AuthAuthenticated(user));
 
       // clear sensitive data after success
@@ -202,8 +191,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _currentPin = '';
       _currentPhone = '';
     } catch (e) {
-      print('❌ [AuthBloc] Authentication failed: ${e.toString()}');
       _registerPinFailure(emit);
+    }
+  }
+
+  Future<void> _onPinResetRequested(
+    PinResetRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final phone = PhoneNumber(event.phoneNumber);
+    emit(AuthPinResetInProgress(phone.formatted));
+    try {
+      await _resetPin(phone: phone, newPin: event.newPin);
+      _currentPin = '';
+      _failedPinAttempts = 0;
+      _pinLockedUntil = null;
+      emit(AuthPinResetSuccess(phone.formatted));
+    } catch (error) {
+      emit(AuthFailure(error.toString(), phone.formatted));
     }
   }
 
@@ -220,9 +225,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    try {
-      await _logout();
-    } catch (_) {}
+    await _logout();
     _failedPinAttempts = 0;
     _pinLockedUntil = null;
     _currentPhone = '';

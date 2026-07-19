@@ -52,7 +52,6 @@ class PaymentSuccess extends PaymentState {
   List<Object?> get props => [transaction];
 }
 
-
 class PaymentFailure extends PaymentState {
   final String errorMessage;
 

@@ -20,7 +20,7 @@ TransactionItemModel _toTransactionItemModel(
     id: t.id,
     type: t.type == TransactionType.credit ? 'CREDIT' : 'DEBIT',
     amount: MoneyModel(
-      amount: t.amount.amount,
+      amount: t.amount.amount.toDouble(),
       currency: t.amount.currency,
       formatted: t.amount.formatted,
       symbol: 'F',
@@ -235,35 +235,58 @@ class HistoryScreen extends StatelessWidget {
                           }
 
                           if (state is TransactionLoaded) {
-                            final allTransactions = state.filteredTransactions
+                            final visibleTransactions = state
+                                .filteredTransactions
+                                .take(state.visibleCount)
                                 .map((t) => _toTransactionItemModel(t, context))
                                 .toList();
 
-                            return TransactionsList(
-                              transactions: allTransactions,
-                              topPadding: isDarkMode ? 14 : 20,
-                              showAmount: true,
-                              isDarkMode: isDarkMode,
-                              emptyState: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                  ),
-                                  child: Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    ).noTransactionsMatchSearch,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? palette.secondaryText
-                                          : const Color(0xFF6B6884),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
+                            return Column(
+                              children: [
+                                Expanded(
+                                  child: TransactionsList(
+                                    transactions: visibleTransactions,
+                                    topPadding: isDarkMode ? 14 : 20,
+                                    showAmount: true,
+                                    isDarkMode: isDarkMode,
+                                    emptyState: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                        ),
+                                        child: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          ).noTransactionsMatchSearch,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: isDarkMode
+                                                ? palette.secondaryText
+                                                : const Color(0xFF6B6884),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                                if (state.hasMore)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: FilledButton.tonalIcon(
+                                      onPressed: () {
+                                        context.read<TransactionBloc>().add(
+                                          const TransactionsLoadMoreRequested(),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.expand_more),
+                                      label: Text(
+                                        AppLocalizations.of(context).loadMore,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             );
                           }
 

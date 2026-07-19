@@ -25,7 +25,7 @@ class WalletRepositoryImpl implements WalletRepository {
   }) async {
     try {
       final json = await _remoteDataSource.updateBalanceAfterPayment(
-        amount: amount.amount,
+        amount: amount.amount.toDouble(),
         isCredit: isCredit,
       );
       return _mapToWallet(json);
@@ -40,27 +40,30 @@ class WalletRepositoryImpl implements WalletRepository {
       final json = await _remoteDataSource.refreshWallet();
       return _mapToWallet(json);
     } catch (e) {
-      throw Exception('Impossible de rafraîchir le portefeuille: ${e.toString()}');
+      throw Exception(
+        'Impossible de rafraîchir le portefeuille: ${e.toString()}',
+      );
     }
   }
 
   Wallet _mapToWallet(Map<String, dynamic> json) {
     final balance = Money(
-      amount: (json['balance']?['amount'] as num?)?.toDouble() ?? 0.0,
+      amount: (json['balance']?['amount'] as num?)?.round() ?? 0,
       currency: json['balance']?['currency'] ?? 'XOF',
     );
     final statusStr = json['status']?.toString().toLowerCase() ?? 'active';
     final status = statusStr == 'active'
         ? WalletStatus.active
         : statusStr == 'frozen'
-            ? WalletStatus.frozen
-            : WalletStatus.inactive;
+        ? WalletStatus.frozen
+        : WalletStatus.inactive;
 
     return Wallet(
       walletId: json['walletId']?.toString() ?? '',
       balance: balance,
       status: status,
-      lastUpdated: DateTime.tryParse(json['lastUpdated']?.toString() ?? '') ??
+      lastUpdated:
+          DateTime.tryParse(json['lastUpdated']?.toString() ?? '') ??
           DateTime.now(),
     );
   }

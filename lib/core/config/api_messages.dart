@@ -1,4 +1,4 @@
-class ApiMessages {
+abstract final class ApiMessages {
   static const String smsError =
       'Erreur lors de la verification SMS. Veuillez reessayer.';
   static const String network = 'Erreur reseau';

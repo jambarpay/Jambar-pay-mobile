@@ -6,7 +6,7 @@ abstract class PaymentRepository {
     required String qrToken,
     required Money amount,
   });
-  
+
   Future<Transaction> confirmPayment({
     required String paymentToken,
     required String pin,

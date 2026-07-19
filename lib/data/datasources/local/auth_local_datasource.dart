@@ -1,11 +1,10 @@
 class AuthLocalDataSource {
-  static const String _testOtp = '1234';
   static const String _testUserId = 'test-user-123';
   static const String _testUserName = 'Abdoulaye Diallo';
+  String _currentPin = '1234';
 
   Future<void> sendOtp(String phone) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    print('📱 [LOCAL] OTP envoyé à $phone (test mode)');
   }
 
   Future<Map<String, dynamic>> verifyOtp({
@@ -14,17 +13,9 @@ class AuthLocalDataSource {
   }) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
-    print('🧪 [AuthLocalDatasource] Checking OTP:');
-    print('   Expected: "$_testOtp" (length=${_testOtp.length})');
-    print('   Received: "$otp" (length=${otp.length})');
-    print('   Match: ${otp == _testOtp}');
-
-    if (otp != _testOtp) {
-      print('❌ [AuthLocalDatasource] OTP incorrect!');
+    if (otp != _currentPin) {
       throw Exception('Code secret incorrect');
     }
-
-    print('✅ [LOCAL] Authentification réussie pour $phone');
 
     return {
       '_id': _testUserId,
@@ -39,8 +30,23 @@ class AuthLocalDataSource {
     return 'mock-refresh-token-${DateTime.now().millisecondsSinceEpoch}';
   }
 
+  Future<void> changePin({
+    required String currentPin,
+    required String newPin,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (currentPin != _currentPin) {
+      throw Exception('Code secret actuel incorrect.');
+    }
+    _currentPin = newPin;
+  }
+
+  Future<void> resetPin({required String phone, required String newPin}) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _currentPin = newPin;
+  }
+
   Future<void> logout() async {
     await Future.delayed(const Duration(milliseconds: 300));
-    print('👋 [LOCAL] Déconnexion simulée');
   }
 }

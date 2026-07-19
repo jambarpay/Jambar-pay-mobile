@@ -1,5 +1,5 @@
-import '../../../ApiService/ApiService.dart';
-import '../../../ApiService/BaseUrl.dart';
+import '../../../core/network/api_service.dart';
+import '../../../core/network/base_url.dart';
 
 class WalletRemoteDataSource {
   final ApiService apiService;
@@ -18,13 +18,10 @@ class WalletRemoteDataSource {
     required double amount,
     required bool isCredit,
   }) async {
-    final response = await apiService.post(
-      BaseUrl.walletUpdate(),
-      {
-        'amount': amount,
-        'type': isCredit ? 'CREDIT' : 'DEBIT',
-      },
-    );
+    final response = await apiService.post(BaseUrl.walletUpdate(), {
+      'amount': amount,
+      'type': isCredit ? 'CREDIT' : 'DEBIT',
+    });
     if (response is! Map) {
       throw Exception('Invalid update response');
     }

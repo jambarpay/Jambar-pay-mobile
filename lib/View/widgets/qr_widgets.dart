@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 
@@ -267,186 +268,30 @@ class QrBlock extends StatelessWidget {
           ],
         ),
         padding: const EdgeInsets.all(10),
-        child: CustomPaint(
-          painter: _QrPainter(
-            data: data,
-            backgroundColor: backgroundColor,
-            foregroundColor: foregroundColor,
+        child: QrImageView(
+          data: data,
+          version: QrVersions.auto,
+          backgroundColor: backgroundColor,
+          padding: EdgeInsets.zero,
+          eyeStyle: QrEyeStyle(
+            eyeShape: QrEyeShape.square,
+            color: foregroundColor,
           ),
+          dataModuleStyle: QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: foregroundColor,
+          ),
+          semanticsLabel: 'QR code',
+          errorStateBuilder: (context, error) {
+            return Center(
+              child: Icon(
+                Icons.qr_code_2,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            );
+          },
         ),
       ),
     );
-  }
-}
-
-class _QrPainter extends CustomPainter {
-  const _QrPainter({
-    required this.data,
-    required this.backgroundColor,
-    required this.foregroundColor,
-  });
-
-  final String data;
-  final Color backgroundColor;
-  final Color foregroundColor;
-
-  static const int _moduleCount = 29;
-  static const int _quietZone = 2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = backgroundColor;
-    final fgPaint = Paint()..color = foregroundColor;
-    final softPaint = Paint()..color = foregroundColor.withValues(alpha: 0.12);
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(10)),
-      bgPaint,
-    );
-
-    final moduleSize = size.shortestSide / (_moduleCount + (_quietZone * 2));
-    final matrix = _generateMatrix(data, _moduleCount);
-
-    for (var row = 0; row < _moduleCount; row++) {
-      for (var col = 0; col < _moduleCount; col++) {
-        final left = (col + _quietZone) * moduleSize;
-        final top = (row + _quietZone) * moduleSize;
-        final rect = Rect.fromLTWH(left, top, moduleSize, moduleSize);
-
-        if (_isFinderCell(row, col)) {
-          _paintFinderCell(canvas, rect, row, col, fgPaint, bgPaint);
-          continue;
-        }
-
-        if (_isAlignmentCell(row, col)) {
-          _paintAlignmentCell(canvas, rect, row, col, fgPaint, bgPaint);
-          continue;
-        }
-
-        if (_isTimingCell(row, col)) {
-          if ((row + col).isEven) {
-            canvas.drawRect(rect.deflate(moduleSize * 0.06), fgPaint);
-          }
-          continue;
-        }
-
-        if (matrix[row][col]) {
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              rect.deflate(moduleSize * 0.09),
-              Radius.circular(moduleSize * 0.16),
-            ),
-            fgPaint,
-          );
-        } else if ((row * col) % 11 == 0 && !_isReservedCell(row, col)) {
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              rect.deflate(moduleSize * 0.28),
-              Radius.circular(moduleSize * 0.14),
-            ),
-            softPaint,
-          );
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _QrPainter oldDelegate) {
-    return oldDelegate.data != data ||
-        oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.foregroundColor != foregroundColor;
-  }
-
-  List<List<bool>> _generateMatrix(String value, int size) {
-    final matrix = List.generate(size, (_) => List<bool>.filled(size, false));
-    final hashSeed = value.codeUnits.fold<int>(
-      0x811C9DC5,
-      (seed, code) => ((seed ^ code) * 16777619) & 0x7fffffff,
-    );
-
-    var rolling = hashSeed;
-    for (var row = 0; row < size; row++) {
-      for (var col = 0; col < size; col++) {
-        if (_isReservedCell(row, col)) {
-          continue;
-        }
-
-        rolling =
-            ((rolling * 1103515245) + 12345 + (row * 31) + col) & 0x7fffffff;
-        final bit = ((rolling >> 7) ^ (rolling >> 15) ^ row ^ (col * 3)) & 1;
-        final diagonalBias = ((row + col + hashSeed) % 5) == 0;
-        matrix[row][col] = bit == 1 || diagonalBias;
-      }
-    }
-
-    return matrix;
-  }
-
-  bool _isReservedCell(int row, int col) {
-    return _isWithinFinder(row, col, 0, 0) ||
-        _isWithinFinder(row, col, 0, _moduleCount - 7) ||
-        _isWithinFinder(row, col, _moduleCount - 7, 0) ||
-        _isWithinAlignment(row, col) ||
-        _isTimingCell(row, col);
-  }
-
-  bool _isFinderCell(int row, int col) {
-    return _isWithinFinder(row, col, 0, 0) ||
-        _isWithinFinder(row, col, 0, _moduleCount - 7) ||
-        _isWithinFinder(row, col, _moduleCount - 7, 0);
-  }
-
-  bool _isWithinFinder(int row, int col, int top, int left) {
-    return row >= top && row < top + 7 && col >= left && col < left + 7;
-  }
-
-  bool _isAlignmentCell(int row, int col) => _isWithinAlignment(row, col);
-
-  bool _isWithinAlignment(int row, int col) {
-    const start = _moduleCount - 9;
-    return row >= start && row < start + 5 && col >= start && col < start + 5;
-  }
-
-  bool _isTimingCell(int row, int col) {
-    final rowTiming = row == 6 && col > 7 && col < _moduleCount - 8;
-    final colTiming = col == 6 && row > 7 && row < _moduleCount - 8;
-    return rowTiming || colTiming;
-  }
-
-  void _paintFinderCell(
-    Canvas canvas,
-    Rect rect,
-    int row,
-    int col,
-    Paint fgPaint,
-    Paint bgPaint,
-  ) {
-    final localRow = row >= _moduleCount - 7 ? row - (_moduleCount - 7) : row;
-    final localCol = col >= _moduleCount - 7 ? col - (_moduleCount - 7) : col;
-    final isOuter =
-        localRow == 0 || localRow == 6 || localCol == 0 || localCol == 6;
-    final isInner =
-        localRow >= 2 && localRow <= 4 && localCol >= 2 && localCol <= 4;
-
-    canvas.drawRect(rect, isOuter || isInner ? fgPaint : bgPaint);
-  }
-
-  void _paintAlignmentCell(
-    Canvas canvas,
-    Rect rect,
-    int row,
-    int col,
-    Paint fgPaint,
-    Paint bgPaint,
-  ) {
-    const start = _moduleCount - 9;
-    final localRow = row - start;
-    final localCol = col - start;
-    final isOuter =
-        localRow == 0 || localRow == 4 || localCol == 0 || localCol == 4;
-    final isCenter = localRow == 2 && localCol == 2;
-
-    canvas.drawRect(rect, isOuter || isCenter ? fgPaint : bgPaint);
   }
 }

@@ -16,6 +16,7 @@ class ProfileInitial extends ProfileState {
 class ProfileLoading extends ProfileState {
   const ProfileLoading();
 }
+
 class ProfileLoaded extends ProfileState {
   final User user;
   final Wallet? wallet;
@@ -27,11 +28,7 @@ class ProfileLoaded extends ProfileState {
     this.isDarkMode = false,
   });
 
-  ProfileLoaded copyWith({
-    User? user,
-    Wallet? wallet,
-    bool? isDarkMode,
-  }) {
+  ProfileLoaded copyWith({User? user, Wallet? wallet, bool? isDarkMode}) {
     return ProfileLoaded(
       user: user ?? this.user,
       wallet: wallet ?? this.wallet,
