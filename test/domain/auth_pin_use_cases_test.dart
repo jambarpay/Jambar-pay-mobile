@@ -28,11 +28,15 @@ void main() {
       final resetPin = ResetPin(repository);
       const phone = PhoneNumber('771234567');
 
-      await resetPin(phone: phone, newPin: '5678');
+      await resetPin(phone: phone, verificationCode: '1234', newPin: '5678');
 
-      expect(repository.reset, ('771234567', '5678'));
+      expect(repository.reset, ('771234567', '1234', '5678'));
       await expectLater(
-        resetPin(phone: const PhoneNumber('123'), newPin: '5678'),
+        resetPin(
+          phone: const PhoneNumber('123'),
+          verificationCode: '1234',
+          newPin: '5678',
+        ),
         throwsException,
       );
     });
@@ -51,7 +55,19 @@ void main() {
       completes,
     );
 
-    await source.resetPin(phone: '771234567', newPin: '9012');
+    await expectLater(
+      source.resetPin(
+        phone: '771234567',
+        verificationCode: '0000',
+        newPin: '9012',
+      ),
+      throwsException,
+    );
+    await source.resetPin(
+      phone: '771234567',
+      verificationCode: '5678',
+      newPin: '9012',
+    );
     await expectLater(
       source.verifyOtp(phone: '771234567', otp: '9012'),
       completes,
@@ -61,7 +77,7 @@ void main() {
 
 class _FakeAuthRepository implements AuthRepository {
   (String, String)? changedPin;
-  (String, String)? reset;
+  (String, String, String)? reset;
 
   @override
   Future<void> changePin({
@@ -74,9 +90,10 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<void> resetPin({
     required PhoneNumber phone,
+    required String verificationCode,
     required String newPin,
   }) async {
-    reset = (phone.digits, newPin);
+    reset = (phone.digits, verificationCode, newPin);
   }
 
   @override

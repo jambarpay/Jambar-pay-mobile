@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'core/network/api_service.dart';
 import 'core/network/mock_api_service.dart';
+import 'core/config/app_environment.dart';
 import 'core/storage/secure_session_storage.dart';
 import 'data/datasources/remote/auth_remote_datasource.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
@@ -46,8 +47,8 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
     await sl.reset();
   }
 
-  const configuredMockApi = bool.fromEnvironment('USE_MOCK_API');
-  const configuredLocalAuth = bool.fromEnvironment('USE_LOCAL_AUTH');
+  const configuredMockApi = AppEnvironment.useMockApi;
+  const configuredLocalAuth = AppEnvironment.useLocalAuth;
   final shouldUseMockApi = useMockApi ?? configuredMockApi;
   final shouldUseLocalAuth =
       useLocalAuth ?? (shouldUseMockApi || configuredLocalAuth);

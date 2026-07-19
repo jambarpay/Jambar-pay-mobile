@@ -72,11 +72,12 @@ class AppLocalizations {
       'statusFailed': 'Échoué',
       'dateToday': 'Aujourd\'hui',
       'dateYesterday': 'Hier',
-      'recentTransactions': 'Transaction Récentes',
+      'recentTransactions': 'Transactions récentes',
       'viewAll': 'Voir tout',
       'map': 'Carte',
       'list': 'Liste',
-      'restaurantsNearby': '{count} restaurants près de vous',
+      'restaurantNearbyOne': '1 restaurant près de vous',
+      'restaurantsNearbyMany': '{count} restaurants près de vous',
       'paymentSuccessMessage': 'Paiement réussi chez {merchantName}.',
       'partnerRestaurant': 'Restaurant partenaire',
       'currentSecretCode': 'Code secret actuel',
@@ -100,9 +101,13 @@ class AppLocalizations {
       'testQr': 'Tester QR 1234',
       'loginTitle': 'Connexion',
       'continueLabel': 'Continuer',
-      'enterPhoneNumber': 'Entrez votre numero de telephone',
-      'phoneNumberLabel': 'Numero de telephone',
-      'resetSecretCode': 'Reinitialiser le code secret',
+      'enterPhoneNumber': 'Entrez votre numéro de téléphone',
+      'phoneNumberLabel': 'Numéro de téléphone',
+      'resetSecretCode': 'Réinitialiser le code secret',
+      'verificationCode': 'Code de vérification',
+      'verificationCodeShort': 'Vérification',
+      'enterVerificationCode':
+          'Saisissez le code à 4 chiffres reçu pour continuer.',
       'accountForPhone': 'Compte {phone}',
       'confirmCode': 'Confirmez le code',
       'scan': 'Scanner',
@@ -110,21 +115,21 @@ class AppLocalizations {
       'invalidQrCode': 'Code QR invalide.',
       'cameraUnavailable':
           'La caméra est indisponible. Vérifiez les autorisations.',
-      'transactionCount': '{count} transaction(s)',
+      'transactionCountOne': '1 transaction',
+      'transactionCountMany': '{count} transactions',
       'progressiveLoadingActive': 'Chargement progressif actif',
       'loadMore': 'Charger plus',
-      'searchRestaurant': 'rechercher un restaurant',
+      'searchRestaurant': 'Rechercher un restaurant',
       'open': 'Ouvert',
-      'closed': 'Ferme',
+      'closed': 'Fermé',
       'walletUnavailable': 'Portefeuille indisponible',
       'scanQrCode': 'Scannez un code QR',
-      'qrDetected': 'QR détecté: {value}',
-      'employeeQr': 'QR employe',
-      'activeEmployeeQr': 'QR employe actif',
-      'readyForScan': 'Pret pour le scan et la confirmation du paiement.',
-      'phoneAuthorizedOnly': 'Numero autorise uniquement: 77 123 45 67',
-      'phoneTooLong': 'Numero trop long',
-      'invalidPhoneNumber': 'Numero de telephone invalide',
+      'qrDetected': 'QR détecté : {value}',
+      'employeeQr': 'QR employé',
+      'activeEmployeeQr': 'QR employé actif',
+      'readyForScan': 'Prêt pour le scan et la confirmation du paiement.',
+      'phoneTooLong': 'Numéro trop long',
+      'invalidPhoneNumber': 'Numéro de téléphone invalide',
       'incorrectSecretCode':
           'Code secret incorrect. Il vous reste {count} {attemptLabel}.',
       'youCanRetryNow': 'Vous pouvez réessayer maintenant.',
@@ -133,11 +138,13 @@ class AppLocalizations {
       'todayAt': "Aujourd'hui, {time}",
       'yesterdayAt': 'Hier, {time}',
       'dateTime': '{date}, {time}',
-      'paymentConfirmed': 'Paiement confirme',
-      'paymentConfirmedBody': 'Votre paiement chez {merchant} a ete confirme.',
-      'balanceUpdated': 'Solde mis a jour',
-      'walletSynced': 'Votre portefeuille a ete synchronise avec succes.',
+      'paymentConfirmed': 'Paiement confirmé',
+      'paymentConfirmedBody': 'Votre paiement chez {merchant} a été confirmé.',
+      'balanceUpdated': 'Solde mis à jour',
+      'walletSynced': 'Votre portefeuille a été synchronisé avec succès.',
       'employerTopUp': 'Recharge employeur',
+      'deleteLastDigit': 'Effacer le dernier chiffre',
+      'pinDigitsEntered': '{count} chiffre(s) saisi(s) sur {total}',
     },
     'en': {
       'appTitle': 'Jambar Pay Mobile',
@@ -193,7 +200,8 @@ class AppLocalizations {
       'viewAll': 'View All',
       'map': 'Map',
       'list': 'List',
-      'restaurantsNearby': '{count} restaurants near you',
+      'restaurantNearbyOne': '1 restaurant near you',
+      'restaurantsNearbyMany': '{count} restaurants near you',
       'paymentSuccessMessage': 'Payment successful at {merchantName}.',
       'partnerRestaurant': 'Partner Restaurant',
       'currentSecretCode': 'Current secret code',
@@ -219,13 +227,18 @@ class AppLocalizations {
       'enterPhoneNumber': 'Enter your phone number',
       'phoneNumberLabel': 'Phone number',
       'resetSecretCode': 'Reset secret code',
+      'verificationCode': 'Verification code',
+      'verificationCodeShort': 'Verification',
+      'enterVerificationCode':
+          'Enter the 4-digit code you received to continue.',
       'accountForPhone': 'Account {phone}',
       'confirmCode': 'Confirm code',
       'scan': 'Scan',
       'myQr': 'My QR',
       'invalidQrCode': 'Invalid QR code.',
       'cameraUnavailable': 'The camera is unavailable. Check permissions.',
-      'transactionCount': '{count} transaction(s)',
+      'transactionCountOne': '1 transaction',
+      'transactionCountMany': '{count} transactions',
       'progressiveLoadingActive': 'Progressive loading active',
       'loadMore': 'Load more',
       'searchRestaurant': 'search for a restaurant',
@@ -237,7 +250,6 @@ class AppLocalizations {
       'employeeQr': 'Employee QR',
       'activeEmployeeQr': 'Active employee QR',
       'readyForScan': 'Ready for scan and payment confirmation.',
-      'phoneAuthorizedOnly': 'Only authorized number: 77 123 45 67',
       'phoneTooLong': 'Phone number too long',
       'invalidPhoneNumber': 'Invalid phone number',
       'incorrectSecretCode':
@@ -253,6 +265,8 @@ class AppLocalizations {
       'balanceUpdated': 'Balance updated',
       'walletSynced': 'Your wallet has been synced successfully.',
       'employerTopUp': 'Employer top-up',
+      'deleteLastDigit': 'Delete the last digit',
+      'pinDigitsEntered': '{count} of {total} digits entered',
     },
   };
 
@@ -328,8 +342,10 @@ class AppLocalizations {
   String get viewAll => _translate('viewAll');
   String get map => _translate('map');
   String get list => _translate('list');
-  String restaurantsNearby(String count) =>
-      _translateWithArgs('restaurantsNearby', {'count': count});
+  String restaurantsNearby(int count) => _translateWithArgs(
+    count == 1 ? 'restaurantNearbyOne' : 'restaurantsNearbyMany',
+    {'count': count.toString()},
+  );
   String paymentSuccessMessage(String merchantName) => _translateWithArgs(
     'paymentSuccessMessage',
     {'merchantName': merchantName},
@@ -359,6 +375,9 @@ class AppLocalizations {
   String get enterPhoneNumber => _translate('enterPhoneNumber');
   String get phoneNumberLabel => _translate('phoneNumberLabel');
   String get resetSecretCode => _translate('resetSecretCode');
+  String get verificationCode => _translate('verificationCode');
+  String get verificationCodeShort => _translate('verificationCodeShort');
+  String get enterVerificationCode => _translate('enterVerificationCode');
   String accountForPhone(String phone) =>
       _translateWithArgs('accountForPhone', {'phone': phone});
   String get confirmCode => _translate('confirmCode');
@@ -366,8 +385,10 @@ class AppLocalizations {
   String get myQr => _translate('myQr');
   String get invalidQrCode => _translate('invalidQrCode');
   String get cameraUnavailable => _translate('cameraUnavailable');
-  String transactionCount(String count) =>
-      _translateWithArgs('transactionCount', {'count': count});
+  String transactionCount(int count) => _translateWithArgs(
+    count == 1 ? 'transactionCountOne' : 'transactionCountMany',
+    {'count': count.toString()},
+  );
   String get progressiveLoadingActive => _translate('progressiveLoadingActive');
   String get loadMore => _translate('loadMore');
   String get searchRestaurant => _translate('searchRestaurant');
@@ -380,7 +401,6 @@ class AppLocalizations {
   String get employeeQr => _translate('employeeQr');
   String get activeEmployeeQr => _translate('activeEmployeeQr');
   String get readyForScan => _translate('readyForScan');
-  String get phoneAuthorizedOnly => _translate('phoneAuthorizedOnly');
   String get phoneTooLong => _translate('phoneTooLong');
   String get invalidPhoneNumber => _translate('invalidPhoneNumber');
   String incorrectSecretCode(int count, String attemptLabel) =>
@@ -402,6 +422,11 @@ class AppLocalizations {
   String get balanceUpdated => _translate('balanceUpdated');
   String get walletSynced => _translate('walletSynced');
   String get employerTopUp => _translate('employerTopUp');
+  String get deleteLastDigit => _translate('deleteLastDigit');
+  String pinDigitsEntered(int count, int total) => _translateWithArgs(
+    'pinDigitsEntered',
+    {'count': count.toString(), 'total': total.toString()},
+  );
 }
 
 class _AppLocalizationsDelegate

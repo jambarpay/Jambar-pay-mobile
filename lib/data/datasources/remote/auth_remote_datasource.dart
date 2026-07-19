@@ -33,9 +33,12 @@ class AuthRemoteDataSource {
       );
     }
 
-    // Extract 'user' object if it exists (API structure)
+    final user = responseMap['user'];
+    if (user is Map) {
+      return Map<String, dynamic>.from(user);
+    }
     if (responseMap.containsKey('user')) {
-      return Map<String, dynamic>.from(responseMap['user']);
+      throw const ApiException('Invalid user response format');
     }
     return responseMap;
   }
@@ -48,13 +51,14 @@ class AuthRemoteDataSource {
       throw Exception('Invalid response format');
     }
     final token = response['token']?.toString() ?? '';
-    if (token.isNotEmpty) {
-      apiService.setToken(token);
-      await sessionStorage.saveTokens(
-        accessToken: token,
-        refreshToken: response['refreshToken']?.toString() ?? refreshToken,
-      );
+    if (token.isEmpty) {
+      throw const ApiException('Invalid refresh response');
     }
+    apiService.setToken(token);
+    await sessionStorage.saveTokens(
+      accessToken: token,
+      refreshToken: response['refreshToken']?.toString() ?? refreshToken,
+    );
     return token;
   }
 
@@ -68,9 +72,14 @@ class AuthRemoteDataSource {
     });
   }
 
-  Future<void> resetPin({required String phone, required String newPin}) async {
+  Future<void> resetPin({
+    required String phone,
+    required String verificationCode,
+    required String newPin,
+  }) async {
     await apiService.post(BaseUrl.utilisateursResetPin(), {
       'phone': phone,
+      'otp': verificationCode,
       'newPin': newPin,
     });
   }

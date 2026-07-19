@@ -22,13 +22,19 @@ class TransactionDto {
     return TransactionDto(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       type: json['type']?.toString() ?? 'DEBIT',
-      amount: MoneyDto.fromJson(json['montant'] as Map<String, dynamic>? ?? {}),
+      amount: MoneyDto.fromJson(_moneyJson(json['montant'] ?? json['amount'])),
       label:
           json['label']?.toString() ?? json['merchantName']?.toString() ?? '',
       date: json['createdAt']?.toString() ?? json['date']?.toString() ?? '',
       status:
           json['statut']?.toString() ?? json['status']?.toString() ?? 'pending',
     );
+  }
+
+  static Map<String, dynamic> _moneyJson(Object? value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    if (value is num) return {'amount': value, 'currency': 'XOF'};
+    return const {};
   }
 
   Map<String, dynamic> toJson() {

@@ -1,7 +1,7 @@
 abstract final class ApiMessages {
   static const String smsError =
-      'Erreur lors de la verification SMS. Veuillez reessayer.';
-  static const String network = 'Erreur reseau';
+      'Erreur lors de la vérification SMS. Veuillez réessayer.';
+  static const String network = 'Erreur réseau';
 
   static String http(String source, int statusCode) {
     return '$source error: $statusCode';

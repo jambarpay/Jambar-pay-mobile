@@ -71,7 +71,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (phone.isValid) {
         emit(AuthPhoneValid(phone.formatted));
       } else {
-        emit(AuthPhoneInvalid(_messages.phoneAuthorizedOnly, _currentPhone));
+        emit(AuthPhoneInvalid(_messages.invalidPhoneNumber, _currentPhone));
       }
     } else if (phone.digits.length >= 9) {
       emit(AuthPhoneInvalid(_messages.phoneTooLong, _currentPhone));
@@ -202,7 +202,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final phone = PhoneNumber(event.phoneNumber);
     emit(AuthPinResetInProgress(phone.formatted));
     try {
-      await _resetPin(phone: phone, newPin: event.newPin);
+      await _resetPin(
+        phone: phone,
+        verificationCode: event.verificationCode,
+        newPin: event.newPin,
+      );
       _currentPin = '';
       _failedPinAttempts = 0;
       _pinLockedUntil = null;

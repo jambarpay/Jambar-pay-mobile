@@ -8,8 +8,8 @@ class MoneyDto {
 
   factory MoneyDto.fromJson(Map<String, dynamic> json) {
     return MoneyDto(
-      amount: (json['montant'] as num?)?.round() ?? 0,
-      currency: json['currency'] ?? 'XOF',
+      amount: (json['montant'] as num? ?? json['amount'] as num?)?.round() ?? 0,
+      currency: json['currency']?.toString() ?? 'XOF',
     );
   }
 

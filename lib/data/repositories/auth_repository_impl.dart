@@ -71,12 +71,21 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> resetPin({
     required PhoneNumber phone,
+    required String verificationCode,
     required String newPin,
   }) async {
     if (_useLocalAuth) {
-      await _localDataSource.resetPin(phone: phone.digits, newPin: newPin);
+      await _localDataSource.resetPin(
+        phone: phone.digits,
+        verificationCode: verificationCode,
+        newPin: newPin,
+      );
     } else {
-      await _remoteDataSource.resetPin(phone: phone.digits, newPin: newPin);
+      await _remoteDataSource.resetPin(
+        phone: phone.digits,
+        verificationCode: verificationCode,
+        newPin: newPin,
+      );
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens/app_colors.dart';
 import '../tokens/app_radius.dart';
+import '../tokens/app_typography.dart';
 
 abstract final class AppTheme {
   static ThemeData get light => _build(Brightness.light);
@@ -24,6 +25,7 @@ abstract final class AppTheme {
 
     final base = ThemeData(
       useMaterial3: true,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: isDark
@@ -32,7 +34,7 @@ abstract final class AppTheme {
     );
 
     return base.copyWith(
-      textTheme: base.textTheme.apply(
+      textTheme: AppTypography.from(base.textTheme).apply(
         bodyColor: isDark
             ? AppColors.darkPrimaryText
             : AppColors.lightPrimaryText,
@@ -69,6 +71,29 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: isDark
+            ? AppColors.darkSurface
+            : AppColors.lightSurface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.sheet),
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: isDark ? AppColors.darkBorder : AppColors.lightDivider,
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.brand,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

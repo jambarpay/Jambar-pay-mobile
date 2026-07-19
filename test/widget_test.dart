@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jambar_pay_mobile/main.dart';
 import 'package:jambar_pay_mobile/injection.dart' as di;
-import 'package:jambar_pay_mobile/View/widgets/home_widgets.dart';
+import 'package:jambar_pay_mobile/presentation/widgets/home_widgets.dart';
 
 void main() {
   setUpAll(() async {
@@ -38,21 +38,21 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    expect(find.text('Transaction Récentes'), findsOneWidget);
+    expect(find.text('Transactions récentes'), findsOneWidget);
     expect(find.text('Abdoulaye Diallo'), findsOneWidget);
     expect(find.text('Le FOOD'), findsWidgets);
 
     await tester.tap(find.text('Voir tout'));
     await tester.pumpAndSettle();
 
-    expect(find.text('6 transaction(s)'), findsOneWidget);
+    expect(find.text('6 transactions'), findsOneWidget);
     expect(find.text('Le FOOD'), findsWidgets);
 
     await tester.tap(find.text('Restaurants').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Restaurants'), findsWidgets);
-    expect(find.text('rechercher un restaurant'), findsOneWidget);
+    expect(find.text('Rechercher un restaurant'), findsOneWidget);
 
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();

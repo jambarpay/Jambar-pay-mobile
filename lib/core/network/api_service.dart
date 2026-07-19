@@ -29,7 +29,10 @@ class ApiService {
   void setToken(String? t) => token = t;
 
   Map<String, String> get _defaultHeaders {
-    final headers = <String, String>{'Content-Type': 'application/json'};
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
+    };
     if (token != null && token!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -66,8 +69,10 @@ class ApiService {
         return await _decodeBody(response);
       }
 
-      if (response.body.contains('twilio') ||
-          response.body.contains('unverified')) {
+      final decodedBody = await _decodeBody(response);
+      final serverMessage = _serverMessage(decodedBody);
+      if (response.body.toLowerCase().contains('twilio') ||
+          response.body.toLowerCase().contains('unverified')) {
         throw ApiException(
           ApiMessages.smsError,
           statusCode: response.statusCode,
@@ -75,7 +80,7 @@ class ApiService {
       }
 
       throw ApiException(
-        ApiMessages.http('HTTP', response.statusCode),
+        serverMessage ?? ApiMessages.http('HTTP', response.statusCode),
         statusCode: response.statusCode,
       );
     } on TimeoutException {
@@ -85,6 +90,17 @@ class ApiService {
     } on http.ClientException catch (error) {
       throw ApiException('${ApiMessages.network}: ${error.message}');
     }
+  }
+
+  String? _serverMessage(dynamic decodedBody) {
+    if (decodedBody is Map) {
+      final value = decodedBody['message'] ?? decodedBody['error'];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    if (decodedBody is String && decodedBody.trim().length <= 200) {
+      return decodedBody.trim().isEmpty ? null : decodedBody.trim();
+    }
+    return null;
   }
 
   Future<dynamic> get(

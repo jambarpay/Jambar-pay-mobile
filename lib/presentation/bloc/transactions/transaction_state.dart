@@ -33,6 +33,9 @@ class TransactionLoaded extends TransactionState {
     this.visibleCount = 4,
   });
 
+  List<Transaction> get visibleTransactions =>
+      filteredTransactions.take(visibleCount).toList(growable: false);
+
   TransactionLoaded copyWith({
     List<Transaction>? allTransactions,
     List<Transaction>? filteredTransactions,

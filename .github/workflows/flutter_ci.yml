@@ -1,0 +1,50 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.3
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test with coverage
+        run: flutter test --coverage
+
+      - name: Enforce coverage threshold
+        run: dart run tool/check_coverage.dart coverage/lcov.info 80
+
+      - name: Build web release
+        run: flutter build web --release
+
+      - name: Build Android release
+        run: flutter build apk --release

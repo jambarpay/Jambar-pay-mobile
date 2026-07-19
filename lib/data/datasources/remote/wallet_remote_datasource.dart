@@ -15,7 +15,7 @@ class WalletRemoteDataSource {
   }
 
   Future<Map<String, dynamic>> updateBalanceAfterPayment({
-    required double amount,
+    required int amount,
     required bool isCredit,
   }) async {
     final response = await apiService.post(BaseUrl.walletUpdate(), {

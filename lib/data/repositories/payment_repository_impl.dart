@@ -28,7 +28,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
     final parsedAmount = responseAmount is Map
         ? Money(
             amount:
-                (responseAmount['montant'] as num?)?.toDouble() ??
+                responseAmount['montant'] as num? ??
+                responseAmount['amount'] as num? ??
                 amount.amount,
             currency: responseAmount['currency']?.toString() ?? amount.currency,
           )

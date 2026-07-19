@@ -7,7 +7,7 @@ import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_bloc.dart';
 import 'injection.dart' as di;
-import 'View/main.dart' as app;
+import 'presentation/jambar_pay_app.dart' as app;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

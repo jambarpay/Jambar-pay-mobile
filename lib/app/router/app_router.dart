@@ -1,35 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../View/main.dart' show JambarPayFlow;
-import '../../View/models/mobile_employee_space.dart';
-import '../../View/screens/payment_simulation_screen.dart';
-import '../../View/screens/qr_screen.dart';
-import '../../View/screens/secret_code_screen.dart';
+import '../../presentation/jambar_pay_app.dart' show JambarPayFlow;
+import '../../presentation/models/mobile_employee_space.dart';
+import '../../presentation/screens/payment_screen.dart';
+import '../../presentation/screens/qr_screen.dart';
+import '../../presentation/screens/secret_code_screen.dart';
 
 abstract final class AppRoutes {
   static const root = '/';
   static const qr = '/qr';
   static const payment = '/payment';
   static const secretCode = '/secret-code';
-}
 
-class QrRouteArgs {
-  const QrRouteArgs({
-    required this.onTabSelected,
-    required this.isDarkMode,
-    required this.userProfile,
-    required this.paymentState,
-    required this.wallet,
-    required this.onPaymentCompleted,
-  });
-
-  final ValueChanged<int> onTabSelected;
-  final bool isDarkMode;
-  final UserProfileModel userProfile;
-  final PaymentUIState paymentState;
-  final WalletSummaryModel? wallet;
-  final void Function(QRScanResultModel, PaymentResultModel) onPaymentCompleted;
+  static String secretCodeLocation({
+    required SecretCodeFlowMode mode,
+    required String phoneNumber,
+  }) => Uri(
+    path: secretCode,
+    queryParameters: {
+      'mode': mode.name,
+      if (phoneNumber.isNotEmpty) 'phone': phoneNumber,
+    },
+  ).toString();
 }
 
 class PaymentRouteArgs {
@@ -46,22 +39,6 @@ class PaymentRouteArgs {
   final MoneyModel? availableBalance;
 }
 
-class SecretCodeRouteArgs {
-  const SecretCodeRouteArgs({
-    required this.mode,
-    required this.phoneNumber,
-    this.isDarkMode = false,
-    this.onChangePin,
-    this.onResetPin,
-  });
-
-  final SecretCodeFlowMode mode;
-  final String phoneNumber;
-  final bool isDarkMode;
-  final Future<String?> Function(String currentPin, String newPin)? onChangePin;
-  final Future<String?> Function(String newPin)? onResetPin;
-}
-
 abstract final class AppRouter {
   static GoRouter create() => GoRouter(
     initialLocation: AppRoutes.root,
@@ -72,23 +49,16 @@ abstract final class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.qr,
-        builder: (context, state) {
-          final args = state.extra! as QrRouteArgs;
-          return QrScreen(
-            onTabSelected: args.onTabSelected,
-            isDarkMode: args.isDarkMode,
-            userProfile: args.userProfile,
-            paymentState: args.paymentState,
-            wallet: args.wallet,
-            onPaymentCompleted: args.onPaymentCompleted,
-          );
-        },
+        builder: (context, state) => const QrScreen(),
       ),
       GoRoute(
         path: AppRoutes.payment,
         builder: (context, state) {
-          final args = state.extra! as PaymentRouteArgs;
-          return PaymentSimulationScreen(
+          final args = state.extra;
+          if (args is! PaymentRouteArgs) {
+            return const _InvalidRouteScreen();
+          }
+          return PaymentScreen(
             isDarkMode: args.isDarkMode,
             qrToken: args.qrToken,
             merchantName: args.merchantName,
@@ -99,13 +69,12 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.secretCode,
         builder: (context, state) {
-          final args = state.extra! as SecretCodeRouteArgs;
+          final mode = state.uri.queryParameters['mode'] == 'reset'
+              ? SecretCodeFlowMode.reset
+              : SecretCodeFlowMode.change;
           return SecretCodeScreen(
-            mode: args.mode,
-            phoneNumber: args.phoneNumber,
-            isDarkMode: args.isDarkMode,
-            onChangePin: args.onChangePin,
-            onResetPin: args.onResetPin,
+            mode: mode,
+            phoneNumber: state.uri.queryParameters['phone'] ?? '',
           );
         },
       ),
@@ -113,4 +82,16 @@ abstract final class AppRouter {
     errorBuilder: (context, state) =>
         Scaffold(body: Center(child: Text(state.error.toString()))),
   );
+}
+
+class _InvalidRouteScreen extends StatelessWidget {
+  const _InvalidRouteScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: const Center(child: Text('Navigation impossible.')),
+    );
+  }
 }

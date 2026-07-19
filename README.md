@@ -1,176 +1,126 @@
 # Jambar Pay Mobile
 
-## Vue d'ensemble
+Frontend Flutter de Jambar Pay pour Android, iOS, Web et Linux. L’application couvre l’authentification, le portefeuille, l’historique, les restaurants partenaires, le paiement QR et le profil.
 
-`jambar_pay_mobile` est le front mobile Flutter de Jambar Pay. Il prend en charge :
-
-- l'authentification par numéro de téléphone et PIN
-- l'affichage du tableau de bord wallet
-- l'historique des transactions
-- la recherche et la visualisation des restaurants partenaires
-- le paiement via QR et la confirmation de transaction
-- la gestion du profil utilisateur
-
-L'application est structurée autour d'une architecture modulaire avec une séparation claire entre la présentation, le domaine métier et l'accès aux données.
-
-## Architecture du projet
-
-### Arborescence clé
-
-- `lib/main.dart` : point d'entrée de l'application Flutter
-- `lib/injection.dart` : configuration de l'injection de dépendances GetIt
-- `lib/di.dart` : sélection de l'API réelle ou du mock
-- `lib/ApiService/` : client HTTP, services API et routes backend
-- `lib/data/` : data sources, repositories, persistence
-- `lib/domain/` : entités, use cases, contrats de domaine
-- `lib/presentation/` : BLoC, événements et états
-- `lib/View/` : écrans, widgets, modèles UI et layout
-- `lib/Config/` : fichier de configuration technique
-- `lib/Validation/` : règles de validation
-
-### Couche présentation
-
-Le front mobile utilise :
-
-- `AuthBloc` pour l'authentification
-- `TransactionBloc` pour les transactions
-- `PaymentBloc` pour les paiements QR
-- `ProfileBloc` pour la gestion du profil
-
-La navigation est centralisée depuis `lib/View/main.dart` avec :
-
-- `LoginScreen`
-- `PinScreen`
-- `HomeScreen` (Dashboard / Historique / Restaurants / Profil)
-
-### Couche domaine
-
-La couche `lib/domain/` contient les règles métier, les entités et les interfaces des repositories. Elle orchestre :
-
-- l'envoi d'OTP
-- la vérification du PIN
-- la récupération des transactions
-- la gestion du wallet
-- la confirmation des paiements
-
-### Couche data
-
-La couche `lib/data/` implémente :
-
-- les datasources distants pour l'API
-- les datasources locaux pour le stockage d'authentification
-- les repositories métier utilisés par les use cases
-
-### API backend
-
-Le client API est défini dans `lib/ApiService/BaseUrl.dart`.
-Par défaut, l'application cible :
-
-- `https://api.jambarpay.com`
-
-Les routes utilisées incluent entre autres :
-
-- `/utilisateurs/login`
-- `/utilisateurs/register`
-- `/utilisateurs/refresh`
-- `/utilisateurs/verify-otp`
-- `/comptes`
-- `/comptes/transfert`
-- `/comptes/payer`
-- `/comptes/solde`
-- `/transactions`
-- `/wallet`
-
-## Fonctionnalités principales
-
-- Authentification mobile par numéro de téléphone
-- Saisie de PIN et validation sécurisée
-- Tableau de bord wallet avec solde et état du compte
-- Historique des transactions et filtre basique
-- Liste de restaurants partenaires et vue en mode carte / liste
-- Paiement QR avec gestion du résultat et ajout d'une transaction
-- Profil utilisateur et mode sombre
-
-## Configuration
-
-### Variables d'environnement utiles
-
-- `API_BASE` : URL de base de l'API backend
-- `USE_MOCK_API=true` : force l'utilisation de `MockApiService`
-- `USE_LOCAL_AUTH=true` : active un mode d'auth local pour développement
-
-### Mode mock
-
-Pour démarrer l'application en mode mock (sans backend réel) :
-
-```bash
-flutter run --dart-define=USE_MOCK_API=true
-```
-
-Pour utiliser un backend personnalisé :
-
-```bash
-flutter run --dart-define=API_BASE=https://mon-backend.example.com
-```
-
-## Lancer l'application
-
-Récupérer les dépendances :
+## Démarrage rapide
 
 ```bash
 flutter pub get
+flutter run -d chrome
 ```
 
-Lancer sur appareil ou simulateur :
+Le mode debug utilise automatiquement l’API mock et l’authentification locale. Le compte de développement accepte un numéro mobile sénégalais valide et le code `1234`.
 
-```bash
-flutter run
-```
-
-Liste des appareils disponibles :
+Pour afficher les appareils disponibles :
 
 ```bash
 flutter devices
 ```
 
-Lancer sur un device spécifique :
+Si Android n’apparaît pas, connecter un téléphone avec le débogage USB activé ou démarrer un émulateur Android, puis relancer `flutter devices`.
+
+## Environnements
+
+Les valeurs sont injectées à la compilation avec `--dart-define` :
+
+- `API_BASE` : URL HTTPS du backend ; valeur par défaut `https://api.jambarpay.com`.
+- `USE_MOCK_API` : utilise les réponses locales de développement.
+- `USE_LOCAL_AUTH` : utilise l’authentification locale de développement.
+
+Exécution explicite en mode mock :
 
 ```bash
-flutter run -d <device-id>
+flutter run -d chrome \
+  --dart-define=USE_MOCK_API=true \
+  --dart-define=USE_LOCAL_AUTH=true
 ```
 
-## Compilation Android
+Exécution contre un backend :
+
+```bash
+flutter run -d chrome \
+  --dart-define=USE_MOCK_API=false \
+  --dart-define=USE_LOCAL_AUTH=false \
+  --dart-define=API_BASE=https://api.example.com
+```
+
+Le scanner Web exige `localhost` ou une origine HTTPS et l’autorisation caméra du navigateur.
+
+## Architecture
+
+```text
+lib/
+├── app/router/              # GoRouter et contrats de navigation
+├── core/
+│   ├── config/              # environnement et messages techniques
+│   ├── network/             # client HTTP, endpoints et API mock
+│   └── storage/             # session chiffrée
+├── data/
+│   ├── datasources/         # sources locales et distantes
+│   ├── models/dto/          # adaptation JSON
+│   └── repositories/        # implémentations des contrats métier
+├── design_system/
+│   ├── layouts/             # responsive et breakpoints
+│   ├── theme/               # thèmes Material 3 clair/sombre
+│   └── tokens/              # couleurs, espacements, rayons, durées, typo
+├── domain/
+│   ├── entities/            # objets métier
+│   ├── repositories/        # interfaces
+│   ├── use_cases/           # orchestration métier
+│   └── value_objects/       # PhoneNumber et Money
+├── presentation/
+│   ├── bloc/                # états et événements par fonctionnalité
+│   ├── screens/             # composition des pages
+│   ├── widgets/             # composants réutilisables
+│   └── models/              # modèles strictement visuels
+├── l10n/                    # français et anglais
+├── injection.dart           # composition GetIt
+└── main.dart                # bootstrap et providers racine
+```
+
+Les montants du domaine sont stockés en unités entières XOF. Les tokens de session sont conservés avec `flutter_secure_storage`. Le changement et la réinitialisation du PIN passent par les repositories ; la réinitialisation exige un code de vérification.
+
+Les routes ne transportent aucun callback : les écrans QR, paiement et code secret communiquent avec les BLoC et retournent uniquement des résultats de navigation typés. Les routes du code secret utilisent des paramètres d’URL simples et restent donc compatibles avec les deep links.
+
+## Qualité
+
+```bash
+flutter analyze
+flutter test --coverage
+dart run tool/check_coverage.dart coverage/lcov.info 80
+```
+
+La suite comprend 62 tests unitaires, BLoC, widgets, intégration, accessibilité et non-régression visuelle. La couverture de lignes actuelle est de 80,79 % et la CI refuse toute régression sous 80 %. Les lints renforcés vérifient notamment les futures ignorées, les flux non fermés, les impressions console et les conventions de noms.
+
+Le pipeline [Flutter CI](.github/workflows/flutter_ci.yml) vérifie à chaque pull request le formatage, l’analyse stricte, les tests, la couverture ainsi que les builds Web et Android release. Dependabot surveille les dépendances Dart et GitHub Actions.
+
+## Builds
+
+Web :
+
+```bash
+flutter build web --release
+```
+
+Android debug :
 
 ```bash
 flutter build apk --debug
 ```
 
-## Compilation iOS
-
-La compilation iOS nécessite un environnement macOS.
+Android release non signé :
 
 ```bash
-flutter build ios
+flutter build apk --release
 ```
 
-## Tests
+Pour signer la release, copier `android/key.properties.example` vers `android/key.properties`, renseigner le chemin du keystore et les secrets, puis relancer le build. Les vrais secrets et keystores sont ignorés par Git.
+
+Linux nécessite les dépendances système Flutter Desktop :
 
 ```bash
-flutter test
+sudo apt install clang cmake ninja-build libgtk-3-dev
+flutter run -d linux
 ```
 
-## Points d'attention
-
-- Le front mobile est conçu pour une expérience de paiement et de recherche de restaurants partenaires.
-- Les données de démonstration sont initialisées depuis `lib/View/models/mobile_employee_space.dart`.
-- La logique d'authentification et des API est injectée via `lib/injection.dart`.
-- La navigation principale se fait avec un shell `HomeScreen` reposant sur un index de page.
-
-## Recommandations de documentation
-
-Pour enrichir ce README sans le surcharger, vous pouvez ajouter :
-
-- `docs/architecture.md` : architecture générale et choix techniques
-- `docs/api.md` : comportement attendu des endpoints backend
-- `docs/run.md` : configuration de l'environnement et astuces de build
-- `docs/adr/0001-mobile-architecture.md` : décisions d'architecture importantes
+La compilation iOS nécessite macOS et Xcode.

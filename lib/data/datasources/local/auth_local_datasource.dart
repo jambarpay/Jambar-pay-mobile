@@ -41,8 +41,15 @@ class AuthLocalDataSource {
     _currentPin = newPin;
   }
 
-  Future<void> resetPin({required String phone, required String newPin}) async {
+  Future<void> resetPin({
+    required String phone,
+    required String verificationCode,
+    required String newPin,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    if (verificationCode != _currentPin) {
+      throw Exception('Code de vérification incorrect.');
+    }
     _currentPin = newPin;
   }
 

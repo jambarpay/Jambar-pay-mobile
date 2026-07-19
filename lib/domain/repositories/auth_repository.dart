@@ -8,6 +8,10 @@ abstract class AuthRepository {
 
   Future<String> refreshToken(String refreshToken);
   Future<void> changePin({required String currentPin, required String newPin});
-  Future<void> resetPin({required PhoneNumber phone, required String newPin});
+  Future<void> resetPin({
+    required PhoneNumber phone,
+    required String verificationCode,
+    required String newPin,
+  });
   Future<void> logout();
 }

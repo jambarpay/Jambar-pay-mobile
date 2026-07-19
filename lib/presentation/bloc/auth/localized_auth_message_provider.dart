@@ -8,9 +8,6 @@ class LocalizedAuthMessageProvider implements AuthMessageProvider {
       AppLocalizations(LanguageController.localeNotifier.value);
 
   @override
-  String get phoneAuthorizedOnly => _loc.phoneAuthorizedOnly;
-
-  @override
   String get phoneTooLong => _loc.phoneTooLong;
 
   @override

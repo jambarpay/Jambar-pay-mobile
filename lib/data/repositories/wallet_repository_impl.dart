@@ -25,7 +25,7 @@ class WalletRepositoryImpl implements WalletRepository {
   }) async {
     try {
       final json = await _remoteDataSource.updateBalanceAfterPayment(
-        amount: amount.amount.toDouble(),
+        amount: amount.amount,
         isCredit: isCredit,
       );
       return _mapToWallet(json);
