@@ -181,7 +181,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         PhoneNumber(_currentPhone).formatted,
         _otpCode,
         _setupPin,
-        _currentPin,
+        confirmation: _currentPin,
       ));
     } else {
       emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
@@ -210,7 +210,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           PhoneNumber(_currentPhone).formatted,
           _otpCode,
           _setupPin,
-          _currentPin,
+          confirmation: _currentPin,
         ));
       } else {
         emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
@@ -266,8 +266,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         _formattedCurrentPhone,
         _otpCode,
         _setupPin,
-        '',
-        e.toString(),
+        confirmation: '',
+        errorMessage: e.toString(),
       ));
     }
   }

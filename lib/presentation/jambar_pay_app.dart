@@ -109,7 +109,7 @@ class JambarPayFlow extends StatelessWidget {
           return _buildPinScreen(
             context,
             state.phoneNumber,
-            state.currentPin,
+            pin: state.currentPin,
             totalDigits: 6,
             title: 'Code OTP',
             subtitle: 'Saisissez le code OTP à 6 chiffres',
@@ -118,7 +118,7 @@ class JambarPayFlow extends StatelessWidget {
           return _buildPinScreen(
             context,
             state.phoneNumber,
-            state.pin,
+            pin: state.pin,
             totalDigits: 4,
             title: 'Créer votre code PIN',
             subtitle: 'Choisissez un code PIN à 4 chiffres',
@@ -127,18 +127,18 @@ class JambarPayFlow extends StatelessWidget {
           return _buildPinScreen(
             context,
             state.phoneNumber,
-            state.confirmation,
-            state.errorMessage,
+            pin: state.confirmation,
+            errorText: state.errorMessage,
             totalDigits: 4,
             title: 'Confirmer votre code PIN',
             subtitle: 'Saisissez à nouveau votre code PIN',
           );
         } else if (state is AuthPinLoading) {
-          return _buildPinScreen(context, state.phoneNumber, '', totalDigits: 4);
+          return _buildPinScreen(context, state.phoneNumber, totalDigits: 4);
         } else if (state is AuthPinResetInProgress) {
-          return _buildPinScreen(context, state.phoneNumber, '', totalDigits: 4);
+          return _buildPinScreen(context, state.phoneNumber, totalDigits: 4);
         } else if (state is AuthPinResetSuccess) {
-          return _buildPinScreen(context, state.phoneNumber, '', totalDigits: 4);
+          return _buildPinScreen(context, state.phoneNumber, totalDigits: 4);
         } else if (state is AuthAuthenticated) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (Navigator.of(context).canPop()) {
@@ -161,9 +161,8 @@ class JambarPayFlow extends StatelessWidget {
             return _buildPinScreen(
               context,
               state.phoneNumber,
-              '',
-              state.errorMessage,
-              state.pinLockedUntil,
+              errorText: state.errorMessage,
+              pinLockedUntil: state.pinLockedUntil,
               totalDigits: 6,
               title: 'Code OTP',
               subtitle: 'Saisissez le code OTP à 6 chiffres',
@@ -199,11 +198,10 @@ class JambarPayFlow extends StatelessWidget {
 
   Widget _buildPinScreen(
     BuildContext context,
-    String phoneNumber, [
+    String phoneNumber, {
     String pin = '',
     String? errorText,
     DateTime? pinLockedUntil,
-  ], {
     int totalDigits = 4,
     String? title,
     String? subtitle,

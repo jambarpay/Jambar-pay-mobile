@@ -119,6 +119,8 @@ class _LocalAuthStub extends AuthLocalDataSource {
   Future<Map<String, dynamic>> verifyOtp({
     required String phone,
     required String otp,
+    String? pin,
+    String? pinConfirmation,
   }) async => {'id': 'local-user', 'name': 'Local', 'phone': phone};
 
   @override
@@ -168,6 +170,8 @@ class _RemoteAuthStub extends AuthRemoteDataSource {
   Future<Map<String, dynamic>> verifyOtp({
     required String phone,
     required String otp,
+    String? pin,
+    String? pinConfirmation,
   }) async {
     _throwIfNeeded();
     return {'id': 'remote-user', 'name': 'Remote', 'phone': phone};

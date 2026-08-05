@@ -86,8 +86,9 @@ class AuthPinSetupConfirmation extends AuthState {
     this.phoneNumber,
     this.otp,
     this.pin,
-    [this.confirmation = '', this.errorMessage],
-  );
+    {String confirmation = '', String? errorMessage},
+  ) : confirmation = confirmation,
+      errorMessage = errorMessage;
 
   @override
   List<Object?> get props => [phoneNumber, otp, pin, confirmation, errorMessage];
