@@ -9,7 +9,7 @@ flutter pub get
 flutter run -d chrome
 ```
 
-Le mode debug utilise automatiquement l’API mock et l’authentification locale. Le compte de développement accepte un numéro mobile sénégalais valide et le code `1234`.
+Le mode debug utilise automatiquement l’API mock et l’authentification locale. Le compte de développement accepte un numéro mobile sénégalais valide et l’OTP `123456`. Le code secret de confirmation de paiement reste sur 4 chiffres.
 
 Pour afficher les appareils disponibles :
 
@@ -43,6 +43,12 @@ flutter run -d chrome \
   --dart-define=USE_LOCAL_AUTH=false \
   --dart-define=API_BASE=https://api.example.com
 ```
+
+Le mobile consomme les contrats `/api/v1/auth`, `/api/v1/restaurants`, `/api/v1/qrs` et `/api/v1/payments`. `API_BASE` doit désigner une gateway qui conserve ces chemins. La gateway présente dans le dépôt doit encore être corrigée avant un test bout en bout réel.
+
+Le seul parcours d’authentification exposé par le backend est actuellement une **inscription**. L’écran mobile ne collecte encore que le téléphone : l’adaptateur complète donc temporairement `firstName` et `lastName` avec des valeurs de repli. Pour des données utilisateur réelles, il faudra soit ajouter ces deux champs à l’écran d’inscription, soit fournir côté backend un endpoint de connexion pour un utilisateur existant.
+
+Le backend actuel ne fournit pas encore le refresh token, le changement/réinitialisation de PIN ni la liste des transactions. Ces parcours restent disponibles avec les sources locales/mock ; en mode réel, ils signalent explicitement l'absence du contrat au lieu de simuler un succès.
 
 Le scanner Web exige `localhost` ou une origine HTTPS et l’autorisation caméra du navigateur.
 

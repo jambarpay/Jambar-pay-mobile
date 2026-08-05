@@ -92,7 +92,12 @@ class RestaurantsMapView extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        RestaurantMap(restaurants: restaurants, isDarkMode: isDarkMode),
+        RestaurantMap(
+          restaurants: restaurants
+              .where((item) => item.hasCoordinates)
+              .toList(),
+          isDarkMode: isDarkMode,
+        ),
         const SizedBox(height: 14),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -380,7 +385,9 @@ class RestaurantCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _formatUpdatedAt(context, restaurant.updatedAt),
+                  restaurant.address.isNotEmpty
+                      ? restaurant.address
+                      : _formatUpdatedAt(context, restaurant.updatedAt),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: isDarkMode
@@ -394,14 +401,15 @@ class RestaurantCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${restaurant.distanceKm.toStringAsFixed(1)} km',
-                style: const TextStyle(
-                  color: AppColors.brand,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
+              if (restaurant.distanceKm > 0)
+                Text(
+                  '${restaurant.distanceKm.toStringAsFixed(1)} km',
+                  style: const TextStyle(
+                    color: AppColors.brand,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
               const SizedBox(height: 10),
               Text(
                 restaurant.isOpen

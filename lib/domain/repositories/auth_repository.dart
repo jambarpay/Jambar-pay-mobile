@@ -4,7 +4,12 @@ import '../value_objects/phone_number.dart';
 abstract class AuthRepository {
   Future<void> sendOtp(PhoneNumber phone);
 
-  Future<User> verifyOtp({required PhoneNumber phone, required String otp});
+  Future<User> verifyOtp({
+    required PhoneNumber phone,
+    required String otp,
+    String? pin,
+    String? pinConfirmation,
+  });
 
   Future<String> refreshToken(String refreshToken);
   Future<void> changePin({required String currentPin, required String newPin});

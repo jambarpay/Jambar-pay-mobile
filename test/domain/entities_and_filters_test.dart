@@ -132,19 +132,18 @@ void main() {
   });
 
   test('API endpoint and message helpers expose stable contracts', () {
-    expect(BaseUrl.comptes(), '/comptes');
-    expect(BaseUrl.comptes('1'), '/comptes/1');
-    expect(BaseUrl.comptesByPhone('77'), '/comptes/phone/77');
-    expect(BaseUrl.comptesTransfert(), '/comptes/transfert');
-    expect(BaseUrl.comptesPayer(), '/comptes/payer');
-    expect(BaseUrl.comptesSolde(), '/comptes/solde');
-    expect(BaseUrl.comptesQr(), '/comptes/qr');
-    expect(BaseUrl.comptesDashboard(), '/comptes/dashboard');
-    expect(BaseUrl.transactions(), '/transactions');
-    expect(BaseUrl.restaurants(), '/restaurants');
-    expect(BaseUrl.utilisateursLogin(), '/utilisateurs/login');
-    expect(BaseUrl.wallet(), '/wallet');
-    expect(BaseUrl.walletUpdate(), '/wallet/update');
+    expect(BaseUrl.authRegisterStart(), '/api/v1/auth/register/start');
+    expect(BaseUrl.authRegisterVerify(), '/api/v1/auth/register/verify');
+    expect(BaseUrl.authLogout(), '/api/v1/auth/logout');
+    expect(BaseUrl.transactions(), '/api/v1/payments/transactions');
+    expect(BaseUrl.transactions('tx-1'), '/api/v1/payments/transactions/tx-1');
+    expect(BaseUrl.restaurants(), '/api/v1/restaurants');
+    expect(
+      BaseUrl.walletByOwner('user-1'),
+      '/api/v1/wallets/owners/user-1',
+    );
+    expect(BaseUrl.payWithQr(), '/api/v1/payments/qr');
+    expect(BaseUrl.employeeQr(), '/api/v1/qrs/employee');
     expect(ApiMessages.http('API', 500), 'API error: 500');
     expect(ApiMessages.network, isNotEmpty);
   });

@@ -33,53 +33,31 @@ class _BalanceCardState extends State<BalanceCard> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 350;
-        final qrWidth = (constraints.maxWidth * 0.3)
-            .clamp(104.0, 118.0)
+        final qrWidth = (constraints.maxWidth * (isCompact ? 0.34 : 0.3))
+            .clamp(isCompact ? 82.0 : 104.0, 118.0)
             .toDouble();
 
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: widget.isDarkMode
-                ? palette.sectionContainer
-                : AppColors.darkBalance,
+            color: widget.isDarkMode ? AppColors.brand : AppColors.darkBalance,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
-          child: isCompact
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _BalanceInfo(
-                      wallet: widget.wallet,
-                      palette: palette,
-                      isBalanceVisible: _isBalanceVisible,
-                      onToggleVisibility: _toggleBalanceVisibility,
-                    ),
-                    const SizedBox(height: 14),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _QrActionButton(
-                        width: qrWidth,
-                        onTap: widget.onQrTap,
-                      ),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(
-                      child: _BalanceInfo(
-                        wallet: widget.wallet,
-                        palette: palette,
-                        isBalanceVisible: _isBalanceVisible,
-                        onToggleVisibility: _toggleBalanceVisibility,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _QrActionButton(width: qrWidth, onTap: widget.onQrTap),
-                  ],
+          child: Row(
+            children: [
+              Expanded(
+                child: _BalanceInfo(
+                  wallet: widget.wallet,
+                  palette: palette,
+                  isBalanceVisible: _isBalanceVisible,
+                  onToggleVisibility: _toggleBalanceVisibility,
                 ),
+              ),
+              SizedBox(width: isCompact ? 8 : 12),
+              _QrActionButton(width: qrWidth, onTap: widget.onQrTap),
+            ],
+          ),
         );
       },
     );

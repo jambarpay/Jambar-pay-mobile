@@ -45,6 +45,7 @@ class HomeScreen extends StatelessWidget {
         isDarkMode: isDarkMode,
         onDarkModeChanged: onDarkModeChanged,
         userProfile: appState.userProfile,
+        wallet: appState.wallet,
         onLogout: onLogout,
       ),
     ];

@@ -9,6 +9,8 @@ class RestaurantDto {
     required this.isOpen,
     required this.latitude,
     required this.longitude,
+    required this.address,
+    required this.status,
   });
 
   final String id;
@@ -18,18 +20,28 @@ class RestaurantDto {
   final bool isOpen;
   final double latitude;
   final double longitude;
+  final String address;
+  final String status;
 
   factory RestaurantDto.fromJson(Map<String, dynamic> json) {
+    final status = json['status']?.toString().toUpperCase() ?? 'PENDING';
+    final address =
+        [json['street'], json['district'], json['city'], json['country']]
+            .where((part) => part != null && part.toString().trim().isNotEmpty)
+            .map((part) => part.toString().trim())
+            .join(', ');
     return RestaurantDto(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 0,
       updatedAt:
           DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-      isOpen: json['isOpen'] as bool? ?? false,
+          DateTime.now(),
+      isOpen: json['isOpen'] as bool? ?? status == 'ACTIVE',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      address: json['address']?.toString() ?? address,
+      status: status,
     );
   }
 
@@ -41,5 +53,7 @@ class RestaurantDto {
     isOpen: isOpen,
     latitude: latitude,
     longitude: longitude,
+    address: address,
+    status: status,
   );
 }

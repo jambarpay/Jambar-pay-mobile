@@ -7,6 +7,8 @@ class Restaurant {
     required this.isOpen,
     required this.latitude,
     required this.longitude,
+    this.address = '',
+    this.status = 'PENDING',
   });
 
   final String id;
@@ -16,4 +18,8 @@ class Restaurant {
   final bool isOpen;
   final double latitude;
   final double longitude;
+  final String address;
+  final String status;
+
+  bool get hasCoordinates => latitude != 0 || longitude != 0;
 }

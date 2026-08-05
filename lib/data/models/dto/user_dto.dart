@@ -15,10 +15,16 @@ class UserDto {
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) {
+    final firstName = json['firstName']?.toString().trim() ?? '';
+    final lastName = json['lastName']?.toString().trim() ?? '';
+    final backendName = [
+      firstName,
+      lastName,
+    ].where((part) => part.isNotEmpty).join(' ');
     return UserDto(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      phone: json['phone']?.toString() ?? '',
+      name: json['name']?.toString() ?? backendName,
+      phone: json['phone']?.toString() ?? json['phoneNumber']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString(),
     );
   }

@@ -155,7 +155,11 @@ class _RemoteAuthStub extends AuthRemoteDataSource {
   }
 
   @override
-  Future<void> sendOtp(String phone) async {
+  Future<void> sendOtp(
+    String phone, {
+    String firstName = 'Utilisateur',
+    String lastName = 'Jambaar Pay',
+  }) async {
     _throwIfNeeded();
     sentPhone = phone;
   }

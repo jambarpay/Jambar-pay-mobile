@@ -4,17 +4,21 @@ import '../../domain/value_objects/phone_number.dart';
 import '../datasources/remote/auth_remote_datasource.dart';
 import '../datasources/local/auth_local_datasource.dart';
 import '../models/dto/user_dto.dart';
+import '../../core/session/current_user_session.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
   final AuthLocalDataSource _localDataSource;
   final bool _useLocalAuth;
+  final CurrentUserSession? _currentUserSession;
 
   AuthRepositoryImpl(
     this._remoteDataSource,
     this._localDataSource, {
     bool useLocalAuth = false,
-  }) : _useLocalAuth = useLocalAuth;
+    CurrentUserSession? currentUserSession,
+  }) : _useLocalAuth = useLocalAuth,
+       _currentUserSession = currentUserSession;
 
   @override
   Future<void> sendOtp(PhoneNumber phone) async {
@@ -33,13 +37,27 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> verifyOtp({
     required PhoneNumber phone,
     required String otp,
+    String? pin,
+    String? pinConfirmation,
   }) async {
     try {
       final response = _useLocalAuth
-          ? await _localDataSource.verifyOtp(phone: phone.digits, otp: otp)
-          : await _remoteDataSource.verifyOtp(phone: phone.digits, otp: otp);
+          ? await _localDataSource.verifyOtp(
+              phone: phone.digits,
+              otp: otp,
+              pin: pin,
+              pinConfirmation: pinConfirmation,
+            )
+          : await _remoteDataSource.verifyOtp(
+              phone: phone.digits,
+              otp: otp,
+              pin: pin,
+              pinConfirmation: pinConfirmation,
+            );
       final userDto = UserDto.fromJson(response);
-      return userDto.toDomain();
+      final user = userDto.toDomain();
+      _currentUserSession?.setUserId(user.id);
+      return user;
     } catch (e) {
       throw Exception('Échec de la vérification: ${e.toString()}');
     }
@@ -99,6 +117,8 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } catch (_) {
       // Ignore errors on logout
+    } finally {
+      _currentUserSession?.clear();
     }
   }
 }

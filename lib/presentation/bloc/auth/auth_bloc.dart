@@ -9,6 +9,7 @@ import '../../../domain/use_cases/auth/logout.dart';
 import '../../../domain/use_cases/auth/reset_pin.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  static const int _otpLength = 6;
   static const int _maxPinAttempts = 5;
   static const Duration _pinLockDuration = Duration(minutes: 2);
 
@@ -20,6 +21,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   String _currentPhone = '';
   String _currentPin = '';
+  String _otpCode = '';
+  String _setupPin = '';
+  bool _settingUpPin = false;
+  bool _confirmingSetupPin = false;
   int _failedPinAttempts = 0;
   DateTime? _pinLockedUntil;
 
@@ -133,21 +138,54 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    // append digit(s) to the current pin, but cap at 4 chars
+    final maxLength = _settingUpPin || _confirmingSetupPin ? 4 : _otpLength;
     final incoming = event.pin;
     if (incoming.isEmpty) return;
 
     final combined = _currentPin + incoming;
-    _currentPin = combined.length > 4 ? combined.substring(0, 4) : combined;
+    _currentPin = combined.length > maxLength
+        ? combined.substring(0, maxLength)
+        : combined;
 
-    if (_currentPin.length == 4) {
-      emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
-      add(const PinSubmitted());
+    if (!_settingUpPin && !_confirmingSetupPin && _currentPin.length == _otpLength) {
+      _otpCode = _currentPin;
+      _currentPin = '';
+      _settingUpPin = true;
+      emit(AuthPinSetupEntry(PhoneNumber(_currentPhone).formatted, _otpCode));
+      return;
+    }
+
+    if (_settingUpPin && !_confirmingSetupPin && _currentPin.length == 4) {
+      _setupPin = _currentPin;
+      _currentPin = '';
+      _settingUpPin = false;
+      _confirmingSetupPin = true;
+      emit(AuthPinSetupConfirmation(
+        PhoneNumber(_currentPhone).formatted,
+        _otpCode,
+        _setupPin,
+      ));
+      return;
+    }
+
+    if (_confirmingSetupPin && _currentPin.length == 4) {
+      _completeEmployeeOnboarding(emit);
       return;
     }
 
     // update state to reflect entered digits
-    emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
+    if (_settingUpPin) {
+      emit(AuthPinSetupEntry(PhoneNumber(_currentPhone).formatted, _otpCode, _currentPin));
+    } else if (_confirmingSetupPin) {
+      emit(AuthPinSetupConfirmation(
+        PhoneNumber(_currentPhone).formatted,
+        _otpCode,
+        _setupPin,
+        _currentPin,
+      ));
+    } else {
+      emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
+    }
   }
 
   void _onPinBackspace(PinBackspace event, Emitter<AuthState> emit) {
@@ -161,7 +199,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     if (_currentPin.isNotEmpty) {
       _currentPin = _currentPin.substring(0, _currentPin.length - 1);
-      emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
+      if (_settingUpPin) {
+        emit(AuthPinSetupEntry(
+          PhoneNumber(_currentPhone).formatted,
+          _otpCode,
+          _currentPin,
+        ));
+      } else if (_confirmingSetupPin) {
+        emit(AuthPinSetupConfirmation(
+          PhoneNumber(_currentPhone).formatted,
+          _otpCode,
+          _setupPin,
+          _currentPin,
+        ));
+      } else {
+        emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
+      }
     }
   }
 
@@ -195,6 +248,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  Future<void> _completeEmployeeOnboarding(Emitter<AuthState> emit) async {
+    emit(AuthPinLoading(PhoneNumber(_currentPhone).formatted));
+    try {
+      final user = await _verifyOtp(
+        phone: PhoneNumber(_currentPhone),
+        otp: _otpCode,
+        pin: _setupPin,
+        pinConfirmation: _currentPin,
+      );
+      emit(AuthAuthenticated(user));
+      _resetSensitiveState();
+    } catch (e) {
+      _currentPin = '';
+      _confirmingSetupPin = true;
+      emit(AuthPinSetupConfirmation(
+        _formattedCurrentPhone,
+        _otpCode,
+        _setupPin,
+        '',
+        e.toString(),
+      ));
+    }
+  }
+
+  void _resetSensitiveState() {
+    _failedPinAttempts = 0;
+    _pinLockedUntil = null;
+    _currentPin = '';
+    _otpCode = '';
+    _setupPin = '';
+    _settingUpPin = false;
+    _confirmingSetupPin = false;
+    _currentPhone = '';
+  }
+
   Future<void> _onPinResetRequested(
     PinResetRequested event,
     Emitter<AuthState> emit,
@@ -222,6 +310,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) {
     _currentPhone = '';
     _currentPin = '';
+    _otpCode = '';
+    _setupPin = '';
+    _settingUpPin = false;
+    _confirmingSetupPin = false;
     emit(const AuthPhoneInitial());
   }
 

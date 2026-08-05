@@ -8,8 +8,7 @@ class TransactionRemoteDataSource {
 
   Future<List<dynamic>> getTransactions() async {
     final response = await apiService.get(BaseUrl.transactions());
-    if (response is! List) return [];
-    return response;
+    return _items(response);
   }
 
   Future<Map<String, dynamic>?> getTransactionById(String id) async {
@@ -38,7 +37,14 @@ class TransactionRemoteDataSource {
       BaseUrl.transactions(),
       queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
-    if (response is! List) return [];
-    return response;
+    return _items(response);
+  }
+
+  List<dynamic> _items(dynamic response) {
+    if (response is List) return response;
+    if (response is Map && response['content'] is List) {
+      return List<dynamic>.from(response['content'] as List);
+    }
+    return const [];
   }
 }

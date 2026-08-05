@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:jambar_pay_mobile/app/router/app_router.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/language_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/mobile_employee_space.dart';
 import 'secret_code_screen.dart';
 import '../widgets/app_palette.dart';
@@ -18,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
     required this.isDarkMode,
     required this.onDarkModeChanged,
     required this.userProfile,
+    required this.wallet,
     required this.onLogout,
   });
 
@@ -25,6 +27,7 @@ class ProfileScreen extends StatefulWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final UserProfileModel userProfile;
+  final WalletSummaryModel? wallet;
   final VoidCallback onLogout;
 
   @override
@@ -87,32 +90,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _contactSupport() {
-    final loc = AppLocalizations.of(context);
+  static const _supportWhatsAppNumber = String.fromEnvironment(
+    'SUPPORT_WHATSAPP_NUMBER',
+    defaultValue: '221331234567',
+  );
 
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(loc.contactSupport),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(loc.email),
-              const SizedBox(height: 8),
-              Text(loc.phone),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(loc.ok),
-            ),
-          ],
+  Future<void> _contactSupport() async {
+    final uri = Uri.https('wa.me', _supportWhatsAppNumber);
+    var didLaunch = false;
+
+    try {
+      didLaunch = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on Exception {
+      didLaunch = false;
+    }
+
+    if (!didLaunch && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).supportUnavailable),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -138,6 +137,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
               children: [
                 ProfileActionTile(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: widget.wallet == null
+                      ? AppLocalizations.of(context).walletUnavailable
+                      : AppLocalizations.of(
+                          context,
+                        ).availableBalance(widget.wallet!.balance.formatted),
+                  isDarkMode: widget.isDarkMode,
+                ),
+                const SizedBox(height: 18),
+                ProfileActionTile(
                   icon: Icons.shield_outlined,
                   label: AppLocalizations.of(context).changeSecretCode,
                   isDarkMode: widget.isDarkMode,
@@ -161,11 +170,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
                 const SizedBox(height: 18),
+                ProfileActionTile(
+                  icon: Icons.notifications_outlined,
+                  label: AppLocalizations.of(context).notifications,
+                  isDarkMode: widget.isDarkMode,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context).noNewNotifications,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 18),
                 ProfileSwitchTile(
                   icon: Icons.contrast,
                   label: widget.isDarkMode
-                      ? AppLocalizations.of(context).darkMode
-                      : AppLocalizations.of(context).lightMode,
+                      ? AppLocalizations.of(context).switchToLightMode
+                      : AppLocalizations.of(context).switchToDarkMode,
                   value: widget.isDarkMode,
                   onChanged: widget.onDarkModeChanged,
                   isDarkMode: widget.isDarkMode,
@@ -173,9 +197,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 12),
                 ProfileActionTile(
                   icon: Icons.language,
-                  label: _selectedLanguage.languageCode == 'fr'
-                      ? AppLocalizations.of(context).french
-                      : AppLocalizations.of(context).english,
+                  label: AppLocalizations.of(context).selectedLanguage(
+                    _selectedLanguage.languageCode == 'fr'
+                        ? AppLocalizations.of(context).french
+                        : AppLocalizations.of(context).english,
+                  ),
                   isDarkMode: widget.isDarkMode,
                   onTap: _showLanguageDialog,
                 ),
@@ -184,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.headset_mic_outlined,
                   label: AppLocalizations.of(context).contactSupport,
                   isDarkMode: widget.isDarkMode,
-                  onTap: _contactSupport,
+                  onTap: () => unawaited(_contactSupport()),
                 ),
                 const SizedBox(height: 18),
                 ProfileActionTile(

@@ -33,7 +33,7 @@ void main() {
 
     expect(find.text('Code PIN'), findsOneWidget);
 
-    for (final digit in ['1', '2', '3', '4']) {
+    for (final digit in ['1', '2', '3', '4', '5', '6']) {
       await tester.tap(find.byKey(ValueKey('keypad-$digit')));
       await tester.pumpAndSettle();
     }
@@ -57,7 +57,7 @@ void main() {
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Modifiez votre code secret'), findsOneWidget);
+    expect(find.text('Modifier le code secret'), findsOneWidget);
     expect(find.text('Contacter le support'), findsOneWidget);
 
     await tester.tap(find.text('Accueil'));
@@ -89,7 +89,7 @@ void main() {
     await tester.pumpAndSettle();
 
     for (var attempt = 0; attempt < 5; attempt++) {
-      for (final digit in ['0', '0', '0', '0']) {
+      for (final digit in ['0', '0', '0', '0', '0', '0']) {
         await tester.tap(find.byKey(ValueKey('keypad-$digit')));
         await tester.pumpAndSettle();
       }
@@ -116,7 +116,7 @@ void main() {
     }
     await tester.tap(find.text('Continuer'));
     await tester.pumpAndSettle();
-    for (final digit in ['1', '2', '3', '4']) {
+    for (final digit in ['1', '2', '3', '4', '5', '6']) {
       await tester.tap(find.byKey(ValueKey('keypad-$digit')));
       await tester.pumpAndSettle();
     }
@@ -164,7 +164,7 @@ void main() {
     }
     await tester.tap(find.text('Continuer'));
     await tester.pumpAndSettle();
-    for (final digit in ['1', '2', '3', '4']) {
+    for (final digit in ['1', '2', '3', '4', '5', '6']) {
       await tester.tap(find.byKey(ValueKey('keypad-$digit')));
       await tester.pumpAndSettle();
     }

@@ -15,6 +15,8 @@ import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_eve
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_state.dart';
+import 'package:jambar_pay_mobile/data/datasources/remote/qr_remote_datasource.dart';
+import 'package:jambar_pay_mobile/injection.dart' as di;
 import '../models/mobile_employee_space.dart';
 import 'payment_screen.dart';
 import '../widgets/app_palette.dart';
@@ -36,6 +38,8 @@ class _QrScreenState extends State<QrScreen> {
   late QRScanResultModel? _scanResult;
   late PaymentResultModel? _paymentResult;
   String? _qrErrorMessage;
+  String? _employeeQrContent;
+  final QrRemoteDataSource _qrDataSource = di.sl<QrRemoteDataSource>();
 
   void _clearQrError() {
     _qrErrorMessage = null;
@@ -53,6 +57,7 @@ class _QrScreenState extends State<QrScreen> {
       torchEnabled: false,
       autoStart: false,
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadEmployeeQr());
   }
 
   @override
@@ -177,6 +182,7 @@ class _QrScreenState extends State<QrScreen> {
                                   isDarkMode: false,
                                   userProfile: userProfile,
                                   scanResult: _scanResult,
+                                  employeeQrContent: _employeeQrContent,
                                 ),
                         ),
                       ),
@@ -258,6 +264,26 @@ class _QrScreenState extends State<QrScreen> {
         isDarkMode: isDarkMode,
       ),
     );
+  }
+
+  Future<void> _loadEmployeeQr() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated || authState.user.id.isEmpty) return;
+
+    try {
+      final response = await _qrDataSource.generateEmployeeQr(
+        authState.user.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _employeeQrContent = response['qrContent']?.toString();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _qrErrorMessage = AppLocalizations.of(context).invalidQrCode;
+      });
+    }
   }
 
   Future<void> _openPaymentFlow(String rawValue) async {

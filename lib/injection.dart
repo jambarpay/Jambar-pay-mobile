@@ -1,13 +1,16 @@
 import 'package:get_it/get_it.dart';
 import 'core/network/api_service.dart';
+import 'core/network/base_url.dart';
 import 'core/network/mock_api_service.dart';
 import 'core/config/app_environment.dart';
 import 'core/storage/secure_session_storage.dart';
+import 'core/session/current_user_session.dart';
 import 'data/datasources/remote/auth_remote_datasource.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
 import 'data/datasources/remote/transaction_remote_datasource.dart';
 import 'data/datasources/remote/wallet_remote_datasource.dart';
 import 'data/datasources/remote/restaurant_remote_datasource.dart';
+import 'data/datasources/remote/qr_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/transaction_repository_impl.dart';
 import 'data/repositories/wallet_repository_impl.dart';
@@ -42,10 +45,14 @@ import 'presentation/bloc/restaurants/restaurant_bloc.dart';
 
 final GetIt sl = GetIt.instance;
 
+const _userApi = 'user-api';
+const _restaurantApi = 'restaurant-api';
+const _paymentApi = 'payment-api';
+const _walletApi = 'wallet-api';
+const _qrApi = 'qr-api';
+
 Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
-  if (sl.isRegistered<ApiService>()) {
-    await sl.reset();
-  }
+  await sl.reset();
 
   const configuredMockApi = AppEnvironment.useMockApi;
   const configuredLocalAuth = AppEnvironment.useLocalAuth;
@@ -58,26 +65,84 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
       : await sessionStorage.readAccessToken();
 
   sl.registerSingleton<SecureSessionStorage>(sessionStorage);
+  sl.registerSingleton<CurrentUserSession>(CurrentUserSession());
 
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
         ? MockApiService()
-        : ApiService(token: persistedAccessToken),
+        : ApiService(
+            baseUrl: BaseUrl.userServiceBase,
+            token: persistedAccessToken,
+          ),
+    instanceName: _userApi,
+    dispose: (service) => service.dispose(),
+  );
+  sl.registerLazySingleton<ApiService>(
+    () => shouldUseMockApi
+        ? MockApiService()
+        : ApiService(
+            baseUrl: BaseUrl.restaurantServiceBase,
+            token: persistedAccessToken,
+          ),
+    instanceName: _restaurantApi,
+    dispose: (service) => service.dispose(),
+  );
+  sl.registerLazySingleton<ApiService>(
+    () => shouldUseMockApi
+        ? MockApiService()
+        : ApiService(
+            baseUrl: BaseUrl.paymentServiceBase,
+            token: persistedAccessToken,
+          ),
+    instanceName: _paymentApi,
+    dispose: (service) => service.dispose(),
+  );
+  sl.registerLazySingleton<ApiService>(
+    () => shouldUseMockApi
+        ? MockApiService()
+        : ApiService(
+            baseUrl: BaseUrl.walletServiceBase,
+            token: persistedAccessToken,
+          ),
+    instanceName: _walletApi,
+    dispose: (service) => service.dispose(),
+  );
+  sl.registerLazySingleton<ApiService>(
+    () => shouldUseMockApi
+        ? MockApiService()
+        : ApiService(
+            baseUrl: BaseUrl.qrServiceBase,
+            token: persistedAccessToken,
+          ),
+    instanceName: _qrApi,
     dispose: (service) => service.dispose(),
   );
 
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSource(sl<ApiService>(), sl<SecureSessionStorage>()),
+    () => AuthRemoteDataSource(
+      sl<ApiService>(instanceName: _userApi),
+      sl<SecureSessionStorage>(),
+    ),
   );
   sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());
   sl.registerLazySingleton<TransactionRemoteDataSource>(
-    () => TransactionRemoteDataSource(sl<ApiService>()),
+    () => TransactionRemoteDataSource(
+      sl<ApiService>(instanceName: _paymentApi),
+    ),
   );
   sl.registerLazySingleton<WalletRemoteDataSource>(
-    () => WalletRemoteDataSource(sl<ApiService>()),
+    () => WalletRemoteDataSource(
+      sl<ApiService>(instanceName: _walletApi),
+      sl<CurrentUserSession>(),
+    ),
   );
   sl.registerLazySingleton<RestaurantRemoteDataSource>(
-    () => RestaurantRemoteDataSource(sl<ApiService>()),
+    () => RestaurantRemoteDataSource(
+      sl<ApiService>(instanceName: _restaurantApi),
+    ),
+  );
+  sl.registerLazySingleton<QrRemoteDataSource>(
+    () => QrRemoteDataSource(sl<ApiService>(instanceName: _qrApi)),
   );
 
   sl.registerLazySingleton<AuthRepository>(
@@ -85,6 +150,7 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
       sl<AuthRemoteDataSource>(),
       sl<AuthLocalDataSource>(),
       useLocalAuth: shouldUseLocalAuth,
+      currentUserSession: sl<CurrentUserSession>(),
     ),
   );
   sl.registerLazySingleton<TransactionRepository>(
@@ -94,7 +160,10 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
     () => WalletRepositoryImpl(sl<WalletRemoteDataSource>()),
   );
   sl.registerLazySingleton<PaymentRepository>(
-    () => PaymentRepositoryImpl(sl<ApiService>()),
+    () => PaymentRepositoryImpl(
+      sl<ApiService>(instanceName: _paymentApi),
+      currentUserSession: sl<CurrentUserSession>(),
+    ),
   );
   sl.registerLazySingleton<RestaurantRepository>(
     () => RestaurantRepositoryImpl(sl<RestaurantRemoteDataSource>()),

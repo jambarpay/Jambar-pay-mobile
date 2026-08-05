@@ -5,12 +5,13 @@ import 'package:jambar_pay_mobile/core/storage/secure_session_storage.dart';
 import 'package:jambar_pay_mobile/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:jambar_pay_mobile/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:jambar_pay_mobile/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:jambar_pay_mobile/core/session/current_user_session.dart';
 
 void main() {
   group('AuthRemoteDataSource', () {
     test('persists tokens and extracts the authenticated user', () async {
       final api = _RecordingApiService()
-        ..postResponses[BaseUrl.utilisateursVerifyOtp()] = {
+        ..postResponses[BaseUrl.authRegisterVerify()] = {
           'token': 'access',
           'refreshToken': 'refresh',
           'user': {'id': 'user-1', 'phone': '771234567'},
@@ -23,45 +24,39 @@ void main() {
       expect(user['id'], 'user-1');
       expect(api.token, 'access');
       expect(storage.savedTokens, ('access', 'refresh'));
-      expect(api.lastData, {'phone': '771234567', 'otp': '1234'});
+      expect(api.lastData, {'phoneNumber': '771234567', 'otp': '1234'});
     });
 
     test('accepts a flat user response and rejects invalid payloads', () async {
       final api = _RecordingApiService();
       final source = AuthRemoteDataSource(api, _RecordingSessionStorage());
 
-      api.postResponses[BaseUrl.utilisateursVerifyOtp()] = {
+      api.postResponses[BaseUrl.authRegisterVerify()] = {
         'id': 'flat-user',
-        'phone': '771234567',
+        'phoneNumber': '771234567',
       };
       expect(
         await source.verifyOtp(phone: '771234567', otp: '1234'),
         containsPair('id', 'flat-user'),
       );
 
-      api.postResponses[BaseUrl.utilisateursVerifyOtp()] = <String>['invalid'];
+      api.postResponses[BaseUrl.authRegisterVerify()] = <String>['invalid'];
       await expectLater(
         source.verifyOtp(phone: '771234567', otp: '1234'),
         throwsA(isA<Exception>()),
       );
 
-      api.postResponses[BaseUrl.utilisateursVerifyOtp()] = {'user': 'invalid'};
+      api.postResponses[BaseUrl.authRegisterVerify()] = {'user': 'invalid'};
       await expectLater(
         source.verifyOtp(phone: '771234567', otp: '1234'),
         throwsA(isA<ApiException>()),
       );
     });
 
-    test('refreshes tokens and rejects missing access tokens', () async {
+    test('reports unsupported backend session refresh', () async {
       final api = _RecordingApiService();
       final storage = _RecordingSessionStorage();
       final source = AuthRemoteDataSource(api, storage);
-      api.postResponses[BaseUrl.utilisateursRefresh()] = {'token': 'new'};
-
-      expect(await source.refreshToken('old-refresh'), 'new');
-      expect(storage.savedTokens, ('new', 'old-refresh'));
-
-      api.postResponses[BaseUrl.utilisateursRefresh()] = {'token': ''};
       await expectLater(
         source.refreshToken('old-refresh'),
         throwsA(isA<ApiException>()),
@@ -76,28 +71,29 @@ void main() {
         final source = AuthRemoteDataSource(api, storage);
 
         await source.sendOtp('771234567');
-        expect(api.lastEndpoint, BaseUrl.utilisateursRegister());
-        expect(api.lastData, {'phone': '771234567'});
-
-        await source.changePin(currentPin: '1234', newPin: '5678');
-        expect(api.lastEndpoint, BaseUrl.utilisateursChangePin());
-        expect(api.lastData, {'currentPin': '1234', 'newPin': '5678'});
-
-        await source.resetPin(
-          phone: '771234567',
-          verificationCode: '9876',
-          newPin: '5678',
-        );
-        expect(api.lastEndpoint, BaseUrl.utilisateursResetPin());
+        expect(api.lastEndpoint, BaseUrl.authRegisterResend());
         expect(api.lastData, {
-          'phone': '771234567',
-          'otp': '9876',
-          'newPin': '5678',
+          'phoneNumber': '771234567',
+          'firstName': 'Utilisateur',
+          'lastName': 'Jambaar Pay',
         });
 
+        await expectLater(
+          source.changePin(currentPin: '1234', newPin: '5678'),
+          throwsA(isA<ApiException>()),
+        );
+
+        await expectLater(
+          source.resetPin(
+            phone: '771234567',
+            verificationCode: '9876',
+            newPin: '5678',
+          ),
+          throwsA(isA<ApiException>()),
+        );
+
         api.token = 'access';
-        api.postError = const ApiException('offline');
-        await expectLater(source.logout(), throwsA(isA<ApiException>()));
+        await source.logout();
         expect(api.token, isNull);
         expect(storage.wasCleared, isTrue);
       },
@@ -133,6 +129,22 @@ void main() {
       });
     });
 
+    test('maps the backend paginated transaction response', () async {
+      final api = _RecordingApiService();
+      final source = TransactionRemoteDataSource(api);
+      api.getResponses[BaseUrl.transactions()] = {
+        'content': [
+          {'id': 'tx-1'},
+        ],
+        'page': 0,
+        'size': 50,
+        'totalElements': 1,
+        'totalPages': 1,
+      };
+
+      expect(await source.getTransactions(), hasLength(1));
+    });
+
     test('returns safe empty values for malformed responses', () async {
       final api = _RecordingApiService();
       final source = TransactionRemoteDataSource(api);
@@ -149,28 +161,26 @@ void main() {
   group('WalletRemoteDataSource', () {
     test('loads, updates and refreshes wallet payloads', () async {
       final api = _RecordingApiService();
-      final source = WalletRemoteDataSource(api);
-      final wallet = {
-        'walletId': 'wallet-1',
-        'balance': {'amount': 50000, 'currency': 'XOF'},
-      };
-      api.getResponses[BaseUrl.wallet()] = wallet;
-      api.postResponses[BaseUrl.walletUpdate()] = wallet;
+      final session = CurrentUserSession()..setUserId('user-1');
+      final source = WalletRemoteDataSource(api, session);
+      final wallet = {'id': 'wallet-1', 'balance': 50000, 'currency': 'XOF'};
+      api.getResponses[BaseUrl.walletByOwner('user-1')] = wallet;
+      api.patchResponses[BaseUrl.walletTopUp('wallet-1')] = wallet;
 
       expect(await source.getWallet(), wallet);
       expect(
-        await source.updateBalanceAfterPayment(amount: 2500, isCredit: false),
+        await source.updateBalanceAfterPayment(amount: 2500, isCredit: true),
         wallet,
       );
-      expect(api.lastData, {'amount': 2500, 'type': 'DEBIT'});
+      expect(api.lastData, {'amount': 2500, 'currency': 'XOF'});
       expect(await source.refreshWallet(), wallet);
     });
 
     test('rejects malformed wallet payloads', () async {
       final api = _RecordingApiService();
-      final source = WalletRemoteDataSource(api);
-      api.getResponses[BaseUrl.wallet()] = <Object>[];
-      api.postResponses[BaseUrl.walletUpdate()] = <Object>[];
+      final session = CurrentUserSession()..setUserId('user-1');
+      final source = WalletRemoteDataSource(api, session);
+      api.getResponses[BaseUrl.walletByOwner('user-1')] = <Object>[];
 
       await expectLater(source.getWallet(), throwsA(isA<Exception>()));
       await expectLater(
@@ -186,6 +196,7 @@ class _RecordingApiService extends ApiService {
 
   final Map<String, dynamic> getResponses = {};
   final Map<String, dynamic> postResponses = {};
+  final Map<String, dynamic> patchResponses = {};
   String? lastEndpoint;
   Map<String, dynamic>? lastData;
   Map<String, String>? lastQueryParameters;
@@ -215,6 +226,18 @@ class _RecordingApiService extends ApiService {
     final error = postError;
     if (error != null) throw error;
     return postResponses[endpoint] ?? const <String, dynamic>{};
+  }
+
+  @override
+  Future<dynamic> patch(
+    String endpoint,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    lastEndpoint = endpoint;
+    lastData = data;
+    return patchResponses[endpoint];
   }
 }
 

@@ -13,6 +13,7 @@ import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
 import 'package:jambar_pay_mobile/domain/entities/wallet.dart';
 import 'package:jambar_pay_mobile/domain/value_objects/money.dart';
 import 'package:jambar_pay_mobile/domain/value_objects/phone_number.dart';
+import 'package:jambar_pay_mobile/core/session/current_user_session.dart';
 
 void main() {
   group('DTO contracts', () {
@@ -95,33 +96,29 @@ void main() {
   group('PaymentRepositoryImpl', () {
     test('initiates, confirms and cancels a payment', () async {
       final api = _RepositoryApiService();
-      final repository = PaymentRepositoryImpl(api);
-      api.postResponses[BaseUrl.comptesQr()] = {
-        'token': 'payment-token',
-        'merchantName': 'Le FOOD',
-        'amount': {'amount': 3500, 'currency': 'XOF'},
-        'expiresAt': '2030-01-01T00:00:00.000Z',
-      };
+      final session = CurrentUserSession()..setUserId('user-1');
+      final repository = PaymentRepositoryImpl(
+        api,
+        currentUserSession: session,
+      );
 
       final initiation = await repository.initiatePayment(
         qrToken: 'qr-token',
         amount: Money.xof(3500),
       );
-      expect(initiation.token, 'payment-token');
+      expect(initiation.token, 'qr-token');
       expect(initiation.amount, Money.xof(3500));
-      expect(api.lastData, {
-        'qrToken': 'qr-token',
+
+      api.postResponses[BaseUrl.payWithQr()] = {
+        'id': 'tx-1',
+        'payerUserId': 'user-1',
+        'restaurantId': 'restaurant-1',
+        'qrReference': 'qr-reference',
+        'type': 'MEAL_PAYMENT',
         'amount': 3500,
         'currency': 'XOF',
-      });
-
-      api.postResponses[BaseUrl.comptesPayer()] = {
-        'id': 'tx-1',
-        'type': 'DEBIT',
-        'amount': {'amount': 3500, 'currency': 'XOF'},
-        'merchantName': 'Le FOOD',
-        'date': '2030-01-01T00:00:00.000Z',
-        'status': 'validated',
+        'createdAt': '2030-01-01T00:00:00.000Z',
+        'status': 'SUCCESS',
       };
       final transaction = await repository.confirmPayment(
         paymentToken: initiation.token,
@@ -129,27 +126,32 @@ void main() {
       );
       expect(transaction.id, 'tx-1');
       expect(transaction.amount, Money.xof(3500));
+      expect(api.lastData, {
+        'payerUserId': 'user-1',
+        'qrContent': 'qr-token',
+        'amount': 3500,
+        'currency': 'XOF',
+      });
 
       await repository.cancelPayment('payment-1');
-      expect(api.deletedEndpoint, '/comptes/payer/payment-1');
+      expect(api.deletedEndpoint, isNull);
     });
 
     test('rejects invalid pins and malformed responses', () async {
       final api = _RepositoryApiService();
-      final repository = PaymentRepositoryImpl(api);
+      final session = CurrentUserSession()..setUserId('user-1');
+      final repository = PaymentRepositoryImpl(
+        api,
+        currentUserSession: session,
+      );
 
       await expectLater(
         repository.confirmPayment(paymentToken: 'token', pin: '12'),
         throwsA(isA<ApiException>()),
       );
 
-      api.postResponses[BaseUrl.comptesQr()] = <Object>[];
-      await expectLater(
-        repository.initiatePayment(qrToken: 'token', amount: Money.xof(1)),
-        throwsA(isA<ApiException>()),
-      );
-
-      api.postResponses[BaseUrl.comptesPayer()] = <Object>[];
+      await repository.initiatePayment(qrToken: 'token', amount: Money.xof(1));
+      api.postResponses[BaseUrl.payWithQr()] = <Object>[];
       await expectLater(
         repository.confirmPayment(paymentToken: 'token', pin: '1234'),
         throwsA(isA<ApiException>()),
@@ -203,32 +205,41 @@ void main() {
   group('WalletRepositoryImpl', () {
     test('maps wallet statuses and preserves integer money', () async {
       final api = _RepositoryApiService();
-      final repository = WalletRepositoryImpl(WalletRemoteDataSource(api));
-      api.getResponses[BaseUrl.wallet()] = _walletJson('active');
+      final session = CurrentUserSession()..setUserId('user-1');
+      final repository = WalletRepositoryImpl(
+        WalletRemoteDataSource(api, session),
+      );
+      api.getResponses[BaseUrl.walletByOwner('user-1')] = _walletJson('active');
 
       final active = await repository.getWallet();
       expect(active.status, WalletStatus.active);
       expect(active.balance, Money.xof(50000));
 
-      api.postResponses[BaseUrl.walletUpdate()] = _walletJson('frozen');
+      api.patchResponses[BaseUrl.walletTopUp('wallet-1')] = _walletJson(
+        'frozen',
+      );
       final frozen = await repository.updateBalanceAfterPayment(
         amount: Money.xof(2500),
-        isCredit: false,
+        isCredit: true,
       );
       expect(frozen.status, WalletStatus.frozen);
-      expect(api.lastData, {'amount': 2500, 'type': 'DEBIT'});
+      expect(api.lastData, {'amount': 2500, 'currency': 'XOF'});
 
-      api.getResponses[BaseUrl.wallet()] = _walletJson('disabled');
+      api.getResponses[BaseUrl.walletByOwner('user-1')] = _walletJson(
+        'disabled',
+      );
       expect((await repository.refreshWallet()).status, WalletStatus.inactive);
     });
   });
 }
 
 Map<String, dynamic> _walletJson(String status) => {
-  'walletId': 'wallet-1',
-  'balance': {'amount': 50000, 'currency': 'XOF'},
+  'id': 'wallet-1',
+  'balance': 50000,
+  'currency': 'XOF',
+  'active': status == 'active',
   'status': status,
-  'lastUpdated': '2030-01-01T00:00:00.000Z',
+  'updatedAt': '2030-01-01T00:00:00.000Z',
 };
 
 class _RepositoryApiService extends ApiService {
@@ -236,6 +247,7 @@ class _RepositoryApiService extends ApiService {
 
   final Map<String, dynamic> getResponses = {};
   final Map<String, dynamic> postResponses = {};
+  final Map<String, dynamic> patchResponses = {};
   Map<String, dynamic>? lastData;
   Map<String, String>? lastQueryParameters;
   String? deletedEndpoint;
@@ -260,6 +272,17 @@ class _RepositoryApiService extends ApiService {
   }) async {
     lastData = data;
     return postResponses[endpoint];
+  }
+
+  @override
+  Future<dynamic> patch(
+    String endpoint,
+    Map<String, dynamic> data, {
+    Map<String, String>? headers,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    lastData = data;
+    return patchResponses[endpoint];
   }
 
   @override

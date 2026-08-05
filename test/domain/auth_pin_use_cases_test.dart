@@ -106,7 +106,12 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> sendOtp(PhoneNumber phone) async {}
 
   @override
-  Future<User> verifyOtp({required PhoneNumber phone, required String otp}) {
+  Future<User> verifyOtp({
+    required PhoneNumber phone,
+    required String otp,
+    String? pin,
+    String? pinConfirmation,
+  }) {
     throw UnimplementedError();
   }
 }

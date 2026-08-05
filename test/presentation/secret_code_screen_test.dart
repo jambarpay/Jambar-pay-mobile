@@ -94,5 +94,7 @@ class _RecordingAuthRepository implements AuthRepository {
   Future<User> verifyOtp({
     required PhoneNumber phone,
     required String otp,
+    String? pin,
+    String? pinConfirmation,
   }) async => User(id: 'user', name: 'Test', phone: phone);
 }

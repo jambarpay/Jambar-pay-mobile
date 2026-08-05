@@ -20,6 +20,11 @@ class PinScreen extends StatefulWidget {
     required this.onDigitTap,
     this.errorText,
     this.pinLockedUntil,
+    // A PinScreen represents a PIN by default. OTP screens explicitly pass
+    // six digits from the authentication flow.
+    this.totalDigits = 4,
+    this.title,
+    this.subtitle,
   });
 
   final String pin;
@@ -29,6 +34,9 @@ class PinScreen extends StatefulWidget {
   final ValueChanged<String> onDigitTap;
   final String? errorText;
   final DateTime? pinLockedUntil;
+  final int totalDigits;
+  final String? title;
+  final String? subtitle;
 
   @override
   State<PinScreen> createState() => _PinScreenState();
@@ -158,7 +166,7 @@ class _PinScreenState extends State<PinScreen> {
                                 const SizedBox(height: 34),
                                 Center(
                                   child: Text(
-                                    AppLocalizations.of(context).pinCode,
+                                    widget.title ?? AppLocalizations.of(context).pinCode,
                                     style: const TextStyle(
                                       fontSize: 21,
                                       fontWeight: FontWeight.w800,
@@ -167,7 +175,7 @@ class _PinScreenState extends State<PinScreen> {
                                 ),
                                 const SizedBox(height: 22),
                                 Text(
-                                  AppLocalizations.of(context).enterYourPinCode,
+                                    widget.subtitle ?? AppLocalizations.of(context).enterYourPinCode,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.black.withValues(alpha: 0.45),
@@ -175,7 +183,10 @@ class _PinScreenState extends State<PinScreen> {
                                 ),
                                 const SizedBox(height: 28),
                                 Center(
-                                  child: PinDots(length: widget.pin.length),
+                                  child: PinDots(
+                                    length: widget.pin.length,
+                                    total: widget.totalDigits,
+                                  ),
                                 ),
                                 if (widget.errorText != null) ...[
                                   const SizedBox(height: 16),

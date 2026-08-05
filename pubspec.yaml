@@ -21,6 +21,7 @@ dependencies:
   go_router: ^17.3.0
   qr_flutter: ^4.1.0
   flutter_secure_storage: ^10.3.1
+  url_launcher: ^6.3.2
   
   # State Management - BLoC
   flutter_bloc: ^8.1.3

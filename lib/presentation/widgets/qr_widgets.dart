@@ -115,18 +115,18 @@ class LargeQrCard extends StatelessWidget {
     required this.isDarkMode,
     required this.userProfile,
     this.scanResult,
+    this.employeeQrContent,
   });
 
   final bool isDarkMode;
   final UserProfileModel userProfile;
   final QRScanResultModel? scanResult;
+  final String? employeeQrContent;
 
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
-    final qrPayload =
-        scanResult?.token ??
-        'JAMBAR|EMPLOYEE|${userProfile.id}|${userProfile.phone}';
+    final qrPayload = scanResult?.token ?? employeeQrContent ?? '';
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth.isFinite
@@ -152,7 +152,11 @@ class LargeQrCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Expanded(child: QrBlock(data: qrPayload, borderRadius: 18)),
+              Expanded(
+                child: qrPayload.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : QrBlock(data: qrPayload, borderRadius: 18),
+              ),
               const SizedBox(height: 12),
               Text(
                 userProfile.name,

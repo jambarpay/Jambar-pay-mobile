@@ -29,6 +29,8 @@ class AppLocalizations {
       'languageChangedFrench': 'Langue changée : Français',
       'languageChangedEnglish': 'Langue changée : Anglais',
       'contactSupport': 'Contacter le support',
+      'supportUnavailable':
+          'Impossible d’ouvrir WhatsApp. Veuillez réessayer plus tard.',
       'email': 'Email : support@jambarpay.com',
       'phone': 'Téléphone : +221 33 123 45 67',
       'ok': 'OK',
@@ -39,7 +41,12 @@ class AppLocalizations {
       'logoutButton': 'Déconnexion',
       'darkMode': 'Sombre',
       'lightMode': 'Clair',
-      'changeSecretCode': 'Modifiez votre code secret',
+      'changeSecretCode': 'Modifier le code secret',
+      'notifications': 'Notifications',
+      'noNewNotifications': 'Aucune nouvelle notification.',
+      'switchToLightMode': 'Passer en mode clair',
+      'switchToDarkMode': 'Passer en mode sombre',
+      'selectedLanguage': 'Langue : {language}',
       'back': 'Retour',
       'home': 'Accueil',
       'history': 'Historique',
@@ -49,6 +56,7 @@ class AppLocalizations {
       'enterAmountToPay': 'Veuillez entrer le montant à payer',
       'availableBalanceTitle': 'Solde disponible',
       'availableBalance': 'Solde disponible : {amount}',
+      'nextTopUp': 'Recharge prévue le {date}',
       'amount': 'Montant',
       'pay': 'Payer',
       'invalidAmount': 'Veuillez saisir un montant valide.',
@@ -154,6 +162,7 @@ class AppLocalizations {
       'languageChangedFrench': 'Language changed: French',
       'languageChangedEnglish': 'Language changed: English',
       'contactSupport': 'Contact support',
+      'supportUnavailable': 'Unable to open WhatsApp. Please try again later.',
       'email': 'Email: support@jambarpay.com',
       'phone': 'Phone: +221 33 123 45 67',
       'ok': 'OK',
@@ -164,7 +173,12 @@ class AppLocalizations {
       'logoutButton': 'Logout',
       'darkMode': 'Dark',
       'lightMode': 'Light',
-      'changeSecretCode': 'Change your secret code',
+      'changeSecretCode': 'Change secret code',
+      'notifications': 'Notifications',
+      'noNewNotifications': 'No new notifications.',
+      'switchToLightMode': 'Switch to light mode',
+      'switchToDarkMode': 'Switch to dark mode',
+      'selectedLanguage': 'Language: {language}',
       'back': 'Back',
       'home': 'Home',
       'history': 'History',
@@ -174,6 +188,7 @@ class AppLocalizations {
       'enterAmountToPay': 'Please enter the amount to pay',
       'availableBalanceTitle': 'Available balance',
       'availableBalance': 'Available balance: {amount}',
+      'nextTopUp': 'Next top-up on {date}',
       'amount': 'Amount',
       'pay': 'Pay',
       'invalidAmount': 'Please enter a valid amount.',
@@ -291,6 +306,7 @@ class AppLocalizations {
   String get languageChangedFrench => _translate('languageChangedFrench');
   String get languageChangedEnglish => _translate('languageChangedEnglish');
   String get contactSupport => _translate('contactSupport');
+  String get supportUnavailable => _translate('supportUnavailable');
   String get email => _translate('email');
   String get phone => _translate('phone');
   String get ok => _translate('ok');
@@ -302,6 +318,12 @@ class AppLocalizations {
   String get darkMode => _translate('darkMode');
   String get lightMode => _translate('lightMode');
   String get changeSecretCode => _translate('changeSecretCode');
+  String get notifications => _translate('notifications');
+  String get noNewNotifications => _translate('noNewNotifications');
+  String get switchToLightMode => _translate('switchToLightMode');
+  String get switchToDarkMode => _translate('switchToDarkMode');
+  String selectedLanguage(String language) =>
+      _translateWithArgs('selectedLanguage', {'language': language});
   String get back => _translate('back');
   String get home => _translate('home');
   String get history => _translate('history');
@@ -312,6 +334,8 @@ class AppLocalizations {
   String get availableBalanceTitle => _translate('availableBalanceTitle');
   String availableBalance(String amount) =>
       _translateWithArgs('availableBalance', {'amount': amount});
+  String nextTopUp(String date) =>
+      _translateWithArgs('nextTopUp', {'date': date});
   String get amount => _translate('amount');
   String get pay => _translate('pay');
   String get invalidAmount => _translate('invalidAmount');

@@ -10,11 +10,20 @@ class AuthLocalDataSource {
   Future<Map<String, dynamic>> verifyOtp({
     required String phone,
     required String otp,
+    String? pin,
+    String? pinConfirmation,
   }) async {
     await Future.delayed(const Duration(milliseconds: 800));
 
-    if (otp != _currentPin) {
+    if (otp != '123456' && otp != _currentPin) {
       throw Exception('Code secret incorrect');
+    }
+    if (pin != null &&
+        (!RegExp(r'^\d{4}$').hasMatch(pin) || pin != pinConfirmation)) {
+      throw Exception('Le code PIN doit contenir 4 chiffres et être confirmé');
+    }
+    if (pin != null) {
+      _currentPin = pin;
     }
 
     return {
@@ -35,6 +44,10 @@ class AuthLocalDataSource {
     required String newPin,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    if (!RegExp(r'^\d{4}$').hasMatch(currentPin) ||
+        !RegExp(r'^\d{4}$').hasMatch(newPin)) {
+      throw Exception('Le code PIN doit contenir 4 chiffres.');
+    }
     if (currentPin != _currentPin) {
       throw Exception('Code secret actuel incorrect.');
     }
@@ -47,6 +60,9 @@ class AuthLocalDataSource {
     required String newPin,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
+    if (!RegExp(r'^\d{4}$').hasMatch(newPin)) {
+      throw Exception('Le code PIN doit contenir 4 chiffres.');
+    }
     if (verificationCode != _currentPin) {
       throw Exception('Code de vérification incorrect.');
     }

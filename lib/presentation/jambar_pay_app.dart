@@ -98,15 +98,47 @@ class JambarPayFlow extends StatelessWidget {
         } else if (state is AuthPhoneValid) {
           return _buildLoginScreen(context, state.formattedPhone);
         } else if (state is AuthPhoneLoading) {
-          return _buildPinScreen(context, state.phoneNumber);
+          return _buildPinScreen(
+            context,
+            state.phoneNumber,
+            totalDigits: 6,
+            title: 'Code OTP',
+            subtitle: 'Saisissez le code OTP à 6 chiffres',
+          );
         } else if (state is AuthPinEntry) {
-          return _buildPinScreen(context, state.phoneNumber, state.currentPin);
+          return _buildPinScreen(
+            context,
+            state.phoneNumber,
+            state.currentPin,
+            totalDigits: 6,
+            title: 'Code OTP',
+            subtitle: 'Saisissez le code OTP à 6 chiffres',
+          );
+        } else if (state is AuthPinSetupEntry) {
+          return _buildPinScreen(
+            context,
+            state.phoneNumber,
+            state.pin,
+            totalDigits: 4,
+            title: 'Créer votre code PIN',
+            subtitle: 'Choisissez un code PIN à 4 chiffres',
+          );
+        } else if (state is AuthPinSetupConfirmation) {
+          return _buildPinScreen(
+            context,
+            state.phoneNumber,
+            state.confirmation,
+            state.errorMessage,
+            totalDigits: 4,
+            title: 'Confirmer votre code PIN',
+            subtitle: 'Saisissez à nouveau votre code PIN',
+          );
         } else if (state is AuthPinLoading) {
-          return _buildPinScreen(context, state.phoneNumber, '');
+          return _buildPinScreen(context, state.phoneNumber, '', totalDigits: 4);
         } else if (state is AuthPinResetInProgress) {
-          return _buildPinScreen(context, state.phoneNumber, '');
+          return _buildPinScreen(context, state.phoneNumber, '', totalDigits: 4);
         } else if (state is AuthPinResetSuccess) {
-          return _buildPinScreen(context, state.phoneNumber, '');
+          return _buildPinScreen(context, state.phoneNumber, '', totalDigits: 4);
         } else if (state is AuthAuthenticated) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (Navigator.of(context).canPop()) {
@@ -132,6 +164,9 @@ class JambarPayFlow extends StatelessWidget {
               '',
               state.errorMessage,
               state.pinLockedUntil,
+              totalDigits: 6,
+              title: 'Code OTP',
+              subtitle: 'Saisissez le code OTP à 6 chiffres',
             );
           }
           return _buildLoginScreen(context, '');
@@ -168,7 +203,11 @@ class JambarPayFlow extends StatelessWidget {
     String pin = '',
     String? errorText,
     DateTime? pinLockedUntil,
-  ]) {
+  ], {
+    int totalDigits = 4,
+    String? title,
+    String? subtitle,
+  }) {
     return PinScreen(
       pin: pin,
       phoneNumber: phoneNumber,
@@ -183,6 +222,9 @@ class JambarPayFlow extends StatelessWidget {
       },
       errorText: errorText,
       pinLockedUntil: pinLockedUntil,
+      totalDigits: totalDigits,
+      title: title,
+      subtitle: subtitle,
     );
   }
 

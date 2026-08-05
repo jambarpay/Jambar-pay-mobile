@@ -22,18 +22,29 @@ class TransactionDto {
     return TransactionDto(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       type: json['type']?.toString() ?? 'DEBIT',
-      amount: MoneyDto.fromJson(_moneyJson(json['montant'] ?? json['amount'])),
+      amount: MoneyDto.fromJson(
+        _moneyJson(
+          json['montant'] ?? json['amount'],
+          currency: json['currency']?.toString(),
+        ),
+      ),
       label:
-          json['label']?.toString() ?? json['merchantName']?.toString() ?? '',
+          json['label']?.toString() ??
+          json['merchantName']?.toString() ??
+          json['restaurantName']?.toString() ??
+          json['restaurantId']?.toString() ??
+          '',
       date: json['createdAt']?.toString() ?? json['date']?.toString() ?? '',
       status:
           json['statut']?.toString() ?? json['status']?.toString() ?? 'pending',
     );
   }
 
-  static Map<String, dynamic> _moneyJson(Object? value) {
+  static Map<String, dynamic> _moneyJson(Object? value, {String? currency}) {
     if (value is Map) return Map<String, dynamic>.from(value);
-    if (value is num) return {'amount': value, 'currency': 'XOF'};
+    if (value is num) {
+      return {'amount': value, 'currency': currency ?? 'XOF'};
+    }
     return const {};
   }
 
@@ -49,7 +60,11 @@ class TransactionDto {
   }
 
   Transaction toDomain() {
-    final txType = type.toUpperCase() == 'CREDIT'
+    final normalizedType = type.toUpperCase();
+    final txType =
+        normalizedType == 'CREDIT' ||
+            normalizedType == 'WALLET_TOP_UP' ||
+            normalizedType == 'REFUND'
         ? TransactionType.credit
         : TransactionType.debit;
 
@@ -79,6 +94,9 @@ class TransactionDto {
     if (normalized.contains('failed') ||
         normalized.contains('echoue') ||
         normalized.contains('échec')) {
+      return TransactionStatus.failed;
+    }
+    if (normalized.contains('cancel')) {
       return TransactionStatus.failed;
     }
     return TransactionStatus.pending;

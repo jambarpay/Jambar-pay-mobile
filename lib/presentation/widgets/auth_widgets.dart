@@ -248,45 +248,9 @@ class PhoneField extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 24,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadius.xxxs),
-                        border: Border.all(color: AppColors.shadowStrong),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.xxs),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Row(
-                              children: const [
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: AppColors.senegalGreen,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: AppColors.senegalYellow,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: AppColors.senegalRed,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Icon(
-                              Icons.star,
-                              size: 8,
-                              color: AppColors.senegalGreen,
-                            ),
-                          ],
-                        ),
-                      ),
+                    const Text(
+                      '🇸🇳',
+                      style: TextStyle(fontSize: 22, height: 1),
                     ),
                     const SizedBox(width: 8),
                     const Text(
@@ -333,13 +297,14 @@ class PhoneField extends StatelessWidget {
 }
 
 class PinDots extends StatelessWidget {
-  const PinDots({super.key, required this.length});
+  const PinDots({super.key, required this.length, this.total = 4});
 
   final int length;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
-    const pinLength = 4;
+    final pinLength = total;
     final enteredDigits = length.clamp(0, pinLength);
     return Semantics(
       label: AppLocalizations.of(

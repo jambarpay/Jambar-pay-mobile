@@ -47,23 +47,32 @@ class WalletRepositoryImpl implements WalletRepository {
   }
 
   Wallet _mapToWallet(Map<String, dynamic> json) {
+    final rawBalance = json['balance'];
     final balance = Money(
-      amount: (json['balance']?['amount'] as num?)?.round() ?? 0,
-      currency: json['balance']?['currency'] ?? 'XOF',
+      amount: rawBalance is Map
+          ? (rawBalance['amount'] as num?)?.round() ?? 0
+          : (rawBalance as num?)?.round() ?? 0,
+      currency: rawBalance is Map
+          ? rawBalance['currency']?.toString() ?? 'XOF'
+          : json['currency']?.toString() ?? 'XOF',
     );
-    final statusStr = json['status']?.toString().toLowerCase() ?? 'active';
-    final status = statusStr == 'active'
+    final statusStr = json['status']?.toString().toLowerCase();
+    final status = json['active'] == true || statusStr == 'active'
         ? WalletStatus.active
         : statusStr == 'frozen'
         ? WalletStatus.frozen
         : WalletStatus.inactive;
 
     return Wallet(
-      walletId: json['walletId']?.toString() ?? '',
+      walletId: json['walletId']?.toString() ?? json['id']?.toString() ?? '',
       balance: balance,
       status: status,
       lastUpdated:
-          DateTime.tryParse(json['lastUpdated']?.toString() ?? '') ??
+          DateTime.tryParse(
+            json['lastUpdated']?.toString() ??
+                json['updatedAt']?.toString() ??
+                '',
+          ) ??
           DateTime.now(),
     );
   }

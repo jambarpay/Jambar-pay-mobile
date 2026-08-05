@@ -64,6 +64,35 @@ class AuthPinLoading extends AuthState {
   List<Object?> get props => [phoneNumber];
 }
 
+class AuthPinSetupEntry extends AuthState {
+  final String phoneNumber;
+  final String otp;
+  final String pin;
+
+  const AuthPinSetupEntry(this.phoneNumber, this.otp, [this.pin = '']);
+
+  @override
+  List<Object?> get props => [phoneNumber, otp, pin];
+}
+
+class AuthPinSetupConfirmation extends AuthState {
+  final String phoneNumber;
+  final String otp;
+  final String pin;
+  final String confirmation;
+  final String? errorMessage;
+
+  const AuthPinSetupConfirmation(
+    this.phoneNumber,
+    this.otp,
+    this.pin,
+    [this.confirmation = '', this.errorMessage],
+  );
+
+  @override
+  List<Object?> get props => [phoneNumber, otp, pin, confirmation, errorMessage];
+}
+
 class AuthPinResetInProgress extends AuthState {
   const AuthPinResetInProgress(this.phoneNumber);
 
