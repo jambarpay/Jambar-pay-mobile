@@ -128,7 +128,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onPinChanged(PinChanged event, Emitter<AuthState> emit) {
+  Future<void> _onPinChanged(PinChanged event, Emitter<AuthState> emit) async {
     _clearPinLockIfExpired();
     if (_isPinLocked) {
       _currentPin = '';
@@ -169,7 +169,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
 
     if (_confirmingSetupPin && _currentPin.length == 4) {
-      _completeEmployeeOnboarding(emit);
+      await _completeEmployeeOnboarding(emit);
       return;
     }
 

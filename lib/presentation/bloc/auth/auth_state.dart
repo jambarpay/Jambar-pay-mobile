@@ -85,9 +85,10 @@ class AuthPinSetupConfirmation extends AuthState {
   const AuthPinSetupConfirmation(
     this.phoneNumber,
     this.otp,
-    this.pin,
-    {String confirmation = '', String? errorMessage},
-  ) : confirmation = confirmation,
+    this.pin, {
+    String confirmation = '',
+    String? errorMessage,
+  }) : confirmation = confirmation,
       errorMessage = errorMessage;
 
   @override
