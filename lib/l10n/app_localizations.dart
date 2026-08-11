@@ -110,9 +110,18 @@ class AppLocalizations {
       'loginTitle': 'Connexion',
       'continueLabel': 'Continuer',
       'enterPhoneNumber': 'Entrez votre numéro de téléphone',
+      'yourNumber': 'Votre numéro',
+      'phoneOtpDescription':
+          'Nous vous enverrons un code à 6 chiffres pour vérifier votre identité.',
+      'receiveCode': 'Recevoir le code',
+      'whatsappCodeNote': 'Un code WhatsApp sera envoyé à ce numéro.',
       'phoneNumberLabel': 'Numéro de téléphone',
       'resetSecretCode': 'Réinitialiser le code secret',
       'verificationCode': 'Code de vérification',
+      'whatsappCode': 'Code reçu par WhatsApp',
+      'otpSentTo': 'Entrez le code envoyé au {phone}',
+      'verifyCode': 'Vérifier le code',
+      'resendWhatsapp': 'Pas reçu ? Renvoyer via WhatsApp',
       'verificationCodeShort': 'Vérification',
       'enterVerificationCode':
           'Saisissez le code OTP à 6 chiffres reçu pour continuer.',
@@ -240,9 +249,18 @@ class AppLocalizations {
       'loginTitle': 'Login',
       'continueLabel': 'Continue',
       'enterPhoneNumber': 'Enter your phone number',
+      'yourNumber': 'Your number',
+      'phoneOtpDescription':
+          'We will send you a 6-digit code to verify your identity.',
+      'receiveCode': 'Receive the code',
+      'whatsappCodeNote': 'A WhatsApp code will be sent to this number.',
       'phoneNumberLabel': 'Phone number',
       'resetSecretCode': 'Reset secret code',
       'verificationCode': 'Verification code',
+      'whatsappCode': 'Code received by WhatsApp',
+      'otpSentTo': 'Enter the code sent to {phone}',
+      'verifyCode': 'Verify the code',
+      'resendWhatsapp': 'Didn’t receive it? Resend via WhatsApp',
       'verificationCodeShort': 'Verification',
       'enterVerificationCode':
           'Enter the 6-digit OTP you received to continue.',
@@ -397,9 +415,18 @@ class AppLocalizations {
   String get loginTitle => _translate('loginTitle');
   String get continueLabel => _translate('continueLabel');
   String get enterPhoneNumber => _translate('enterPhoneNumber');
+  String get yourNumber => _translate('yourNumber');
+  String get phoneOtpDescription => _translate('phoneOtpDescription');
+  String get receiveCode => _translate('receiveCode');
+  String get whatsappCodeNote => _translate('whatsappCodeNote');
   String get phoneNumberLabel => _translate('phoneNumberLabel');
   String get resetSecretCode => _translate('resetSecretCode');
   String get verificationCode => _translate('verificationCode');
+  String get whatsappCode => _translate('whatsappCode');
+  String otpSentTo(String phone) =>
+      _translateWithArgs('otpSentTo', {'phone': phone});
+  String get verifyCode => _translate('verifyCode');
+  String get resendWhatsapp => _translate('resendWhatsapp');
   String get verificationCodeShort => _translate('verificationCodeShort');
   String get enterVerificationCode => _translate('enterVerificationCode');
   String accountForPhone(String phone) =>

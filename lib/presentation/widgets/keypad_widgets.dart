@@ -9,11 +9,15 @@ class NumericKeypad extends StatelessWidget {
     required this.onDigitTap,
     required this.onBackspace,
     this.foregroundColor = AppColors.lightPrimaryText,
+    this.buttonBackgroundColor,
+    this.buttonBorderColor,
   });
 
   final ValueChanged<String> onDigitTap;
   final VoidCallback onBackspace;
   final Color foregroundColor;
+  final Color? buttonBackgroundColor;
+  final Color? buttonBorderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +43,8 @@ class NumericKeypad extends StatelessWidget {
                           label: digit,
                           height: buttonHeight,
                           foregroundColor: foregroundColor,
+                          backgroundColor: buttonBackgroundColor,
+                          borderColor: buttonBorderColor,
                           onTap: () => onDigitTap(digit),
                         ),
                       ),
@@ -53,6 +59,8 @@ class NumericKeypad extends StatelessWidget {
                     label: '0',
                     height: buttonHeight,
                     foregroundColor: foregroundColor,
+                    backgroundColor: buttonBackgroundColor,
+                    borderColor: buttonBorderColor,
                     onTap: () => onDigitTap('0'),
                   ),
                 ),
@@ -62,6 +70,8 @@ class NumericKeypad extends StatelessWidget {
                     semanticLabel: AppLocalizations.of(context).deleteLastDigit,
                     height: buttonHeight,
                     foregroundColor: foregroundColor,
+                    backgroundColor: buttonBackgroundColor,
+                    borderColor: buttonBorderColor,
                     onTap: onBackspace,
                   ),
                 ),
@@ -83,6 +93,8 @@ class KeypadButton extends StatelessWidget {
     required this.height,
     required this.onTap,
     this.foregroundColor = AppColors.lightPrimaryText,
+    this.backgroundColor,
+    this.borderColor,
   });
 
   final String? label;
@@ -91,6 +103,8 @@ class KeypadButton extends StatelessWidget {
   final double height;
   final VoidCallback onTap;
   final Color foregroundColor;
+  final Color? backgroundColor;
+  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -108,17 +122,26 @@ class KeypadButton extends StatelessWidget {
         onTap: onTap,
         child: SizedBox(
           height: height,
-          child: Center(
-            child: icon != null
-                ? Icon(icon, size: 22, color: foregroundColor)
-                : Text(
-                    label ?? '',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: foregroundColor,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              border: borderColor == null
+                  ? null
+                  : Border.all(color: borderColor!),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Center(
+              child: icon != null
+                  ? Icon(icon, size: 18, color: foregroundColor)
+                  : Text(
+                      label ?? '',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: foregroundColor,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),

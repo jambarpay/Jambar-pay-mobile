@@ -23,6 +23,11 @@ final class MockApiService extends ApiService {
         'message': 'OTP sent',
         'data': {'otpCode': '123456', 'message': 'OTP sent via WhatsApp'},
       },
+      BaseUrl.authRegisterResend(): {
+        'success': true,
+        'message': 'OTP resent',
+        'data': {'otpCode': '123456', 'message': 'OTP resent via WhatsApp'},
+      },
       BaseUrl.authRegisterVerify(): {
         'success': true,
         'message': 'OTP verified. Account created.',

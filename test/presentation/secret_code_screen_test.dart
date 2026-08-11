@@ -54,11 +54,26 @@ void main() {
       ),
     );
 
-    expect(find.text('Code de vérification'), findsWidgets);
-    for (final digit in '12345656785678'.split('')) {
+    expect(find.text('Code reçu par WhatsApp'), findsOneWidget);
+    for (final digit in '123456'.split('')) {
       await tester.tap(find.byKey(ValueKey('keypad-$digit')));
       await tester.pump();
     }
+    await tester.tap(find.text('Vérifier le code'));
+    await tester.pump();
+
+    for (final digit in '5678'.split('')) {
+      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Continuer'));
+    await tester.pump();
+
+    for (final digit in '5678'.split('')) {
+      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Valider'));
     await tester.pumpAndSettle();
 
     expect(repository.resetCall, ('771234567', '123456', '5678'));

@@ -3,20 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
-import 'package:jambar_pay_mobile/design_system/tokens/app_durations.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
+import 'package:jambar_pay_mobile/domain/value_objects/phone_number.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_state.dart';
 
-import '../widgets/app_palette.dart';
-import '../widgets/auth_widgets.dart';
 import '../widgets/keypad_widgets.dart';
 
 enum SecretCodeFlowMode { change, reset }
 
-class SecretCodeScreen extends StatefulWidget {
+class SecretCodeScreen extends StatelessWidget {
   const SecretCodeScreen({
     super.key,
     required this.mode,
@@ -27,226 +25,71 @@ class SecretCodeScreen extends StatefulWidget {
   final String phoneNumber;
 
   @override
-  State<SecretCodeScreen> createState() => _SecretCodeScreenState();
+  Widget build(BuildContext context) {
+    // The change flow always confirms the phone number again. The forgot-PIN
+    // flow already has it from the login screen and starts with the OTP.
+    if (mode == SecretCodeFlowMode.reset && phoneNumber.isNotEmpty) {
+      return _OtpStep(
+        mode: mode,
+        phoneNumber: PhoneNumber(phoneNumber).digits,
+        sendOnOpen: true,
+      );
+    }
+
+    return _PhoneStep(mode: mode);
+  }
 }
 
-class _SecretCodeScreenState extends State<SecretCodeScreen> {
-  static const int _pinLength = 4;
+class _PhoneStep extends StatefulWidget {
+  const _PhoneStep({required this.mode});
 
-  int _stepIndex = 0;
-  String _verificationCode = '';
-  String _newPin = '';
-  String _confirmPin = '';
-  String? _errorMessage;
-  bool _isSubmitting = false;
-
-  bool get _isChangeMode => widget.mode == SecretCodeFlowMode.change;
-
-  int get _totalSteps => 3;
-
-  int get _activePinLength => _stepIndex == 0 ? 6 : _pinLength;
+  final SecretCodeFlowMode mode;
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.phoneNumber.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(_sendVerificationCode());
-      });
-    }
-  }
+  State<_PhoneStep> createState() => _PhoneStepState();
+}
 
-  Future<void> _sendVerificationCode() async {
-    try {
-      await context.read<AuthBloc>().requestOtpForPinReset(widget.phoneNumber);
-    } catch (error) {
-      if (mounted) {
-        setState(() => _errorMessage = error.toString());
-      }
-    }
-  }
+class _PhoneStepState extends State<_PhoneStep> {
+  String _phone = '';
+  String? _errorMessage;
+  bool _isSending = false;
+
+  bool get _canContinue => PhoneNumber(_phone).isValid && !_isSending;
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final palette = AppPalette(isDarkMode);
-    final bodyTextColor = isDarkMode
-        ? palette.primaryText
-        : AppColors.lightPrimaryText;
-    final hintTextColor = isDarkMode
-        ? palette.secondaryText
-        : Colors.black.withValues(alpha: 0.55);
-    final stepTitle = _stepTitle();
-    final stepDescription = _stepDescription();
+    final loc = AppLocalizations.of(context);
 
-    return Scaffold(
-      backgroundColor: palette.pageBackground,
-      body: Stack(
+    return _FlowFrame(
+      title: loc.yourNumber,
+      onBack: () => Navigator.of(context).pop(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AuthBackdrop(
-            backgroundAsset: 'assets/images/Bglogin.png',
-            topSectionHeight: 290,
+          Text(loc.phoneOtpDescription, style: _bodyTextStyle(context)),
+          const SizedBox(height: 28),
+          _PhoneInput(value: _phone),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 10),
+            _ErrorText(_errorMessage!),
+          ],
+          const SizedBox(height: 22),
+          _PrimaryButton(
+            label: loc.receiveCode,
+            onPressed: _canContinue ? () => unawaited(_sendOtp()) : null,
+            isLoading: _isSending,
           ),
-          SafeArea(
-            child: Column(
-              children: [
-                const BrandHeader(),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final keypadHeight = (constraints.maxHeight * 0.34).clamp(
-                        210.0,
-                        280.0,
-                      );
-
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: constraints.maxHeight,
-                          ),
-                          child: AuthCard(
-                            topMargin: 54,
-                            backgroundColor: isDarkMode
-                                ? palette.sectionContainer
-                                : Colors.white,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
-                                      icon: Icon(
-                                        Icons.arrow_back,
-                                        size: 22,
-                                        color: bodyTextColor,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      AppLocalizations.of(context).back,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: hintTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 22),
-                                Center(
-                                  child: Text(
-                                    _isChangeMode
-                                        ? AppLocalizations.of(
-                                            context,
-                                          ).changeSecretCode
-                                        : AppLocalizations.of(
-                                            context,
-                                          ).resetSecretCode,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      color: bodyTextColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Center(
-                                  child: Text(
-                                    widget.phoneNumber.isEmpty
-                                        ? AppLocalizations.of(
-                                            context,
-                                          ).setYourNewSecretCode
-                                        : AppLocalizations.of(
-                                            context,
-                                          ).accountForPhone(widget.phoneNumber),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: hintTextColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 26),
-                                Text(
-                                  stepTitle,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: bodyTextColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  stepDescription,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: hintTextColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 22),
-                                _StepProgress(
-                                  currentStep: _stepIndex,
-                                  totalSteps: _totalSteps,
-                                  isDarkMode: isDarkMode,
-                                ),
-                                const SizedBox(height: 24),
-                                Center(
-                                  child: PinDots(
-                                    length: _activePinValue.length,
-                                    total: _activePinLength,
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                if (_errorMessage != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      _errorMessage!,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                IgnorePointer(
-                                  ignoring: _isSubmitting,
-                                  child: AnimatedOpacity(
-                                    duration: AppDurations.fast,
-                                    opacity: _isSubmitting ? 0.45 : 1,
-                                    child: SizedBox(
-                                      height: keypadHeight.toDouble(),
-                                      child: NumericKeypad(
-                                        onDigitTap: _onDigitTap,
-                                        onBackspace: _onBackspace,
-                                        foregroundColor: bodyTextColor,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                if (_isSubmitting)
-                                  const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(top: 8),
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+          const SizedBox(height: 12),
+          _WhatsAppNote(text: loc.whatsappCodeNote),
+          const SizedBox(height: 42),
+          SizedBox(
+            height: 286,
+            child: NumericKeypad(
+              onDigitTap: _onDigitTap,
+              onBackspace: _onBackspace,
+              foregroundColor: AppColors.lightPrimaryText,
+              buttonBackgroundColor: AppColors.lightSurface,
+              buttonBorderColor: AppColors.lightBorder,
             ),
           ),
         ],
@@ -254,224 +97,629 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
     );
   }
 
-  String get _activePinValue {
-    return switch (_stepIndex) {
-      0 => _verificationCode,
-      1 => _newPin,
-      _ => _confirmPin,
-    };
-  }
-
-  void _setActivePinValue(String value) {
-    switch (_stepIndex) {
-      case 0:
-        _verificationCode = value;
-      case 1:
-        _newPin = value;
-      case 2:
-        _confirmPin = value;
-    }
-  }
-
   void _onDigitTap(String digit) {
-    if (_activePinValue.length >= _activePinLength) {
-      return;
-    }
-
+    if (_phone.length >= 9 || _isSending) return;
     setState(() {
       _errorMessage = null;
-      _setActivePinValue('$_activePinValue$digit');
+      _phone += digit;
     });
-
-    if (_activePinValue.length != _activePinLength) {
-      return;
-    }
-
-    if (_stepIndex < _totalSteps - 1) {
-      setState(() {
-        _stepIndex += 1;
-      });
-      return;
-    }
-
-    unawaited(_submit());
   }
 
   void _onBackspace() {
-    if (_activePinValue.isNotEmpty) {
-      setState(() {
-        _errorMessage = null;
-        _setActivePinValue(
-          _activePinValue.substring(0, _activePinValue.length - 1),
-        );
-      });
-      return;
-    }
-
-    if (_stepIndex == 0) {
-      return;
-    }
-
+    if (_phone.isEmpty || _isSending) return;
     setState(() {
       _errorMessage = null;
-      _stepIndex -= 1;
-      _setActivePinValue(
-        _activePinValue.substring(0, _activePinValue.length - 1),
-      );
+      _phone = _phone.substring(0, _phone.length - 1);
     });
   }
 
-  Future<void> _submit() async {
-    final newPin = _newPin;
-    final confirmPin = _confirmPin;
+  Future<void> _sendOtp() async {
+    if (!_canContinue) return;
 
-    if (newPin != confirmPin) {
+    setState(() {
+      _isSending = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await context.read<AuthBloc>().requestOtpForPinReset(_phone);
+      if (!mounted) return;
+      final completed = await Navigator.of(context).push<bool>(
+        _flowRoute<bool>(_OtpStep(mode: widget.mode, phoneNumber: _phone)),
+      );
+      if (completed == true && mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (error) {
+      if (mounted) setState(() => _errorMessage = _cleanError(error));
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+}
+
+class _OtpStep extends StatefulWidget {
+  const _OtpStep({
+    required this.mode,
+    required this.phoneNumber,
+    this.sendOnOpen = false,
+  });
+
+  final SecretCodeFlowMode mode;
+  final String phoneNumber;
+  final bool sendOnOpen;
+
+  @override
+  State<_OtpStep> createState() => _OtpStepState();
+}
+
+class _OtpStepState extends State<_OtpStep> {
+  String _otp = '';
+  String? _errorMessage;
+  bool _isSending = false;
+  bool _isVerifying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sendOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_sendOtp());
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final formattedPhone = PhoneNumber(widget.phoneNumber).formatted;
+
+    return _FlowFrame(
+      title: loc.whatsappCode,
+      onBack: () => Navigator.of(context).pop(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            loc.otpSentTo(formattedPhone),
+            style: _bodyTextStyle(context),
+          ),
+          const SizedBox(height: 34),
+          _CodeBoxes(value: _otp, total: 6),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            _ErrorText(_errorMessage!),
+          ],
+          const SizedBox(height: 24),
+          _PrimaryButton(
+            label: loc.verifyCode,
+            onPressed: _otp.length == 6 && !_isVerifying
+                ? () => unawaited(_verifyOtp())
+                : null,
+            isLoading: _isVerifying,
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton.icon(
+              onPressed: _isSending ? null : () => unawaited(_sendOtp()),
+              icon: const Icon(Icons.chat_rounded, size: 16),
+              label: Text(loc.resendWhatsapp),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.success,
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 36),
+          SizedBox(
+            height: 286,
+            child: IgnorePointer(
+              ignoring: _isVerifying,
+              child: NumericKeypad(
+                onDigitTap: _onDigitTap,
+                onBackspace: _onBackspace,
+                foregroundColor: AppColors.lightPrimaryText,
+                buttonBackgroundColor: AppColors.lightSurface,
+                buttonBorderColor: AppColors.lightBorder,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onDigitTap(String digit) {
+    if (_otp.length >= 6 || _isVerifying) return;
+    setState(() {
+      _errorMessage = null;
+      _otp += digit;
+    });
+  }
+
+  void _onBackspace() {
+    if (_otp.isEmpty || _isVerifying) return;
+    setState(() {
+      _errorMessage = null;
+      _otp = _otp.substring(0, _otp.length - 1);
+    });
+  }
+
+  Future<void> _sendOtp() async {
+    setState(() => _isSending = true);
+    try {
+      await context.read<AuthBloc>().requestOtpForPinReset(widget.phoneNumber);
+    } catch (error) {
+      if (mounted) setState(() => _errorMessage = _cleanError(error));
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    setState(() => _isVerifying = true);
+    final completed = await Navigator.of(context).push<bool>(
+      _flowRoute<bool>(
+        _PinStep(
+          phoneNumber: widget.phoneNumber,
+          verificationCode: _otp,
+          kind: _PinStepKind.newPin,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() => _isVerifying = false);
+    if (completed == true) Navigator.of(context).pop(true);
+  }
+}
+
+enum _PinStepKind { newPin, confirmation }
+
+class _PinStep extends StatefulWidget {
+  const _PinStep({
+    required this.phoneNumber,
+    required this.verificationCode,
+    required this.kind,
+    this.newPin,
+  });
+
+  final String phoneNumber;
+  final String verificationCode;
+  final _PinStepKind kind;
+  final String? newPin;
+
+  @override
+  State<_PinStep> createState() => _PinStepState();
+}
+
+class _PinStepState extends State<_PinStep> {
+  String _pin = '';
+  String? _errorMessage;
+  bool _isSubmitting = false;
+
+  bool get _isConfirmation => widget.kind == _PinStepKind.confirmation;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final title = _isConfirmation ? loc.confirmation : loc.newSecretCode;
+
+    return _FlowFrame(
+      title: title,
+      onBack: () => Navigator.of(context).pop(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _isConfirmation ? loc.enterNewSecretCodeAgain : loc.chooseNewSecretCode,
+            style: _bodyTextStyle(context),
+          ),
+          const SizedBox(height: 34),
+          _CodeBoxes(value: _pin, total: 4),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            _ErrorText(_errorMessage!),
+          ],
+          const SizedBox(height: 24),
+          _PrimaryButton(
+            label: _isConfirmation ? 'Valider' : loc.continueLabel,
+            onPressed: _pin.length == 4 && !_isSubmitting
+                ? () => unawaited(_continue())
+                : null,
+            isLoading: _isSubmitting,
+          ),
+          const SizedBox(height: 42),
+          SizedBox(
+            height: 286,
+            child: IgnorePointer(
+              ignoring: _isSubmitting,
+              child: NumericKeypad(
+                onDigitTap: _onDigitTap,
+                onBackspace: _onBackspace,
+                foregroundColor: AppColors.lightPrimaryText,
+                buttonBackgroundColor: AppColors.lightSurface,
+                buttonBorderColor: AppColors.lightBorder,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onDigitTap(String digit) {
+    if (_pin.length >= 4 || _isSubmitting) return;
+    setState(() {
+      _errorMessage = null;
+      _pin += digit;
+    });
+  }
+
+  void _onBackspace() {
+    if (_pin.isEmpty || _isSubmitting) return;
+    setState(() {
+      _errorMessage = null;
+      _pin = _pin.substring(0, _pin.length - 1);
+    });
+  }
+
+  Future<void> _continue() async {
+    if (!_isConfirmation) {
+      final completed = await Navigator.of(context).push<bool>(
+        _flowRoute<bool>(
+          _PinStep(
+            phoneNumber: widget.phoneNumber,
+            verificationCode: widget.verificationCode,
+            kind: _PinStepKind.confirmation,
+            newPin: _pin,
+          ),
+        ),
+      );
+      if (completed == true && mounted) Navigator.of(context).pop(true);
+      return;
+    }
+
+    if (widget.newPin != _pin) {
       setState(() {
         _errorMessage = AppLocalizations.of(context).codeMismatch;
-        _confirmPin = '';
-        _stepIndex = _totalSteps - 1;
+        _pin = '';
       });
       return;
     }
 
     setState(() => _isSubmitting = true);
-
     String? error;
     try {
       final bloc = context.read<AuthBloc>();
       bloc.add(
         PinResetRequested(
           phoneNumber: widget.phoneNumber,
-          verificationCode: _verificationCode,
-          newPin: newPin,
+          verificationCode: widget.verificationCode,
+          newPin: widget.newPin!,
         ),
       );
       final result = await bloc.stream.firstWhere(
         (state) => state is AuthPinResetSuccess || state is AuthFailure,
       );
-      if (result is AuthFailure) {
-        error = result.errorMessage;
-      }
+      if (result is AuthFailure) error = result.errorMessage;
     } catch (exception) {
-      error = exception.toString();
+      error = _cleanError(exception);
     }
 
     if (!mounted) return;
-
     if (error != null) {
       setState(() {
         _isSubmitting = false;
         _errorMessage = error;
-        _verificationCode = '';
-        _newPin = '';
-        _confirmPin = '';
-        _stepIndex = 0;
+        _pin = '';
       });
       return;
     }
 
     Navigator.of(context).pop(true);
   }
-
-  String _stepTitle() {
-    final loc = AppLocalizations.of(context);
-    if (_isChangeMode) {
-      return switch (_stepIndex) {
-        0 => loc.verificationCode,
-        1 => loc.newSecretCode,
-        _ => loc.confirmation,
-      };
-    }
-
-    return switch (_stepIndex) {
-      0 => loc.verificationCode,
-      1 => loc.newSecretCode,
-      _ => loc.confirmCode,
-    };
-  }
-
-  String _stepDescription() {
-    final loc = AppLocalizations.of(context);
-    if (_isChangeMode) {
-      return switch (_stepIndex) {
-        0 => loc.enterVerificationCode,
-        1 => loc.chooseNewSecretCode,
-        _ => loc.enterNewSecretCodeAgain,
-      };
-    }
-
-    return switch (_stepIndex) {
-      0 => loc.enterVerificationCode,
-      1 => loc.setYourNewSecretCode,
-      _ => loc.enterCodeAgain,
-    };
-  }
 }
 
-class _StepProgress extends StatelessWidget {
-  const _StepProgress({
-    required this.currentStep,
-    required this.totalSteps,
-    this.isDarkMode = false,
+class _FlowFrame extends StatelessWidget {
+  const _FlowFrame({
+    required this.title,
+    required this.child,
+    required this.onBack,
   });
 
-  final int currentStep;
-  final int totalSteps;
-  final bool isDarkMode;
+  final String title;
+  final Widget child;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppPalette(isDarkMode);
-    final loc = AppLocalizations.of(context);
-    final labels = [
-      loc.verificationCodeShort,
-      loc.newLabel,
-      loc.confirmationShort,
-    ];
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final background = isDarkMode ? AppColors.darkBackground : const Color(0xFFFCFCFD);
+    final foreground = isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+
+    return Scaffold(
+      backgroundColor: background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 20, 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: onBack,
+                    icon: Icon(Icons.arrow_back, color: foreground, size: 24),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 46,
+                      ),
+                      child: child,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhoneInput extends StatelessWidget {
+  const _PhoneInput({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final foreground = isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+    final display = value.isEmpty ? '77 XXX XX XX' : _formatPartialPhone(value);
+
+    return Container(
+      height: 58,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkControl : AppColors.lightSurface,
+        border: Border.all(color: AppColors.lightBorder),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          const Text('🇸🇳', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Text(
+            '+221',
+            style: TextStyle(
+              color: foreground,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(width: 1, height: 24, color: AppColors.lightBorder),
+          const SizedBox(width: 12),
+          Text(
+            display,
+            style: TextStyle(
+              color: value.isEmpty
+                  ? foreground.withValues(alpha: 0.35)
+                  : foreground,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: .4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CodeBoxes extends StatelessWidget {
+  const _CodeBoxes({required this.value, required this.total});
+
+  final String value;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final foreground = isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+    final border = isDarkMode ? AppColors.darkBorder : AppColors.lightBorder;
 
     return Row(
-      children: List.generate(totalSteps, (index) {
-        final isActive = index == currentStep;
-        final isComplete = index < currentStep;
-
+      children: List.generate(total, (index) {
+        final filled = index < value.length;
+        final active = index == value.length && value.length < total;
         return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: index == totalSteps - 1 ? 0 : 8),
-            child: Column(
-              children: [
-                AnimatedContainer(
-                  duration: AppDurations.fast,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isComplete || isActive
-                        ? palette.accent
-                        : (isDarkMode
-                              ? AppColors.darkProgress
-                              : AppColors.lightProgress),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  labels[index],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    color: isActive
-                        ? (isDarkMode
-                              ? palette.primaryText
-                              : AppColors.lightPrimaryText)
-                        : (isDarkMode
-                              ? palette.secondaryText
-                              : AppColors.lightMutedText),
-                  ),
-                ),
-              ],
+          child: Container(
+            height: 58,
+            margin: EdgeInsets.only(right: index == total - 1 ? 0 : 7),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: filled || active
+                  ? (isDarkMode ? AppColors.darkControl : AppColors.brandSurfaceSoft)
+                  : (isDarkMode ? AppColors.darkTile : AppColors.lightSurface),
+              border: Border.all(
+                color: active ? AppColors.brand : border,
+                width: active ? 1.5 : 1,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              filled ? value[index] : '',
+              style: TextStyle(
+                color: foreground,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         );
       }),
     );
   }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.brand,
+          disabledBackgroundColor: AppColors.brand.withValues(alpha: 0.35),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _WhatsAppNote extends StatelessWidget {
+  const _WhatsAppNote({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.chat_rounded, color: AppColors.success, size: 15),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkSecondaryText
+                  : AppColors.lightSecondaryText,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  const _ErrorText(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      style: const TextStyle(
+        color: AppColors.error,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+TextStyle _bodyTextStyle(BuildContext context) {
+  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  return TextStyle(
+    color: isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText,
+    fontSize: 13,
+    height: 1.45,
+  );
+}
+
+String _formatPartialPhone(String value) {
+  final digits = value.replaceAll(RegExp(r'\D'), '');
+  final parts = <String>[];
+  if (digits.isNotEmpty) {
+    parts.add(digits.substring(0, digits.length < 2 ? digits.length : 2));
+  }
+  if (digits.length > 2) {
+    parts.add(digits.substring(2, digits.length < 5 ? digits.length : 5));
+  }
+  if (digits.length > 5) {
+    parts.add(digits.substring(5, digits.length < 7 ? digits.length : 7));
+  }
+  if (digits.length > 7) {
+    parts.add(digits.substring(7, digits.length < 9 ? digits.length : 9));
+  }
+  return parts.join(' ');
+}
+
+String _cleanError(Object error) {
+  return error.toString().replaceFirst('Exception: ', '');
+}
+
+PageRoute<T> _flowRoute<T>(Widget child) {
+  return PageRouteBuilder<T>(
+    pageBuilder: (context, animation, secondaryAnimation) => child,
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+  );
 }
