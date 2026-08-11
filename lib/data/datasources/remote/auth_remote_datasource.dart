@@ -15,9 +15,7 @@ class AuthRemoteDataSource {
   }) async {
     // Employees are provisioned by their enterprise. The mobile app only
     // requests a new OTP for an already-provisioned employee account.
-    await apiService.post(BaseUrl.authRegisterResend(), {
-      'phoneNumber': phone,
-    });
+    await apiService.post(BaseUrl.authRegisterResend(), {'phoneNumber': phone});
   }
 
   Future<Map<String, dynamic>> verifyOtp({
@@ -31,7 +29,9 @@ class AuthRemoteDataSource {
     }
     if (pinConfirmation != null &&
         !RegExp(r'^\d{4}$').hasMatch(pinConfirmation)) {
-      throw const ApiException('La confirmation du PIN doit contenir 4 chiffres.');
+      throw const ApiException(
+        'La confirmation du PIN doit contenir 4 chiffres.',
+      );
     }
     if ((pin == null) != (pinConfirmation == null) ||
         (pin != null && pin != pinConfirmation)) {
@@ -89,6 +89,38 @@ class AuthRemoteDataSource {
     return responseMap;
   }
 
+  Future<Map<String, dynamic>> loginWithPin({
+    required String phone,
+    required String pin,
+  }) async {
+    final response = await apiService.post(BaseUrl.authEmployeeLogin(), {
+      'phoneNumber': phone,
+      'pin': pin,
+    });
+    if (response is! Map) {
+      throw const ApiException('Invalid login response format');
+    }
+
+    final envelope = Map<String, dynamic>.from(response);
+    final responseMap = envelope['data'] is Map
+        ? Map<String, dynamic>.from(envelope['data'] as Map)
+        : envelope;
+    final accessToken = responseMap['accessToken']?.toString();
+    if (accessToken == null || accessToken.isEmpty) {
+      throw const ApiException('Invalid login response');
+    }
+
+    apiService.setToken(accessToken);
+    await sessionStorage.saveTokens(accessToken: accessToken);
+
+    final profile = responseMap['profile'];
+    if (profile is! Map) {
+      throw const ApiException('Invalid user response format');
+    }
+    final profileMap = Map<String, dynamic>.from(profile);
+    return {'id': profileMap['id'], 'name': profileMap['name'], 'phone': phone};
+  }
+
   Future<String> refreshToken(String refreshToken) async {
     throw const ApiException(
       'Le backend actuel ne fournit pas de renouvellement de session.',
@@ -109,8 +141,14 @@ class AuthRemoteDataSource {
     required String verificationCode,
     required String newPin,
   }) async {
-    throw const ApiException(
-      'Le backend actuel ne fournit pas de réinitialisation du code secret.',
+    if (!RegExp(r'^\d{6}$').hasMatch(verificationCode)) {
+      throw const ApiException('Le code OTP doit contenir 6 chiffres.');
+    }
+    await verifyOtp(
+      phone: phone,
+      otp: verificationCode,
+      pin: newPin,
+      pinConfirmation: newPin,
     );
   }
 

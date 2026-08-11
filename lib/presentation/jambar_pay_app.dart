@@ -101,18 +101,18 @@ class JambarPayFlow extends StatelessWidget {
           return _buildPinScreen(
             context,
             state.phoneNumber,
-            totalDigits: 6,
-            title: 'Code OTP',
-            subtitle: 'Saisissez le code OTP à 6 chiffres',
+            totalDigits: 4,
+            title: 'Code PIN',
+            subtitle: 'Saisissez votre code PIN à 4 chiffres',
           );
         } else if (state is AuthPinEntry) {
           return _buildPinScreen(
             context,
             state.phoneNumber,
             pin: state.currentPin,
-            totalDigits: 6,
-            title: 'Code OTP',
-            subtitle: 'Saisissez le code OTP à 6 chiffres',
+            totalDigits: 4,
+            title: 'Code PIN',
+            subtitle: 'Saisissez votre code PIN à 4 chiffres',
           );
         } else if (state is AuthPinSetupEntry) {
           return _buildPinScreen(
@@ -163,9 +163,9 @@ class JambarPayFlow extends StatelessWidget {
               state.phoneNumber,
               errorText: state.errorMessage,
               pinLockedUntil: state.pinLockedUntil,
-              totalDigits: 6,
-              title: 'Code OTP',
-              subtitle: 'Saisissez le code OTP à 6 chiffres',
+              totalDigits: 4,
+              title: 'Code PIN',
+              subtitle: 'Saisissez votre code PIN à 4 chiffres',
             );
           }
           return _buildLoginScreen(context, '');

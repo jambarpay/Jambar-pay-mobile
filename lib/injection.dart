@@ -23,6 +23,7 @@ import 'domain/repositories/payment_repository.dart';
 import 'domain/repositories/restaurant_repository.dart';
 import 'domain/use_cases/auth/send_otp.dart';
 import 'domain/use_cases/auth/verify_otp.dart';
+import 'domain/use_cases/auth/login_with_pin.dart';
 import 'domain/use_cases/auth/change_pin.dart';
 import 'domain/use_cases/auth/logout.dart';
 import 'domain/use_cases/auth/reset_pin.dart';
@@ -126,9 +127,8 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   );
   sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());
   sl.registerLazySingleton<TransactionRemoteDataSource>(
-    () => TransactionRemoteDataSource(
-      sl<ApiService>(instanceName: _paymentApi),
-    ),
+    () =>
+        TransactionRemoteDataSource(sl<ApiService>(instanceName: _paymentApi)),
   );
   sl.registerLazySingleton<WalletRemoteDataSource>(
     () => WalletRemoteDataSource(
@@ -171,6 +171,7 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
 
   sl.registerFactory(() => SendOtp(sl<AuthRepository>()));
   sl.registerFactory(() => VerifyOtp(sl<AuthRepository>()));
+  sl.registerFactory(() => LoginWithPin(sl<AuthRepository>()));
   sl.registerFactory(() => ChangePin(sl<AuthRepository>()));
   sl.registerFactory(() => ResetPin(sl<AuthRepository>()));
   sl.registerFactory(() => Logout(sl<AuthRepository>()));
@@ -195,6 +196,7 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
     () => AuthBloc(
       sendOtp: sl<SendOtp>(),
       verifyOtp: sl<VerifyOtp>(),
+      loginWithPin: sl<LoginWithPin>(),
       logout: sl<Logout>(),
       resetPin: sl<ResetPin>(),
       messages: sl<AuthMessageProvider>(),

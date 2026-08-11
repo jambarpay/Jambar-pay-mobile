@@ -12,6 +12,7 @@ import '../widgets/app_palette.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/transaction_widgets.dart';
+import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
 
 TransactionItemModel _toTransactionItemModel(
   Transaction transaction,
@@ -78,20 +79,53 @@ class HomeDashboard extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(22, 58, 22, 18),
+          padding: const EdgeInsets.fromLTRB(22, 48, 22, 18),
           decoration: BoxDecoration(color: palette.headerBackground),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                appState.userProfile.name,
-                style: TextStyle(
-                  color: palette.onHeader,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Bonjour',
+                          style: TextStyle(
+                            color: palette.onHeaderMuted,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          appState.userProfile.name,
+                          style: TextStyle(
+                            color: palette.onHeader,
+                            fontSize: 25,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.brand,
+                    child: Text(
+                      appState.userProfile.name.isEmpty
+                          ? '?'
+                          : appState.userProfile.name[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               BalanceCard(
                 isDarkMode: isDarkMode,
                 wallet: appState.wallet,
@@ -108,67 +142,68 @@ class HomeDashboard extends StatelessWidget {
         Expanded(
           child: ColoredBox(
             color: palette.pageBackground,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isDarkMode ? 12 : 0,
-                isDarkMode ? 14 : 0,
-                isDarkMode ? 12 : 0,
-                0,
-              ),
-              child: Container(
-                color: isDarkMode
-                    ? palette.sectionContainer
-                    : Colors.transparent,
-                child: Column(
-                  children: [
-                    SectionHeader(
-                      title: loc.recentTransactions,
-                      actionLabel: loc.viewAll,
-                      onActionTap: () {
-                        final transactionBloc = context.read<TransactionBloc>();
-                        final transactionState = transactionBloc.state;
-
-                        if (transactionState is TransactionLoaded) {
-                          transactionBloc.add(const SearchCleared());
-                          transactionBloc.add(
-                            const TransactionsFilterChanged('all'),
-                          );
-                        } else {
-                          transactionBloc.add(
-                            const TransactionsLoadRequested(),
-                          );
-                        }
-
-                        onTabSelected(1);
-                      },
-                      isDarkMode: isDarkMode,
-                    ),
-                    Expanded(
-                      child: BlocBuilder<TransactionBloc, TransactionState>(
-                        builder: (context, state) {
-                          final recentTransactions = state is TransactionLoaded
-                              ? state.allTransactions
-                                    .take(6)
-                                    .map(
-                                      (transaction) => _toTransactionItemModel(
-                                        transaction,
-                                        context,
-                                      ),
-                                    )
-                                    .toList()
-                              : const <TransactionItemModel>[];
-
-                          return TransactionsList(
-                            transactions: recentTransactions,
-                            showAmount: true,
-                            isDarkMode: isDarkMode,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+            child: Column(
+              children: [
+                QuickActionGrid(
+                  scanLabel: loc.scan,
+                  restaurantsLabel: loc.restaurants,
+                  historyLabel: loc.history,
+                  statementLabel: 'Relevé',
+                  onScan: () async {
+                    final selectedTab = await context.push<int>(AppRoutes.qr);
+                    if (selectedTab != null && context.mounted) {
+                      onTabSelected(selectedTab);
+                    }
+                  },
+                  onRestaurants: () => onTabSelected(2),
+                  onHistory: () => onTabSelected(1),
+                  onStatement: () => onTabSelected(1),
+                  isDarkMode: isDarkMode,
                 ),
-              ),
+                SectionHeader(
+                  title: loc.recentTransactions,
+                  actionLabel: loc.viewAll,
+                  onActionTap: () {
+                    final transactionBloc = context.read<TransactionBloc>();
+                    final transactionState = transactionBloc.state;
+
+                    if (transactionState is TransactionLoaded) {
+                      transactionBloc.add(const SearchCleared());
+                      transactionBloc.add(
+                        const TransactionsFilterChanged('all'),
+                      );
+                    } else {
+                      transactionBloc.add(const TransactionsLoadRequested());
+                    }
+
+                    onTabSelected(1);
+                  },
+                  isDarkMode: isDarkMode,
+                ),
+                Expanded(
+                  child: BlocBuilder<TransactionBloc, TransactionState>(
+                    builder: (context, state) {
+                      final recentTransactions = state is TransactionLoaded
+                          ? state.allTransactions
+                                .take(6)
+                                .map(
+                                  (transaction) => _toTransactionItemModel(
+                                    transaction,
+                                    context,
+                                  ),
+                                )
+                                .toList()
+                          : const <TransactionItemModel>[];
+
+                      return TransactionsList(
+                        transactions: recentTransactions,
+                        showAmount: true,
+                        isDarkMode: isDarkMode,
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),

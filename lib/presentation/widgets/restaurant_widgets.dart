@@ -295,12 +295,22 @@ class _SearchBarState extends State<SearchBar> {
     final palette = AppPalette(widget.isDarkMode);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       decoration: BoxDecoration(
-        color: widget.isDarkMode
-            ? palette.tileBackground
-            : AppColors.lightControl,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: widget.isDarkMode ? palette.tileBackground : Colors.white,
+        border: Border.all(
+          color: widget.isDarkMode
+              ? AppColors.darkBorder
+              : AppColors.lightBorder,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowSubtle,
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: TextField(
         controller: _controller,
@@ -318,7 +328,7 @@ class _SearchBarState extends State<SearchBar> {
             fontSize: 13.5,
           ),
           prefixIcon: Icon(
-            Icons.search,
+            Icons.search_rounded,
             color: widget.isDarkMode
                 ? AppColors.purpleAccent
                 : AppColors.lightHint,
@@ -346,31 +356,39 @@ class RestaurantCard extends StatelessWidget {
     final palette = AppPalette(isDarkMode);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? palette.tileBackground
-            : AppColors.lightSurfaceVariant,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: isDarkMode ? palette.tileBackground : Colors.white,
+        border: Border.all(
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowSubtle,
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: isDarkMode
                   ? AppColors.darkWarmSurface
                   : AppColors.brandSurfaceSoft,
-              borderRadius: BorderRadius.circular(AppRadius.xs),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: const Icon(
               Icons.restaurant_outlined,
-              size: 16,
+              size: 22,
               color: AppColors.brand,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,7 +396,7 @@ class RestaurantCard extends StatelessWidget {
                 Text(
                   restaurant.name,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: isDarkMode ? palette.primaryText : null,
                   ),
@@ -417,7 +435,7 @@ class RestaurantCard extends StatelessWidget {
                     : AppLocalizations.of(context).closed,
                 style: TextStyle(
                   color: restaurant.isOpen ? AppColors.success : Colors.red,
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -4,7 +4,6 @@ import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
-import 'qr_widgets.dart';
 import '../utils/localized_view_data.dart';
 
 class BalanceCard extends StatefulWidget {
@@ -38,25 +37,35 @@ class _BalanceCardState extends State<BalanceCard> {
             .toDouble();
 
         return Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: widget.isDarkMode ? AppColors.brand : AppColors.darkBalance,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            color: AppColors.brandDark,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _BalanceInfo(
-                  wallet: widget.wallet,
-                  palette: palette,
-                  isBalanceVisible: _isBalanceVisible,
-                  onToggleVisibility: _toggleBalanceVisibility,
-                ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 12, 16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF633A), Color(0xFFFF8A5E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              SizedBox(width: isCompact ? 8 : 12),
-              _QrActionButton(width: qrWidth, onTap: widget.onQrTap),
-            ],
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _BalanceInfo(
+                    wallet: widget.wallet,
+                    palette: palette,
+                    isBalanceVisible: _isBalanceVisible,
+                    onToggleVisibility: _toggleBalanceVisibility,
+                  ),
+                ),
+                SizedBox(width: isCompact ? 8 : 12),
+                _QrActionButton(width: qrWidth, onTap: widget.onQrTap),
+              ],
+            ),
           ),
         );
       },
@@ -166,23 +175,21 @@ class _QrActionButton extends StatelessWidget {
         ),
         child: Column(
           children: [
-            const QrBlock(data: 'JAMBAR|BALANCE|ENTRY', borderRadius: 10),
-            const SizedBox(height: 10),
+            Icon(
+              Icons.photo_camera_outlined,
+              size: 24,
+              color: AppColors.brandDark,
+            ),
+            const SizedBox(height: 5),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.photo_camera_outlined, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    AppLocalizations.of(context).scan,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+              child: Text(
+                AppLocalizations.of(context).scan,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.brandDark,
+                ),
               ),
             ),
           ],

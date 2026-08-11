@@ -34,6 +34,22 @@ class AuthLocalDataSource {
     };
   }
 
+  Future<Map<String, dynamic>> loginWithPin({
+    required String phone,
+    required String pin,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (pin != _currentPin) {
+      throw Exception('Code PIN incorrect.');
+    }
+    return {
+      'id': _testUserId,
+      'name': _testUserName,
+      'phone': phone,
+      'avatarUrl': null,
+    };
+  }
+
   Future<String> refreshToken(String refreshToken) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return 'mock-refresh-token-${DateTime.now().millisecondsSinceEpoch}';
@@ -63,7 +79,7 @@ class AuthLocalDataSource {
     if (!RegExp(r'^\d{4}$').hasMatch(newPin)) {
       throw Exception('Le code PIN doit contenir 4 chiffres.');
     }
-    if (verificationCode != _currentPin) {
+    if (verificationCode != '123456' && verificationCode != _currentPin) {
       throw Exception('Code de vérification incorrect.');
     }
     _currentPin = newPin;

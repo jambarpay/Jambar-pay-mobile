@@ -333,6 +333,29 @@ final class MockApiService extends ApiService {
   }) async {
     await Future.delayed(Duration(milliseconds: 800)); // Simulate delay
 
+    if (endpoint == BaseUrl.authEmployeeLogin()) {
+      if (data['pin']?.toString() != '1234') {
+        throw const ApiException('Téléphone ou code PIN incorrect.');
+      }
+      return {
+        'success': true,
+        'message': 'Authentication successful',
+        'data': {
+          'accessToken': 'mock_employee_access_token',
+          'tokenType': 'Bearer',
+          'expiresAt': DateTime.now()
+              .add(const Duration(hours: 1))
+              .millisecondsSinceEpoch,
+          'profile': {
+            'id': 'test-user-123',
+            'name': 'Abdoulaye Diallo',
+            'email': '771234567@employees.jambaarpay.com',
+            'role': 'EMPLOYE',
+          },
+        },
+      };
+    }
+
     if (endpoint == BaseUrl.payWithQr()) {
       final now = DateTime.now();
       return {

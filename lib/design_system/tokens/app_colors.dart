@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const brand = Color(0xFFF57C21);
-  static const brandDark = Color(0xFF1C1A33);
+  static const brand = Color(0xFFFF6B3D);
+  static const brandDark = Color(0xFF17182F);
   static const success = Color(0xFF11B777);
   static const warning = Color(0xFFF5A623);
   static const error = Color(0xFFD32F2F);
 
-  static const lightBackground = Color(0xFFF7F7FB);
+  static const lightBackground = Color(0xFFF4F5F9);
   static const lightSurface = Colors.white;
-  static const lightSurfaceVariant = Color(0xFFEFEFFF);
-  static const lightControl = Color(0xFFEAE9FF);
-  static const lightTile = Color(0xFFF0EEFF);
+  static const lightSurfaceVariant = Color(0xFFFFFFFF);
+  static const lightControl = Color(0xFFFFFFFF);
+  static const lightTile = Color(0xFFFFFFFF);
   static const lightPrimaryText = brandDark;
-  static const lightSecondaryText = Color(0xFF6B6884);
-  static const lightMutedText = Color(0xFF8A8898);
-  static const lightBorder = Color(0xFFCBC9D3);
+  static const lightSecondaryText = Color(0xFF747681);
+  static const lightMutedText = Color(0xFF9699A4);
+  static const lightBorder = Color(0xFFE4E5EB);
 
   static const darkBackground = Color(0xFF17162B);
   static const darkHeader = brandDark;
@@ -69,7 +69,7 @@ abstract final class AppColors {
   static const lightMapEmpty = Color(0xFFF3F2FB);
   static const lightThumb = Color(0xFFF4F4F4);
   static const senegalYellow = Color(0xFFFCD116);
-  static const brandSurface = Color(0xFFFFE0CC);
-  static const brandSurfaceSoft = Color(0xFFFFEFE5);
-  static const brandSurfaceMuted = Color(0xFFFFF1E6);
+  static const brandSurface = Color(0xFFFFE8DF);
+  static const brandSurfaceSoft = Color(0xFFFFF0EB);
+  static const brandSurfaceMuted = Color(0xFFFFF5F1);
 }

@@ -11,6 +11,8 @@ abstract class AuthRepository {
     String? pinConfirmation,
   });
 
+  Future<User> loginWithPin({required PhoneNumber phone, required String pin});
+
   Future<String> refreshToken(String refreshToken);
   Future<void> changePin({required String currentPin, required String newPin});
   Future<void> resetPin({

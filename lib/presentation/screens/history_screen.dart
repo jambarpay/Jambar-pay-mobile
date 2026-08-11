@@ -53,9 +53,18 @@ String _formatDate(DateTime date, BuildContext context) {
 }
 
 class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key, required this.isDarkMode});
+  const HistoryScreen({
+    super.key,
+    required this.isDarkMode,
+    this.userProfile,
+    this.wallet,
+    this.onQrTap,
+  });
 
   final bool isDarkMode;
+  final UserProfileModel? userProfile;
+  final WalletSummaryModel? wallet;
+  final VoidCallback? onQrTap;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +72,14 @@ class HistoryScreen extends StatelessWidget {
 
     return Column(
       children: [
+        if (userProfile != null)
+          EmployeeHeroHeader(
+            userProfile: userProfile!,
+            wallet: wallet,
+            onQrTap: onQrTap ?? () {},
+            isDarkMode: isDarkMode,
+            showBalanceCard: false,
+          ),
         SubPageHeader(
           title: AppLocalizations.of(context).history,
           onBackEnabled: false,

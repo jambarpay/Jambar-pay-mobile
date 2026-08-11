@@ -5,16 +5,17 @@ import 'auth_message_provider.dart';
 import '../../../domain/value_objects/phone_number.dart';
 import '../../../domain/use_cases/auth/send_otp.dart';
 import '../../../domain/use_cases/auth/verify_otp.dart';
+import '../../../domain/use_cases/auth/login_with_pin.dart';
 import '../../../domain/use_cases/auth/logout.dart';
 import '../../../domain/use_cases/auth/reset_pin.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  static const int _otpLength = 6;
   static const int _maxPinAttempts = 5;
   static const Duration _pinLockDuration = Duration(minutes: 2);
 
   final SendOtp _sendOtp;
   final VerifyOtp _verifyOtp;
+  final LoginWithPin _loginWithPin;
   final Logout _logout;
   final ResetPin _resetPin;
   final AuthMessageProvider _messages;
@@ -31,11 +32,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
     required SendOtp sendOtp,
     required VerifyOtp verifyOtp,
+    required LoginWithPin loginWithPin,
     required Logout logout,
     required ResetPin resetPin,
     required AuthMessageProvider messages,
   }) : _sendOtp = sendOtp,
        _verifyOtp = verifyOtp,
+       _loginWithPin = loginWithPin,
        _logout = logout,
        _resetPin = resetPin,
        _messages = messages,
@@ -119,13 +122,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    emit(AuthPhoneLoading(_currentPhone));
-    try {
-      await _sendOtp(phone);
-      emit(AuthPinEntry(phone.formatted));
-    } catch (e) {
-      emit(AuthPhoneInvalid(e.toString(), _currentPhone));
-    }
+    // OTP is reserved for onboarding and PIN reset/change. Normal mobile
+    // authentication uses the employee PIN only.
+    _currentPin = '';
+    emit(AuthPinEntry(phone.formatted));
   }
 
   Future<void> _onPinChanged(PinChanged event, Emitter<AuthState> emit) async {
@@ -138,7 +138,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    final maxLength = _settingUpPin || _confirmingSetupPin ? 4 : _otpLength;
+    final maxLength = 4;
     final incoming = event.pin;
     if (incoming.isEmpty) return;
 
@@ -147,11 +147,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         ? combined.substring(0, maxLength)
         : combined;
 
-    if (!_settingUpPin && !_confirmingSetupPin && _currentPin.length == _otpLength) {
-      _otpCode = _currentPin;
-      _currentPin = '';
-      _settingUpPin = true;
-      emit(AuthPinSetupEntry(PhoneNumber(_currentPhone).formatted, _otpCode));
+    if (!_settingUpPin && !_confirmingSetupPin && _currentPin.length == 4) {
+      await _completePinLogin(emit);
       return;
     }
 
@@ -160,11 +157,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _currentPin = '';
       _settingUpPin = false;
       _confirmingSetupPin = true;
-      emit(AuthPinSetupConfirmation(
-        PhoneNumber(_currentPhone).formatted,
-        _otpCode,
-        _setupPin,
-      ));
+      emit(
+        AuthPinSetupConfirmation(
+          PhoneNumber(_currentPhone).formatted,
+          _otpCode,
+          _setupPin,
+        ),
+      );
       return;
     }
 
@@ -175,14 +174,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     // update state to reflect entered digits
     if (_settingUpPin) {
-      emit(AuthPinSetupEntry(PhoneNumber(_currentPhone).formatted, _otpCode, _currentPin));
+      emit(
+        AuthPinSetupEntry(
+          PhoneNumber(_currentPhone).formatted,
+          _otpCode,
+          _currentPin,
+        ),
+      );
     } else if (_confirmingSetupPin) {
-      emit(AuthPinSetupConfirmation(
-        PhoneNumber(_currentPhone).formatted,
-        _otpCode,
-        _setupPin,
-        confirmation: _currentPin,
-      ));
+      emit(
+        AuthPinSetupConfirmation(
+          PhoneNumber(_currentPhone).formatted,
+          _otpCode,
+          _setupPin,
+          confirmation: _currentPin,
+        ),
+      );
     } else {
       emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
     }
@@ -200,18 +207,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (_currentPin.isNotEmpty) {
       _currentPin = _currentPin.substring(0, _currentPin.length - 1);
       if (_settingUpPin) {
-        emit(AuthPinSetupEntry(
-          PhoneNumber(_currentPhone).formatted,
-          _otpCode,
-          _currentPin,
-        ));
+        emit(
+          AuthPinSetupEntry(
+            PhoneNumber(_currentPhone).formatted,
+            _otpCode,
+            _currentPin,
+          ),
+        );
       } else if (_confirmingSetupPin) {
-        emit(AuthPinSetupConfirmation(
-          PhoneNumber(_currentPhone).formatted,
-          _otpCode,
-          _setupPin,
-          confirmation: _currentPin,
-        ));
+        emit(
+          AuthPinSetupConfirmation(
+            PhoneNumber(_currentPhone).formatted,
+            _otpCode,
+            _setupPin,
+            confirmation: _currentPin,
+          ),
+        );
       } else {
         emit(AuthPinEntry(PhoneNumber(_currentPhone).formatted, _currentPin));
       }
@@ -233,19 +244,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     emit(AuthPinLoading(PhoneNumber(_currentPhone).formatted));
     try {
-      final phone = PhoneNumber(_currentPhone);
+      await _completePinLogin(emit);
+    } catch (e) {
+      _registerPinFailure(emit);
+    }
+  }
 
-      final user = await _verifyOtp(phone: phone, otp: _currentPin);
+  Future<void> _completePinLogin(Emitter<AuthState> emit) async {
+    emit(AuthPinLoading(_formattedCurrentPhone));
+    try {
+      final user = await _loginWithPin(
+        phone: PhoneNumber(_currentPhone),
+        pin: _currentPin,
+      );
       emit(AuthAuthenticated(user));
-
-      // clear sensitive data after success
       _failedPinAttempts = 0;
       _pinLockedUntil = null;
       _currentPin = '';
       _currentPhone = '';
-    } catch (e) {
+    } catch (_) {
       _registerPinFailure(emit);
     }
+  }
+
+  Future<void> requestOtpForPinReset(String phoneNumber) {
+    return _sendOtp(PhoneNumber(phoneNumber));
   }
 
   Future<void> _completeEmployeeOnboarding(Emitter<AuthState> emit) async {
@@ -262,13 +285,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e) {
       _currentPin = '';
       _confirmingSetupPin = true;
-      emit(AuthPinSetupConfirmation(
-        _formattedCurrentPhone,
-        _otpCode,
-        _setupPin,
-        confirmation: '',
-        errorMessage: e.toString(),
-      ));
+      emit(
+        AuthPinSetupConfirmation(
+          _formattedCurrentPhone,
+          _otpCode,
+          _setupPin,
+          confirmation: '',
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 

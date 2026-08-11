@@ -102,12 +102,16 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.brandDark,
-        indicatorColor: AppColors.brand.withValues(alpha: 0.18),
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        elevation: 8,
+        shadowColor: AppColors.shadowStrong,
+        indicatorColor: AppColors.brand.withValues(alpha: 0.12),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            color: selected ? AppColors.brand : Colors.white,
+            color: selected
+                ? AppColors.brand
+                : (isDark ? Colors.white : AppColors.lightMutedText),
             fontSize: 11,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
@@ -116,7 +120,7 @@ abstract final class AppTheme {
           return IconThemeData(
             color: states.contains(WidgetState.selected)
                 ? AppColors.brand
-                : Colors.white,
+                : (isDark ? Colors.white : AppColors.lightMutedText),
           );
         }),
       ),

@@ -17,8 +17,8 @@ class ResetPin {
     if (!RegExp(r'^\d{4}$').hasMatch(newPin)) {
       throw Exception('Le code secret doit contenir 4 chiffres.');
     }
-    if (!RegExp(r'^\d{4}$').hasMatch(verificationCode)) {
-      throw Exception('Le code de vérification doit contenir 4 chiffres.');
+    if (!RegExp(r'^\d{6}$').hasMatch(verificationCode)) {
+      throw Exception('Le code OTP doit contenir 6 chiffres.');
     }
     await _authRepository.resetPin(
       phone: phone,

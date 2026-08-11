@@ -120,32 +120,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Column(
       children: [
-        SubPageHeader(
-          title: '',
-          onBack: widget.onBackHome,
-          customContent: ProfileHeaderCard(
-            onBack: widget.onBackHome,
-            isDarkMode: widget.isDarkMode,
-            userProfile: widget.userProfile,
-          ),
+        EmployeeHeroHeader(
+          userProfile: widget.userProfile,
+          wallet: widget.wallet,
+          onQrTap: () => context.push(AppRoutes.qr),
+          isDarkMode: widget.isDarkMode,
+          showBalanceCard: false,
+        ),
+        ProfileIdentityHeader(
+          userProfile: widget.userProfile,
           isDarkMode: widget.isDarkMode,
         ),
+        /* Keep the profile actions in the same scrollable area while the
+         * visual header follows the employee mobile reference. */
         Expanded(
-          child: ColoredBox(
+          child: Container(
             color: palette.pageBackground,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
               children: [
-                ProfileActionTile(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: widget.wallet == null
-                      ? AppLocalizations.of(context).walletUnavailable
-                      : AppLocalizations.of(
-                          context,
-                        ).availableBalance(widget.wallet!.balance.formatted),
-                  isDarkMode: widget.isDarkMode,
-                ),
-                const SizedBox(height: 18),
                 ProfileActionTile(
                   icon: Icons.shield_outlined,
                   label: AppLocalizations.of(context).changeSecretCode,

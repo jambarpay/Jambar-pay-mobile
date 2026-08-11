@@ -8,16 +8,23 @@ import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_state
 import '../widgets/app_palette.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/restaurant_widgets.dart';
+import '../models/mobile_employee_space.dart';
 
 class RestaurantsScreen extends StatefulWidget {
   const RestaurantsScreen({
     super.key,
     required this.onBackHome,
     required this.isDarkMode,
+    this.userProfile,
+    this.wallet,
+    this.onQrTap,
   });
 
   final VoidCallback onBackHome;
   final bool isDarkMode;
+  final UserProfileModel? userProfile;
+  final WalletSummaryModel? wallet;
+  final VoidCallback? onQrTap;
 
   @override
   State<RestaurantsScreen> createState() => _RestaurantsScreenState();
@@ -46,6 +53,14 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
 
         return Column(
           children: [
+            if (widget.userProfile != null)
+              EmployeeHeroHeader(
+                userProfile: widget.userProfile!,
+                wallet: widget.wallet,
+                onQrTap: widget.onQrTap ?? () {},
+                isDarkMode: widget.isDarkMode,
+                showBalanceCard: false,
+              ),
             SubPageHeader(
               title: loc.restaurants,
               onBack: widget.onBackHome,

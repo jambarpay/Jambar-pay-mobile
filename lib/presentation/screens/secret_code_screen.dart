@@ -9,9 +9,6 @@ import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_state.dart';
-import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_bloc.dart';
-import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_event.dart';
-import 'package:jambar_pay_mobile/presentation/bloc/profile/profile_state.dart';
 
 import '../widgets/app_palette.dart';
 import '../widgets/auth_widgets.dart';
@@ -37,7 +34,6 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   static const int _pinLength = 4;
 
   int _stepIndex = 0;
-  String _currentPin = '';
   String _verificationCode = '';
   String _newPin = '';
   String _confirmPin = '';
@@ -47,6 +43,28 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   bool get _isChangeMode => widget.mode == SecretCodeFlowMode.change;
 
   int get _totalSteps => 3;
+
+  int get _activePinLength => _stepIndex == 0 ? 6 : _pinLength;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.phoneNumber.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_sendVerificationCode());
+      });
+    }
+  }
+
+  Future<void> _sendVerificationCode() async {
+    try {
+      await context.read<AuthBloc>().requestOtpForPinReset(widget.phoneNumber);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _errorMessage = error.toString());
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,13 +193,13 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
                                 _StepProgress(
                                   currentStep: _stepIndex,
                                   totalSteps: _totalSteps,
-                                  isChangeMode: _isChangeMode,
                                   isDarkMode: isDarkMode,
                                 ),
                                 const SizedBox(height: 24),
                                 Center(
                                   child: PinDots(
                                     length: _activePinValue.length,
+                                    total: _activePinLength,
                                   ),
                                 ),
                                 const SizedBox(height: 18),
@@ -237,13 +255,6 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   }
 
   String get _activePinValue {
-    if (_isChangeMode) {
-      return switch (_stepIndex) {
-        0 => _currentPin,
-        1 => _newPin,
-        _ => _confirmPin,
-      };
-    }
     return switch (_stepIndex) {
       0 => _verificationCode,
       1 => _newPin,
@@ -252,17 +263,6 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   }
 
   void _setActivePinValue(String value) {
-    if (_isChangeMode) {
-      switch (_stepIndex) {
-        case 0:
-          _currentPin = value;
-        case 1:
-          _newPin = value;
-        case 2:
-          _confirmPin = value;
-      }
-      return;
-    }
     switch (_stepIndex) {
       case 0:
         _verificationCode = value;
@@ -274,7 +274,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
   }
 
   void _onDigitTap(String digit) {
-    if (_activePinValue.length >= _pinLength) {
+    if (_activePinValue.length >= _activePinLength) {
       return;
     }
 
@@ -283,7 +283,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
       _setActivePinValue('$_activePinValue$digit');
     });
 
-    if (_activePinValue.length != _pinLength) {
+    if (_activePinValue.length != _activePinLength) {
       return;
     }
 
@@ -338,30 +338,19 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
 
     String? error;
     try {
-      if (_isChangeMode) {
-        final bloc = context.read<ProfileBloc>();
-        bloc.add(PinChangeRequested(currentPin: _currentPin, newPin: newPin));
-        final result = await bloc.stream.firstWhere(
-          (state) => state is PinChangeSuccess || state is PinChangeFailure,
-        );
-        if (result is PinChangeFailure) {
-          error = result.errorMessage;
-        }
-      } else {
-        final bloc = context.read<AuthBloc>();
-        bloc.add(
-          PinResetRequested(
-            phoneNumber: widget.phoneNumber,
-            verificationCode: _verificationCode,
-            newPin: newPin,
-          ),
-        );
-        final result = await bloc.stream.firstWhere(
-          (state) => state is AuthPinResetSuccess || state is AuthFailure,
-        );
-        if (result is AuthFailure) {
-          error = result.errorMessage;
-        }
+      final bloc = context.read<AuthBloc>();
+      bloc.add(
+        PinResetRequested(
+          phoneNumber: widget.phoneNumber,
+          verificationCode: _verificationCode,
+          newPin: newPin,
+        ),
+      );
+      final result = await bloc.stream.firstWhere(
+        (state) => state is AuthPinResetSuccess || state is AuthFailure,
+      );
+      if (result is AuthFailure) {
+        error = result.errorMessage;
       }
     } catch (exception) {
       error = exception.toString();
@@ -373,17 +362,10 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
       setState(() {
         _isSubmitting = false;
         _errorMessage = error;
-        if (_isChangeMode) {
-          _currentPin = '';
-          _newPin = '';
-          _confirmPin = '';
-          _stepIndex = 0;
-        } else {
-          _verificationCode = '';
-          _newPin = '';
-          _confirmPin = '';
-          _stepIndex = 0;
-        }
+        _verificationCode = '';
+        _newPin = '';
+        _confirmPin = '';
+        _stepIndex = 0;
       });
       return;
     }
@@ -395,7 +377,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
     final loc = AppLocalizations.of(context);
     if (_isChangeMode) {
       return switch (_stepIndex) {
-        0 => loc.currentSecretCode,
+        0 => loc.verificationCode,
         1 => loc.newSecretCode,
         _ => loc.confirmation,
       };
@@ -412,7 +394,7 @@ class _SecretCodeScreenState extends State<SecretCodeScreen> {
     final loc = AppLocalizations.of(context);
     if (_isChangeMode) {
       return switch (_stepIndex) {
-        0 => loc.enterYourCurrentCode,
+        0 => loc.enterVerificationCode,
         1 => loc.chooseNewSecretCode,
         _ => loc.enterNewSecretCodeAgain,
       };
@@ -430,22 +412,22 @@ class _StepProgress extends StatelessWidget {
   const _StepProgress({
     required this.currentStep,
     required this.totalSteps,
-    required this.isChangeMode,
     this.isDarkMode = false,
   });
 
   final int currentStep;
   final int totalSteps;
-  final bool isChangeMode;
   final bool isDarkMode;
 
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
     final loc = AppLocalizations.of(context);
-    final labels = isChangeMode
-        ? [loc.current, loc.newLabel, loc.confirmationShort]
-        : [loc.verificationCodeShort, loc.newLabel, loc.confirmationShort];
+    final labels = [
+      loc.verificationCodeShort,
+      loc.newLabel,
+      loc.confirmationShort,
+    ];
 
     return Row(
       children: List.generate(totalSteps, (index) {

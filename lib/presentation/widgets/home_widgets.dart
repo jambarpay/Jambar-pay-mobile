@@ -3,7 +3,224 @@ import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_durations.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+import '../models/mobile_employee_space.dart';
+import 'balance_card.dart';
 import 'app_palette.dart';
+
+class EmployeeHeroHeader extends StatelessWidget {
+  const EmployeeHeroHeader({
+    super.key,
+    required this.userProfile,
+    required this.wallet,
+    required this.onQrTap,
+    this.isDarkMode = false,
+    this.showBalanceCard = true,
+  });
+
+  final UserProfileModel userProfile;
+  final WalletSummaryModel? wallet;
+  final VoidCallback onQrTap;
+  final bool isDarkMode;
+  final bool showBalanceCard;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette(isDarkMode);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 42, 22, 18),
+      color: palette.headerBackground,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bonjour',
+                      style: TextStyle(
+                        color: palette.onHeaderMuted,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      userProfile.name,
+                      style: TextStyle(
+                        color: palette.onHeader,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: AppColors.brand,
+                child: Text(
+                  userProfile.name.isEmpty
+                      ? '?'
+                      : userProfile.name[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (showBalanceCard) ...[
+            const SizedBox(height: 16),
+            BalanceCard(
+              isDarkMode: isDarkMode,
+              wallet: wallet,
+              onQrTap: onQrTap,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class QuickActionGrid extends StatelessWidget {
+  const QuickActionGrid({
+    super.key,
+    required this.scanLabel,
+    required this.restaurantsLabel,
+    required this.historyLabel,
+    required this.statementLabel,
+    required this.onScan,
+    required this.onRestaurants,
+    required this.onHistory,
+    required this.onStatement,
+    this.isDarkMode = false,
+  });
+
+  final String scanLabel;
+  final String restaurantsLabel;
+  final String historyLabel;
+  final String statementLabel;
+  final VoidCallback onScan;
+  final VoidCallback onRestaurants;
+  final VoidCallback onHistory;
+  final VoidCallback onStatement;
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette(isDarkMode);
+    final actions =
+        <({IconData icon, String title, String subtitle, VoidCallback onTap})>[
+          (
+            icon: Icons.photo_camera_outlined,
+            title: scanLabel,
+            subtitle: 'Payer au restaurant',
+            onTap: onScan,
+          ),
+          (
+            icon: Icons.restaurant_outlined,
+            title: restaurantsLabel,
+            subtitle: 'Près de moi',
+            onTap: onRestaurants,
+          ),
+          (
+            icon: Icons.bar_chart_rounded,
+            title: 'Ce mois',
+            subtitle: 'Voir mes repas',
+            onTap: onHistory,
+          ),
+          (
+            icon: Icons.description_outlined,
+            title: statementLabel,
+            subtitle: 'Exporter PDF',
+            onTap: onStatement,
+          ),
+        ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 4),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: actions.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1.55,
+        ),
+        itemBuilder: (context, index) {
+          final action = actions[index];
+          return Material(
+            color: isDarkMode ? palette.tileBackground : Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            elevation: 0,
+            child: InkWell(
+              onTap: action.onTap,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              child: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDarkMode
+                        ? AppColors.darkBorder
+                        : AppColors.lightBorder,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.shadowSubtle,
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(action.icon, color: AppColors.brand, size: 27),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          action.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.primaryText,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          action.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.mutedText,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
 
 class HomeBottomNavigation extends StatelessWidget {
   const HomeBottomNavigation({
@@ -22,15 +239,24 @@ class HomeBottomNavigation extends StatelessWidget {
     final palette = AppPalette(isDarkMode);
     final loc = AppLocalizations.of(context);
     final items = <({IconData icon, String label})>[
-      (icon: Icons.home_outlined, label: loc.home),
-      (icon: Icons.history, label: loc.history),
-      (icon: Icons.storefront_outlined, label: loc.restaurants),
-      (icon: Icons.person_outline, label: loc.profile),
+      (icon: Icons.home_rounded, label: loc.home),
+      (icon: Icons.history_rounded, label: loc.history),
+      (icon: Icons.restaurant_rounded, label: loc.restaurants),
+      (icon: Icons.person_rounded, label: loc.profile),
     ];
 
     return Container(
-      color: palette.headerBackground,
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurface : Colors.white,
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowSubtle,
+            blurRadius: 20,
+            offset: Offset(0, -5),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
       child: SafeArea(
         top: false,
         child: Row(
@@ -49,14 +275,25 @@ class HomeBottomNavigation extends StatelessWidget {
                     children: [
                       Icon(
                         item.icon,
-                        color: isSelected ? palette.accent : palette.onHeader,
+                        color: isSelected
+                            ? palette.accent
+                            : (isDarkMode
+                                  ? palette.onHeader
+                                  : AppColors.lightMutedText),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         item.label,
                         style: TextStyle(
                           fontSize: 11,
-                          color: isSelected ? palette.accent : palette.onHeader,
+                          color: isSelected
+                              ? palette.accent
+                              : (isDarkMode
+                                    ? palette.onHeader
+                                    : AppColors.lightMutedText),
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                       ),
                     ],
@@ -90,15 +327,19 @@ class HomeNavigationRail extends StatelessWidget {
     return NavigationRail(
       selectedIndex: currentIndex,
       onDestinationSelected: onTap,
-      backgroundColor: palette.headerBackground,
+      backgroundColor: isDarkMode ? palette.headerBackground : Colors.white,
       indicatorColor: palette.accent.withValues(alpha: 0.18),
       selectedIconTheme: IconThemeData(color: palette.accent),
-      unselectedIconTheme: IconThemeData(color: palette.onHeader),
+      unselectedIconTheme: IconThemeData(
+        color: isDarkMode ? palette.onHeader : AppColors.lightMutedText,
+      ),
       selectedLabelTextStyle: TextStyle(
         color: palette.accent,
         fontWeight: FontWeight.w700,
       ),
-      unselectedLabelTextStyle: TextStyle(color: palette.onHeader),
+      unselectedLabelTextStyle: TextStyle(
+        color: isDarkMode ? palette.onHeader : AppColors.lightMutedText,
+      ),
       labelType: NavigationRailLabelType.all,
       destinations: [
         NavigationRailDestination(
@@ -141,18 +382,18 @@ class SectionHeader extends StatelessWidget {
     final palette = AppPalette(isDarkMode);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 10, 22, 12),
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
       child: Row(
         children: [
           Expanded(
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: isDarkMode
                     ? AppColors.lavenderText
-                    : AppColors.lightHeading,
+                    : AppColors.lightPrimaryText,
               ),
             ),
           ),
@@ -204,7 +445,7 @@ class SubPageHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
           child:
               customContent ??
               Column(
@@ -246,12 +487,12 @@ class SubPageHeader extends StatelessWidget {
                                 title,
                                 style: TextStyle(
                                   color: palette.onHeader,
-                                  fontSize: 20,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                             if (subtitle != null) ...[
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 8),
                               Text(
                                 subtitle!,
                                 style: TextStyle(
@@ -303,7 +544,7 @@ class TogglePill extends StatelessWidget {
         color: isDarkMode ? palette.sectionContainer : Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.xxxl),
         border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : Colors.transparent,
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
         ),
       ),
       child: Row(
@@ -353,7 +594,7 @@ class ToggleChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isDarkMode ? Colors.white : AppColors.navyDeep)
+              ? (isDarkMode ? Colors.white : AppColors.brand)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.sheet),
         ),

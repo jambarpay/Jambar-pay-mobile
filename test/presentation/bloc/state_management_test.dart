@@ -317,6 +317,12 @@ class _ProfileAuthRepository implements AuthRepository {
   Future<void> sendOtp(PhoneNumber phone) async {}
 
   @override
+  Future<User> loginWithPin({
+    required PhoneNumber phone,
+    required String pin,
+  }) async => User(id: 'user', name: 'Test', phone: phone);
+
+  @override
   Future<User> verifyOtp({
     required PhoneNumber phone,
     required String otp,

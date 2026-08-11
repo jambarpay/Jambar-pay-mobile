@@ -64,6 +64,23 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<User> loginWithPin({
+    required PhoneNumber phone,
+    required String pin,
+  }) async {
+    try {
+      final response = _useLocalAuth
+          ? await _localDataSource.loginWithPin(phone: phone.digits, pin: pin)
+          : await _remoteDataSource.loginWithPin(phone: phone.digits, pin: pin);
+      final user = UserDto.fromJson(response).toDomain();
+      _currentUserSession?.setUserId(user.id);
+      return user;
+    } catch (e) {
+      throw Exception('Échec de la connexion: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<String> refreshToken(String refreshToken) async {
     try {
       return _useLocalAuth

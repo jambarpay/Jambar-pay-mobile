@@ -20,6 +20,10 @@ void main() {
     await repository.sendOtp(phone);
     final user = await repository.verifyOtp(phone: phone, otp: '1234');
     expect(user.id, 'local-user');
+    expect(
+      (await repository.loginWithPin(phone: phone, pin: '1234')).id,
+      'local-user',
+    );
     expect(await repository.refreshToken('refresh'), 'local-refresh');
     await repository.changePin(currentPin: '1234', newPin: '5678');
     await repository.resetPin(
@@ -46,6 +50,10 @@ void main() {
     await repository.sendOtp(phone);
     final user = await repository.verifyOtp(phone: phone, otp: '1234');
     expect(user.id, 'remote-user');
+    expect(
+      (await repository.loginWithPin(phone: phone, pin: '1234')).id,
+      'remote-user',
+    );
     expect(await repository.refreshToken('refresh'), 'remote-refresh');
     await repository.changePin(currentPin: '1234', newPin: '5678');
     await repository.resetPin(
@@ -124,6 +132,12 @@ class _LocalAuthStub extends AuthLocalDataSource {
   }) async => {'id': 'local-user', 'name': 'Local', 'phone': phone};
 
   @override
+  Future<Map<String, dynamic>> loginWithPin({
+    required String phone,
+    required String pin,
+  }) async => {'id': 'local-user', 'name': 'Local', 'phone': phone};
+
+  @override
   Future<String> refreshToken(String refreshToken) async => 'local-refresh';
 
   @override
@@ -172,6 +186,15 @@ class _RemoteAuthStub extends AuthRemoteDataSource {
     required String otp,
     String? pin,
     String? pinConfirmation,
+  }) async {
+    _throwIfNeeded();
+    return {'id': 'remote-user', 'name': 'Remote', 'phone': phone};
+  }
+
+  @override
+  Future<Map<String, dynamic>> loginWithPin({
+    required String phone,
+    required String pin,
   }) async {
     _throwIfNeeded();
     return {'id': 'remote-user', 'name': 'Remote', 'phone': phone};

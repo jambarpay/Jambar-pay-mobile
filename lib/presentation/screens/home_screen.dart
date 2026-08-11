@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:jambar_pay_mobile/app/router/app_router.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_breakpoints.dart';
 import '../models/mobile_employee_space.dart';
 import '../widgets/app_palette.dart';
@@ -35,10 +37,18 @@ class HomeScreen extends StatelessWidget {
         isDarkMode: isDarkMode,
         appState: appState,
       ),
-      HistoryScreen(isDarkMode: isDarkMode),
+      HistoryScreen(
+        isDarkMode: isDarkMode,
+        userProfile: appState.userProfile,
+        wallet: appState.wallet,
+        onQrTap: () => context.push(AppRoutes.qr),
+      ),
       RestaurantsScreen(
         onBackHome: () => onTabSelected(0),
         isDarkMode: isDarkMode,
+        userProfile: appState.userProfile,
+        wallet: appState.wallet,
+        onQrTap: () => context.push(AppRoutes.qr),
       ),
       ProfileScreen(
         onBackHome: () => onTabSelected(0),

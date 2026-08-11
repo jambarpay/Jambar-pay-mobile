@@ -91,16 +91,14 @@ class _HistorySearchFieldState extends State<HistorySearchField> {
 
   @override
   Widget build(BuildContext context) {
-    final fillColor = widget.isDarkMode
-        ? AppColors.darkPanel
-        : AppColors.lightControl;
+    final fillColor = widget.isDarkMode ? AppColors.darkPanel : Colors.white;
     final hintColor = widget.isDarkMode
         ? AppColors.lavenderMuted
         : AppColors.lightHint;
     final loc = AppLocalizations.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: TextField(
         controller: _controller,
         onChanged: widget.onChanged,
@@ -144,12 +142,17 @@ class HistoryFilterChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.sm),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.brand
-              : (isDarkMode ? AppColors.darkPanel : AppColors.lightControl),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+              : (isDarkMode ? AppColors.darkPanel : Colors.white),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.brand
+                : (isDarkMode ? AppColors.darkBorder : AppColors.lightBorder),
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.xxxl),
         ),
         child: Text(
           label,

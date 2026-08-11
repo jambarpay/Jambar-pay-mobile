@@ -28,13 +28,13 @@ void main() {
       final resetPin = ResetPin(repository);
       const phone = PhoneNumber('771234567');
 
-      await resetPin(phone: phone, verificationCode: '1234', newPin: '5678');
+      await resetPin(phone: phone, verificationCode: '123456', newPin: '5678');
 
-      expect(repository.reset, ('771234567', '1234', '5678'));
+      expect(repository.reset, ('771234567', '123456', '5678'));
       await expectLater(
         resetPin(
           phone: const PhoneNumber('123'),
-          verificationCode: '1234',
+          verificationCode: '123456',
           newPin: '5678',
         ),
         throwsException,
@@ -58,14 +58,14 @@ void main() {
     await expectLater(
       source.resetPin(
         phone: '771234567',
-        verificationCode: '0000',
+        verificationCode: '000000',
         newPin: '9012',
       ),
       throwsException,
     );
     await source.resetPin(
       phone: '771234567',
-      verificationCode: '5678',
+      verificationCode: '123456',
       newPin: '9012',
     );
     await expectLater(
@@ -104,6 +104,12 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> sendOtp(PhoneNumber phone) async {}
+
+  @override
+  Future<User> loginWithPin({
+    required PhoneNumber phone,
+    required String pin,
+  }) async => User(id: 'user', name: 'Test', phone: phone);
 
   @override
   Future<User> verifyOtp({

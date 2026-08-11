@@ -5,6 +5,57 @@ import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
 
+class ProfileIdentityHeader extends StatelessWidget {
+  const ProfileIdentityHeader({
+    super.key,
+    required this.userProfile,
+    this.isDarkMode = false,
+  });
+
+  final UserProfileModel userProfile;
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette(isDarkMode);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 38,
+            backgroundColor: AppColors.brand,
+            child: Text(
+              userProfile.name.isEmpty
+                  ? '?'
+                  : userProfile.name[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            userProfile.name,
+            style: TextStyle(
+              color: palette.primaryText,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            userProfile.phone,
+            style: TextStyle(color: palette.mutedText, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ProfileHeaderCard extends StatelessWidget {
   const ProfileHeaderCard({
     super.key,
@@ -100,10 +151,20 @@ class ProfileActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 19),
           decoration: BoxDecoration(
-            color: isDarkMode ? palette.tileBackground : AppColors.lightControl,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            color: isDarkMode ? palette.tileBackground : Colors.white,
+            border: Border.all(
+              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadowSubtle,
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -168,10 +229,13 @@ class _ProfileSwitchTileState extends State<ProfileSwitchTile> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.isDarkMode
-            ? palette.tileBackground
-            : AppColors.lightControl,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: widget.isDarkMode ? palette.tileBackground : Colors.white,
+        border: Border.all(
+          color: widget.isDarkMode
+              ? AppColors.darkBorder
+              : AppColors.lightBorder,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         children: [

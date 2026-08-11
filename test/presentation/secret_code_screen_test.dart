@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jambar_pay_mobile/domain/entities/user.dart';
 import 'package:jambar_pay_mobile/domain/repositories/auth_repository.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/logout.dart';
+import 'package:jambar_pay_mobile/domain/use_cases/auth/login_with_pin.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/reset_pin.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/send_otp.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/verify_otp.dart';
@@ -26,6 +27,7 @@ void main() {
     final authBloc = AuthBloc(
       sendOtp: SendOtp(repository),
       verifyOtp: VerifyOtp(repository),
+      loginWithPin: LoginWithPin(repository),
       logout: Logout(repository),
       resetPin: ResetPin(repository),
       messages: LocalizedAuthMessageProvider(),
@@ -53,13 +55,13 @@ void main() {
     );
 
     expect(find.text('Code de vérification'), findsWidgets);
-    for (final digit in '123456785678'.split('')) {
+    for (final digit in '12345656785678'.split('')) {
       await tester.tap(find.byKey(ValueKey('keypad-$digit')));
       await tester.pump();
     }
     await tester.pumpAndSettle();
 
-    expect(repository.resetCall, ('771234567', '1234', '5678'));
+    expect(repository.resetCall, ('771234567', '123456', '5678'));
   });
 }
 
@@ -89,6 +91,12 @@ class _RecordingAuthRepository implements AuthRepository {
 
   @override
   Future<void> sendOtp(PhoneNumber phone) async {}
+
+  @override
+  Future<User> loginWithPin({
+    required PhoneNumber phone,
+    required String pin,
+  }) async => User(id: 'user', name: 'Test', phone: phone);
 
   @override
   Future<User> verifyOtp({
