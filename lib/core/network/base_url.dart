@@ -1,5 +1,5 @@
 abstract final class BaseUrl {
-  static const String defaultApiBase = 'http://localhost:8081';
+  static const String defaultApiBase = 'https://149.202.61.30';
   static const String apiPrefix = '/api/v1';
 
   static String get base =>
@@ -7,27 +7,27 @@ abstract final class BaseUrl {
 
   static String get userServiceBase => _serviceBase(
     const String.fromEnvironment('USER_SERVICE_BASE'),
-    'http://localhost:8081',
+    defaultApiBase,
   );
 
   static String get restaurantServiceBase => _serviceBase(
     const String.fromEnvironment('RESTAURANT_SERVICE_BASE'),
-    'http://localhost:8082',
+    defaultApiBase,
   );
 
   static String get qrServiceBase => _serviceBase(
     const String.fromEnvironment('QR_SERVICE_BASE'),
-    'http://localhost:8083',
+    defaultApiBase,
   );
 
   static String get paymentServiceBase => _serviceBase(
     const String.fromEnvironment('PAYMENT_SERVICE_BASE'),
-    'http://localhost:8084',
+    defaultApiBase,
   );
 
   static String get walletServiceBase => _serviceBase(
     const String.fromEnvironment('WALLET_SERVICE_BASE'),
-    'http://localhost:8085',
+    defaultApiBase,
   );
 
   static String _serviceBase(String serviceBase, String localDefault) {
