@@ -148,6 +148,8 @@ class AppLocalizations {
       'invalidPhoneNumber': 'Numéro de téléphone invalide',
       'incorrectSecretCode':
           'Code secret incorrect. Il vous reste {count} {attemptLabel}.',
+      'loginServiceUnavailable':
+          'Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.',
       'youCanRetryNow': 'Vous pouvez réessayer maintenant.',
       'validated': 'Valide',
       'active': 'Actif',
@@ -285,6 +287,8 @@ class AppLocalizations {
       'invalidPhoneNumber': 'Invalid phone number',
       'incorrectSecretCode':
           'Incorrect secret code. {count} {attemptLabel} remaining.',
+      'loginServiceUnavailable':
+          'Unable to reach the server. Check your connection and try again.',
       'youCanRetryNow': 'You can retry now.',
       'validated': 'Validated',
       'active': 'Active',
@@ -456,6 +460,7 @@ class AppLocalizations {
         'count': count.toString(),
         'attemptLabel': attemptLabel,
       });
+  String get loginServiceUnavailable => _translate('loginServiceUnavailable');
   String get youCanRetryNow => _translate('youCanRetryNow');
   String get validated => _translate('validated');
   String get active => _translate('active');

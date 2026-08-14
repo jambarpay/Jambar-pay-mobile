@@ -23,14 +23,16 @@ import '../widgets/home_widgets.dart';
 import '../widgets/qr_widgets.dart';
 
 class QrScreen extends StatefulWidget {
-  const QrScreen({super.key});
+  const QrScreen({super.key, this.startInScannerMode = false});
+
+  final bool startInScannerMode;
 
   @override
   State<QrScreen> createState() => _QrScreenState();
 }
 
 class _QrScreenState extends State<QrScreen> {
-  bool _showScanner = false;
+  late bool _showScanner;
   late final MobileScannerController _scannerController;
   String? _lastScannedValue;
   bool _isOpeningPayment = false;
@@ -47,6 +49,7 @@ class _QrScreenState extends State<QrScreen> {
   @override
   void initState() {
     super.initState();
+    _showScanner = widget.startInScannerMode;
     _scanResult = null;
     _paymentResult = null;
     _scannerController = MobileScannerController(
@@ -56,7 +59,13 @@ class _QrScreenState extends State<QrScreen> {
       torchEnabled: false,
       autoStart: false,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadEmployeeQr());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_showScanner) {
+        unawaited(_startScanner());
+      } else {
+        unawaited(_loadEmployeeQr());
+      }
+    });
   }
 
   @override
@@ -75,17 +84,21 @@ class _QrScreenState extends State<QrScreen> {
     });
 
     if (value) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        try {
-          await _scannerController.start();
-        } catch (error) {
-          _showScannerError(error);
-        }
-      });
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(_startScanner()),
+      );
       return;
     }
 
     await _stopScanner();
+  }
+
+  Future<void> _startScanner() async {
+    try {
+      await _scannerController.start();
+    } catch (error) {
+      _showScannerError(error);
+    }
   }
 
   Future<void> _selectBottomTab(int index) async {

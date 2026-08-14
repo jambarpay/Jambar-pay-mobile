@@ -11,10 +11,12 @@ void main() {
 
   test('AuthRepositoryImpl delegates the complete local contract', () async {
     final local = _LocalAuthStub();
+    final storage = _RecordingSessionStorage();
     final repository = AuthRepositoryImpl(
       _RemoteAuthStub(),
       local,
       useLocalAuth: true,
+      sessionStorage: storage,
     );
 
     await repository.sendOtp(phone);
@@ -37,6 +39,7 @@ void main() {
     expect(local.changedPin, ('1234', '5678'));
     expect(local.resetCall, ('771234567', '9876', '5678'));
     expect(local.didLogout, isTrue);
+    expect(storage.didClearRememberedPhone, isTrue);
   });
 
   test('AuthRepositoryImpl delegates the complete remote contract', () async {
@@ -112,6 +115,15 @@ void main() {
       await expectLater(repository.logout(), completes);
     },
   );
+}
+
+class _RecordingSessionStorage extends SecureSessionStorage {
+  bool didClearRememberedPhone = false;
+
+  @override
+  Future<void> clearRememberedPhone() async {
+    didClearRememberedPhone = true;
+  }
 }
 
 class _LocalAuthStub extends AuthLocalDataSource {

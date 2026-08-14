@@ -152,6 +152,12 @@ class AuthRepositoryImpl implements AuthRepository {
       // Ignore errors on logout
     } finally {
       _currentUserSession?.clear();
+      try {
+        await _sessionStorage?.clearRememberedPhone();
+      } catch (_) {
+        // The local auth state must still be cleared when storage is
+        // temporarily unavailable.
+      }
     }
   }
 }

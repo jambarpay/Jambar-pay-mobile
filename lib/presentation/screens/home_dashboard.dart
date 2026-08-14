@@ -130,7 +130,9 @@ class HomeDashboard extends StatelessWidget {
                 isDarkMode: isDarkMode,
                 wallet: appState.wallet,
                 onQrTap: () async {
-                  final selectedTab = await context.push<int>(AppRoutes.qr);
+                  final selectedTab = await context.push<int>(
+                    AppRoutes.qrScanner,
+                  );
                   if (selectedTab != null && context.mounted) {
                     onTabSelected(selectedTab);
                   }
@@ -150,7 +152,9 @@ class HomeDashboard extends StatelessWidget {
                   historyLabel: loc.history,
                   statementLabel: 'Relevé',
                   onScan: () async {
-                    final selectedTab = await context.push<int>(AppRoutes.qr);
+                    final selectedTab = await context.push<int>(
+                      AppRoutes.qrScanner,
+                    );
                     if (selectedTab != null && context.mounted) {
                       onTabSelected(selectedTab);
                     }

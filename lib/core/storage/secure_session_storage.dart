@@ -27,6 +27,9 @@ class SecureSessionStorage {
     await _storage.write(key: _rememberedPhoneKey, value: normalizedPhone);
   }
 
+  Future<void> clearRememberedPhone() =>
+      _storage.delete(key: _rememberedPhoneKey);
+
   Future<void> saveTokens({
     required String accessToken,
     String? refreshToken,

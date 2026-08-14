@@ -10,6 +10,7 @@ import '../../presentation/screens/secret_code_screen.dart';
 abstract final class AppRoutes {
   static const root = '/';
   static const qr = '/qr';
+  static const qrScanner = '/qr?mode=scanner';
   static const payment = '/payment';
   static const secretCode = '/secret-code';
 
@@ -49,7 +50,9 @@ abstract final class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.qr,
-        builder: (context, state) => const QrScreen(),
+        builder: (context, state) => QrScreen(
+          startInScannerMode: state.uri.queryParameters['mode'] == 'scanner',
+        ),
       ),
       GoRoute(
         path: AppRoutes.payment,

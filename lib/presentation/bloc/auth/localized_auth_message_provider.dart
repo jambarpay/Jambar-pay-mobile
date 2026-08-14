@@ -22,6 +22,9 @@ class LocalizedAuthMessageProvider implements AuthMessageProvider {
   }
 
   @override
+  String get loginServiceUnavailable => _loc.loginServiceUnavailable;
+
+  @override
   String retryInDuration(Duration duration) {
     final normalized = duration.isNegative ? Duration.zero : duration;
     final totalSeconds = normalized.inSeconds;

@@ -88,7 +88,7 @@ class ScannerPreview extends StatelessWidget {
               Positioned(
                 left: 24,
                 right: 24,
-                bottom: 24,
+                bottom: 12,
                 child: Text(
                   lastScannedValue == null
                       ? AppLocalizations.of(context).scanQrCode

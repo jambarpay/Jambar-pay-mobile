@@ -273,7 +273,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _currentPin = '';
       _currentPhone = '';
     } catch (error) {
-      _registerPinFailure(emit);
+      _handlePinLoginFailure(error, emit);
     }
   }
 
@@ -399,6 +399,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         _formattedCurrentPhone,
       ),
     );
+  }
+
+  void _handlePinLoginFailure(Object error, Emitter<AuthState> emit) {
+    if (_isInvalidPinError(error)) {
+      _registerPinFailure(emit);
+      return;
+    }
+
+    _currentPin = '';
+    emit(
+      AuthFailure(_messages.loginServiceUnavailable, _formattedCurrentPhone),
+    );
+  }
+
+  bool _isInvalidPinError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('code pin incorrect') ||
+        message.contains('code secret incorrect') ||
+        message.contains('phone or pin') ||
+        message.contains('unauthorized') ||
+        message.contains('401');
   }
 
   String _pinLockMessage() {

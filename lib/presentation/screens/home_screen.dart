@@ -41,14 +41,14 @@ class HomeScreen extends StatelessWidget {
         isDarkMode: isDarkMode,
         userProfile: appState.userProfile,
         wallet: appState.wallet,
-        onQrTap: () => context.push(AppRoutes.qr),
+        onQrTap: () => context.push(AppRoutes.qrScanner),
       ),
       RestaurantsScreen(
         onBackHome: () => onTabSelected(0),
         isDarkMode: isDarkMode,
         userProfile: appState.userProfile,
         wallet: appState.wallet,
-        onQrTap: () => context.push(AppRoutes.qr),
+        onQrTap: () => context.push(AppRoutes.qrScanner),
       ),
       ProfileScreen(
         onBackHome: () => onTabSelected(0),

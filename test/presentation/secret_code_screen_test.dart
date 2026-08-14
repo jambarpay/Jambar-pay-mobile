@@ -12,10 +12,42 @@ import 'package:jambar_pay_mobile/domain/use_cases/auth/verify_otp.dart';
 import 'package:jambar_pay_mobile/domain/value_objects/phone_number.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_state.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/localized_auth_message_provider.dart';
 import 'package:jambar_pay_mobile/presentation/screens/secret_code_screen.dart';
 
 void main() {
+  test('a network failure is not reported as an incorrect PIN', () async {
+    final repository = _RecordingAuthRepository()
+      ..loginError = Exception('Erreur réseau');
+    final authBloc = AuthBloc(
+      sendOtp: SendOtp(repository),
+      verifyOtp: VerifyOtp(repository),
+      loginWithPin: LoginWithPin(repository),
+      logout: Logout(repository),
+      resetPin: ResetPin(repository),
+      messages: LocalizedAuthMessageProvider(),
+      initialPhone: '782917770',
+    );
+    addTearDown(authBloc.close);
+
+    final expectation = expectLater(
+      authBloc.stream,
+      emitsInOrder([
+        isA<AuthPinLoading>(),
+        isA<AuthFailure>().having(
+          (state) => state.errorMessage,
+          'message',
+          contains('serveur'),
+        ),
+      ]),
+    );
+
+    authBloc.add(const PinChanged('1501'));
+    await expectation;
+  });
+
   testWidgets('reset flow submits verification code before the new PIN', (
     tester,
   ) async {
@@ -88,6 +120,7 @@ void main() {
 
 class _RecordingAuthRepository implements AuthRepository {
   (String, String, String)? resetCall;
+  Object? loginError;
 
   @override
   Future<void> resetPin({
@@ -117,7 +150,10 @@ class _RecordingAuthRepository implements AuthRepository {
   Future<User> loginWithPin({
     required PhoneNumber phone,
     required String pin,
-  }) async => User(id: 'user', name: 'Test', phone: phone);
+  }) async {
+    if (loginError case final error?) throw error;
+    return User(id: 'user', name: 'Test', phone: phone);
+  }
 
   @override
   Future<User> verifyOtp({

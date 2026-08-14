@@ -110,6 +110,7 @@ void main() {
         loc.phoneTooLong,
         loc.invalidPhoneNumber,
         loc.incorrectSecretCode(2, 'attempts'),
+        loc.loginServiceUnavailable,
         loc.youCanRetryNow,
         loc.validated,
         loc.active,

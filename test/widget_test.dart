@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jambar_pay_mobile/main.dart';
 import 'package:jambar_pay_mobile/injection.dart' as di;
 import 'package:jambar_pay_mobile/presentation/widgets/home_widgets.dart';
+import 'package:jambar_pay_mobile/presentation/widgets/qr_widgets.dart';
 
 void main() {
   setUpAll(() async {
@@ -67,7 +68,7 @@ void main() {
     await tester.tap(find.text('Scanner').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Mon QR'), findsOneWidget);
+    expect(find.byType(ScannerPreview), findsOneWidget);
     expect(find.text('Retour'), findsOneWidget);
   });
 

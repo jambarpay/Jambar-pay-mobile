@@ -1,5 +1,5 @@
 abstract final class BaseUrl {
-  static const String defaultApiBase = 'https://149.202.61.30';
+  static const String defaultApiBase = 'http://149.202.61.30:30088';
   static const String apiPrefix = '/api/v1';
 
   static String get base =>
