@@ -297,10 +297,20 @@ class PhoneField extends StatelessWidget {
 }
 
 class PinDots extends StatelessWidget {
-  const PinDots({super.key, required this.length, this.total = 4});
+  const PinDots({
+    super.key,
+    required this.length,
+    this.total = 4,
+    this.filledColor,
+    this.emptyColor,
+    this.showEmptyBorder = true,
+  });
 
   final int length;
   final int total;
+  final Color? filledColor;
+  final Color? emptyColor;
+  final bool showEmptyBorder;
 
   @override
   Widget build(BuildContext context) {
@@ -323,9 +333,11 @@ class PinDots extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isFilled
-                    ? AppColors.lightPrimaryText
-                    : Colors.transparent,
-                border: Border.all(color: AppColors.neutralBorder),
+                    ? (filledColor ?? AppColors.lightPrimaryText)
+                    : (emptyColor ?? Colors.transparent),
+                border: showEmptyBorder && !isFilled
+                    ? Border.all(color: AppColors.neutralBorder)
+                    : null,
               ),
             );
           }),

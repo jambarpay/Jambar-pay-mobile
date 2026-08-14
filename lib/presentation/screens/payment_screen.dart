@@ -46,9 +46,25 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   String _amountDigits = '';
   String _pinDigits = '';
+  late final TextEditingController _pinController;
+  late final FocusNode _pinFocusNode;
   String? _errorMessage;
   bool _isSubmitting = false;
   bool _isPinStep = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pinController = TextEditingController();
+    _pinFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    _pinFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +79,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
           availableBalance: widget.availableBalance,
           amountDigits: _amountDigits,
           pinDigits: _pinDigits,
+          pinController: _pinController,
+          pinFocusNode: _pinFocusNode,
           errorMessage: _errorMessage,
           isSubmitting: _isSubmitting,
           isPinStep: _isPinStep,
@@ -71,6 +89,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           onAmountBackspace: _onAmountBackspace,
           onPinDigitTap: _onPinDigitTap,
           onPinBackspace: _onPinBackspace,
+          onNativePinChanged: _onNativePinChanged,
           onSubmit: _isPinStep ? _confirmPayment : _startPayment,
         ),
       ),
@@ -106,6 +125,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() {
       _errorMessage = null;
       _pinDigits = _pinDigits.substring(0, _pinDigits.length - 1);
+    });
+  }
+
+  void _onNativePinChanged(String value) {
+    setState(() {
+      _errorMessage = null;
+      _pinDigits = value;
     });
   }
 
@@ -155,11 +181,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
         setState(() {
           _isSubmitting = false;
           _isPinStep = true;
+          _pinDigits = '';
+          _pinController.clear();
         });
       case PaymentFailure():
         setState(() {
           _isSubmitting = false;
           _pinDigits = '';
+          _pinController.clear();
           _errorMessage = state.errorMessage;
         });
       case PaymentSuccess():

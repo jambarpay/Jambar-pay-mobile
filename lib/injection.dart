@@ -64,6 +64,9 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   final persistedAccessToken = shouldUseMockApi
       ? null
       : await sessionStorage.readAccessToken();
+  final rememberedPhone = shouldUseMockApi
+      ? null
+      : await sessionStorage.readRememberedPhone();
 
   sl.registerSingleton<SecureSessionStorage>(sessionStorage);
   sl.registerSingleton<CurrentUserSession>(CurrentUserSession());
@@ -151,6 +154,7 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
       sl<AuthLocalDataSource>(),
       useLocalAuth: shouldUseLocalAuth,
       currentUserSession: sl<CurrentUserSession>(),
+      sessionStorage: shouldUseMockApi ? null : sl<SecureSessionStorage>(),
     ),
   );
   sl.registerLazySingleton<TransactionRepository>(
@@ -200,6 +204,7 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
       logout: sl<Logout>(),
       resetPin: sl<ResetPin>(),
       messages: sl<AuthMessageProvider>(),
+      initialPhone: rememberedPhone,
     ),
   );
   sl.registerFactory<TransactionBloc>(

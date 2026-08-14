@@ -16,6 +16,8 @@ class PaymentForm extends StatelessWidget {
     required this.merchantName,
     required this.amountDigits,
     required this.pinDigits,
+    required this.pinController,
+    required this.pinFocusNode,
     required this.isSubmitting,
     required this.isPinStep,
     required this.onClose,
@@ -23,6 +25,7 @@ class PaymentForm extends StatelessWidget {
     required this.onAmountBackspace,
     required this.onPinDigitTap,
     required this.onPinBackspace,
+    required this.onNativePinChanged,
     required this.onSubmit,
     this.availableBalance,
     this.errorMessage,
@@ -33,6 +36,8 @@ class PaymentForm extends StatelessWidget {
   final MoneyModel? availableBalance;
   final String amountDigits;
   final String pinDigits;
+  final TextEditingController pinController;
+  final FocusNode pinFocusNode;
   final String? errorMessage;
   final bool isSubmitting;
   final bool isPinStep;
@@ -41,6 +46,7 @@ class PaymentForm extends StatelessWidget {
   final VoidCallback onAmountBackspace;
   final ValueChanged<String> onPinDigitTap;
   final VoidCallback onPinBackspace;
+  final ValueChanged<String> onNativePinChanged;
   final VoidCallback onSubmit;
 
   @override
@@ -111,7 +117,20 @@ class PaymentForm extends StatelessWidget {
                           ),
                         const SizedBox(height: 26),
                         if (isPinStep)
-                          PinDots(length: pinDigits.length)
+                          Column(
+                            children: [
+                              PinDots(length: pinDigits.length),
+                              NativeNumericInput(
+                                controller: pinController,
+                                focusNode: pinFocusNode,
+                                maxLength: 4,
+                                textFieldKey: const ValueKey(
+                                  'native-payment-pin-text-field',
+                                ),
+                                onChanged: onNativePinChanged,
+                              ),
+                            ],
+                          )
                         else
                           _AmountField(
                             amountLabel: amountDigits.isEmpty
@@ -146,18 +165,15 @@ class PaymentForm extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 26),
-                        SizedBox(
-                          height: keypadHeight.toDouble(),
-                          child: NumericKeypad(
-                            onDigitTap: isPinStep
-                                ? onPinDigitTap
-                                : onAmountDigitTap,
-                            onBackspace: isPinStep
-                                ? onPinBackspace
-                                : onAmountBackspace,
-                            foregroundColor: contentColor,
+                        if (!isPinStep)
+                          SizedBox(
+                            height: keypadHeight.toDouble(),
+                            child: NumericKeypad(
+                              onDigitTap: onAmountDigitTap,
+                              onBackspace: onAmountBackspace,
+                              foregroundColor: contentColor,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

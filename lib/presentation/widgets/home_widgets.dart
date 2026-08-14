@@ -145,78 +145,80 @@ class QuickActionGrid extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 4),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: actions.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 14,
-          childAspectRatio: 1.55,
-        ),
-        itemBuilder: (context, index) {
-          final action = actions[index];
-          return Material(
-            color: isDarkMode ? palette.tileBackground : Colors.white,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            elevation: 0,
-            child: InkWell(
-              onTap: action.onTap,
+      child: LayoutBuilder(
+        builder: (context, constraints) => GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: actions.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            childAspectRatio: constraints.maxWidth > 600 ? 1.8 : 1.55,
+          ),
+          itemBuilder: (context, index) {
+            final action = actions[index];
+            return Material(
+              color: isDarkMode ? palette.tileBackground : Colors.white,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDarkMode
-                        ? AppColors.darkBorder
-                        : AppColors.lightBorder,
+              elevation: 0,
+              child: InkWell(
+                onTap: action.onTap,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                child: Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isDarkMode
+                          ? AppColors.darkBorder
+                          : AppColors.lightBorder,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.shadowSubtle,
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.shadowSubtle,
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(action.icon, color: AppColors.brand, size: 27),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          action.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: palette.primaryText,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(action.icon, color: AppColors.brand, size: 27),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            action.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.primaryText,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          action.subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: palette.mutedText,
-                            fontSize: 11,
+                          const SizedBox(height: 2),
+                          Text(
+                            action.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.mutedText,
+                              fontSize: 11,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

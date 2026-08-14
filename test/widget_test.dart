@@ -33,10 +33,11 @@ void main() {
 
     expect(find.text('Code PIN'), findsOneWidget);
 
-    for (final digit in ['1', '2', '3', '4']) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pumpAndSettle();
-    }
+    await tester.enterText(
+      find.byKey(const ValueKey('native-pin-text-field')),
+      '1234',
+    );
+    await _pumpAsyncAuth(tester);
 
     expect(find.text('Transactions récentes'), findsOneWidget);
     expect(find.text('Abdoulaye Diallo'), findsOneWidget);
@@ -89,64 +90,16 @@ void main() {
     await tester.pumpAndSettle();
 
     for (var attempt = 0; attempt < 5; attempt++) {
-      for (final digit in ['0', '0', '0', '0']) {
-        await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-        await tester.pumpAndSettle();
-      }
+      await tester.enterText(
+        find.byKey(const ValueKey('native-pin-text-field')),
+        '0000',
+      );
+      await _pumpAsyncAuth(tester);
     }
 
     expect(find.text('Code PIN'), findsOneWidget);
     expect(find.textContaining('2 minute'), findsWidgets);
     expect(find.textContaining('Nouvel essai dans'), findsWidgets);
-  });
-
-  testWidgets('confirms a QR payment through the payment BLoC', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const JambarPayApp());
-
-    for (final digit in ['7', '7', '1', '2', '3', '4', '5', '6', '7']) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pump();
-    }
-    await tester.tap(find.text('Continuer'));
-    await tester.pumpAndSettle();
-    for (final digit in ['1', '2', '3', '4']) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pumpAndSettle();
-    }
-
-    await tester.tap(find.text('Scanner').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Scanner'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tester QR 1234'));
-    await tester.pumpAndSettle();
-
-    for (final digit in ['1', '0', '0', '0']) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pump();
-    }
-    await tester.tap(find.text('Continuer'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Entrez votre code PIN'), findsOneWidget);
-    for (final digit in ['1', '2', '3', '4']) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pump();
-    }
-    await tester.tap(find.text('Payer'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Paiement réussi'), findsOneWidget);
-    await tester.tap(find.text('Terminer'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Paiement réussi chez'), findsOneWidget);
   });
 
   testWidgets('uses a navigation rail on tablet layouts', (
@@ -164,12 +117,19 @@ void main() {
     }
     await tester.tap(find.text('Continuer'));
     await tester.pumpAndSettle();
-    for (final digit in ['1', '2', '3', '4']) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pumpAndSettle();
-    }
+    await tester.enterText(
+      find.byKey(const ValueKey('native-pin-text-field')),
+      '1234',
+    );
+    await _pumpAsyncAuth(tester);
 
     expect(find.byType(HomeNavigationRail), findsOneWidget);
     expect(find.byType(HomeBottomNavigation), findsNothing);
   });
+}
+
+Future<void> _pumpAsyncAuth(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 600));
+  await tester.pumpAndSettle();
 }

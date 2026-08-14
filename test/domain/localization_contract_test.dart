@@ -80,7 +80,6 @@ void main() {
         loc.retryIn('30s'),
         loc.secretCodeResetSuccess,
         loc.forgotPin,
-        loc.testQr,
         loc.loginTitle,
         loc.continueLabel,
         loc.enterPhoneNumber,

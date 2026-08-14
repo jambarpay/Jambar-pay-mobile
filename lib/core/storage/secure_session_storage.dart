@@ -6,12 +6,26 @@ class SecureSessionStorage {
 
   static const _accessTokenKey = 'auth.access_token';
   static const _refreshTokenKey = 'auth.refresh_token';
+  static const _rememberedPhoneKey = 'auth.remembered_phone';
 
   final FlutterSecureStorage _storage;
 
   Future<String?> readAccessToken() => _storage.read(key: _accessTokenKey);
 
   Future<String?> readRefreshToken() => _storage.read(key: _refreshTokenKey);
+
+  Future<String?> readRememberedPhone() =>
+      _storage.read(key: _rememberedPhoneKey);
+
+  Future<void> saveRememberedPhone(String phone) async {
+    final normalizedPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (normalizedPhone.isEmpty) {
+      await _storage.delete(key: _rememberedPhoneKey);
+      return;
+    }
+
+    await _storage.write(key: _rememberedPhoneKey, value: normalizedPhone);
+  }
 
   Future<void> saveTokens({
     required String accessToken,

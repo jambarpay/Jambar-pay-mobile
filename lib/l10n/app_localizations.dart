@@ -106,7 +106,6 @@ class AppLocalizations {
       'retryIn': 'Nouvel essai dans {duration}',
       'secretCodeResetSuccess': 'Code secret réinitialisé avec succès.',
       'forgotPin': 'Première connexion ou PIN oublié ?',
-      'testQr': 'Tester QR 1234',
       'loginTitle': 'Connexion',
       'continueLabel': 'Continuer',
       'enterPhoneNumber': 'Entrez votre numéro de téléphone',
@@ -245,7 +244,6 @@ class AppLocalizations {
       'retryIn': 'Retry in {duration}',
       'secretCodeResetSuccess': 'Secret code reset successfully.',
       'forgotPin': 'First login or forgot PIN?',
-      'testQr': 'Test QR 1234',
       'loginTitle': 'Login',
       'continueLabel': 'Continue',
       'enterPhoneNumber': 'Enter your phone number',
@@ -411,7 +409,6 @@ class AppLocalizations {
       _translateWithArgs('retryIn', {'duration': duration});
   String get secretCodeResetSuccess => _translate('secretCodeResetSuccess');
   String get forgotPin => _translate('forgotPin');
-  String get testQr => _translate('testQr');
   String get loginTitle => _translate('loginTitle');
   String get continueLabel => _translate('continueLabel');
   String get enterPhoneNumber => _translate('enterPhoneNumber');

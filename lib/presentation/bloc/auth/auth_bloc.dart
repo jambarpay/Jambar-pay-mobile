@@ -36,13 +36,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required Logout logout,
     required ResetPin resetPin,
     required AuthMessageProvider messages,
+    String? initialPhone,
   }) : _sendOtp = sendOtp,
        _verifyOtp = verifyOtp,
        _loginWithPin = loginWithPin,
        _logout = logout,
        _resetPin = resetPin,
        _messages = messages,
-       super(const AuthPhoneInitial()) {
+       _currentPhone = PhoneNumber(initialPhone ?? '').digits,
+       super(_initialState(initialPhone)) {
     on<PhoneNumberChanged>(_onPhoneNumberChanged);
     on<PhoneNumberBackspace>(_onPhoneNumberBackspace);
     on<PhoneNumberSubmitted>(_onPhoneNumberSubmitted);
@@ -52,6 +54,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<PinResetRequested>(_onPinResetRequested);
     on<BackToPhoneRequested>(_onBackToPhoneRequested);
     on<LogoutRequested>(_onLogoutRequested);
+  }
+
+  static AuthState _initialState(String? phone) {
+    final rememberedPhone = PhoneNumber(phone ?? '');
+    if (rememberedPhone.isValid) {
+      return AuthPinEntry(rememberedPhone.formatted);
+    }
+    return const AuthPhoneInitial();
   }
 
   void _onPhoneNumberChanged(
@@ -262,7 +272,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _pinLockedUntil = null;
       _currentPin = '';
       _currentPhone = '';
-    } catch (_) {
+    } catch (error) {
       _registerPinFailure(emit);
     }
   }

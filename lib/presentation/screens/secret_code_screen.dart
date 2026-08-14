@@ -125,7 +125,10 @@ class _PhoneStepState extends State<_PhoneStep> {
       await context.read<AuthBloc>().requestOtpForPinReset(_phone);
       if (!mounted) return;
       final completed = await Navigator.of(context).push<bool>(
-        _flowRoute<bool>(_OtpStep(mode: widget.mode, phoneNumber: _phone)),
+        _flowRoute<bool>(
+          context,
+          _OtpStep(mode: widget.mode, phoneNumber: _phone),
+        ),
       );
       if (completed == true && mounted) {
         Navigator.of(context).pop(true);
@@ -158,15 +161,26 @@ class _OtpStepState extends State<_OtpStep> {
   String? _errorMessage;
   bool _isSending = false;
   bool _isVerifying = false;
+  late final TextEditingController _otpController;
+  late final FocusNode _otpFocusNode;
 
   @override
   void initState() {
     super.initState();
+    _otpController = TextEditingController();
+    _otpFocusNode = FocusNode();
     if (widget.sendOnOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(_sendOtp());
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    _otpFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -180,12 +194,21 @@ class _OtpStepState extends State<_OtpStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            loc.otpSentTo(formattedPhone),
-            style: _bodyTextStyle(context),
-          ),
+          Text(loc.otpSentTo(formattedPhone), style: _bodyTextStyle(context)),
           const SizedBox(height: 34),
-          _CodeBoxes(value: _otp, total: 6),
+          _CodeInput(
+            controller: _otpController,
+            focusNode: _otpFocusNode,
+            value: _otp,
+            total: 6,
+            label: loc.whatsappCode,
+            textFieldKey: const ValueKey('native-otp-text-field'),
+            enabled: !_isVerifying,
+            onChanged: (value) => setState(() {
+              _errorMessage = null;
+              _otp = value;
+            }),
+          ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
             _ErrorText(_errorMessage!),
@@ -213,39 +236,15 @@ class _OtpStepState extends State<_OtpStep> {
               ),
             ),
           ),
-          const SizedBox(height: 36),
-          SizedBox(
-            height: 286,
-            child: IgnorePointer(
-              ignoring: _isVerifying,
-              child: NumericKeypad(
-                onDigitTap: _onDigitTap,
-                onBackspace: _onBackspace,
-                foregroundColor: AppColors.lightPrimaryText,
-                buttonBackgroundColor: AppColors.lightSurface,
-                buttonBorderColor: AppColors.lightBorder,
-              ),
-            ),
+          const SizedBox(height: 24),
+          Text(
+            'Utilisez le clavier numérique de votre téléphone.',
+            textAlign: TextAlign.center,
+            style: _bodyTextStyle(context).copyWith(fontSize: 12),
           ),
         ],
       ),
     );
-  }
-
-  void _onDigitTap(String digit) {
-    if (_otp.length >= 6 || _isVerifying) return;
-    setState(() {
-      _errorMessage = null;
-      _otp += digit;
-    });
-  }
-
-  void _onBackspace() {
-    if (_otp.isEmpty || _isVerifying) return;
-    setState(() {
-      _errorMessage = null;
-      _otp = _otp.substring(0, _otp.length - 1);
-    });
   }
 
   Future<void> _sendOtp() async {
@@ -263,6 +262,7 @@ class _OtpStepState extends State<_OtpStep> {
     setState(() => _isVerifying = true);
     final completed = await Navigator.of(context).push<bool>(
       _flowRoute<bool>(
+        context,
         _PinStep(
           phoneNumber: widget.phoneNumber,
           verificationCode: _otp,
@@ -300,8 +300,24 @@ class _PinStepState extends State<_PinStep> {
   String _pin = '';
   String? _errorMessage;
   bool _isSubmitting = false;
+  late final TextEditingController _pinController;
+  late final FocusNode _pinFocusNode;
 
   bool get _isConfirmation => widget.kind == _PinStepKind.confirmation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pinController = TextEditingController();
+    _pinFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    _pinFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -315,11 +331,29 @@ class _PinStepState extends State<_PinStep> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _isConfirmation ? loc.enterNewSecretCodeAgain : loc.chooseNewSecretCode,
+            _isConfirmation
+                ? loc.enterNewSecretCodeAgain
+                : loc.chooseNewSecretCode,
             style: _bodyTextStyle(context),
           ),
           const SizedBox(height: 34),
-          _CodeBoxes(value: _pin, total: 4),
+          _CodeInput(
+            controller: _pinController,
+            focusNode: _pinFocusNode,
+            value: _pin,
+            total: 4,
+            label: title,
+            textFieldKey: ValueKey(
+              _isConfirmation
+                  ? 'native-secret-code-confirmation-text-field'
+                  : 'native-secret-code-text-field',
+            ),
+            enabled: !_isSubmitting,
+            onChanged: (value) => setState(() {
+              _errorMessage = null;
+              _pin = value;
+            }),
+          ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
             _ErrorText(_errorMessage!),
@@ -332,45 +366,22 @@ class _PinStepState extends State<_PinStep> {
                 : null,
             isLoading: _isSubmitting,
           ),
-          const SizedBox(height: 42),
-          SizedBox(
-            height: 286,
-            child: IgnorePointer(
-              ignoring: _isSubmitting,
-              child: NumericKeypad(
-                onDigitTap: _onDigitTap,
-                onBackspace: _onBackspace,
-                foregroundColor: AppColors.lightPrimaryText,
-                buttonBackgroundColor: AppColors.lightSurface,
-                buttonBorderColor: AppColors.lightBorder,
-              ),
-            ),
+          const SizedBox(height: 24),
+          Text(
+            'Utilisez le clavier numérique de votre téléphone.',
+            textAlign: TextAlign.center,
+            style: _bodyTextStyle(context).copyWith(fontSize: 12),
           ),
         ],
       ),
     );
   }
 
-  void _onDigitTap(String digit) {
-    if (_pin.length >= 4 || _isSubmitting) return;
-    setState(() {
-      _errorMessage = null;
-      _pin += digit;
-    });
-  }
-
-  void _onBackspace() {
-    if (_pin.isEmpty || _isSubmitting) return;
-    setState(() {
-      _errorMessage = null;
-      _pin = _pin.substring(0, _pin.length - 1);
-    });
-  }
-
   Future<void> _continue() async {
     if (!_isConfirmation) {
       final completed = await Navigator.of(context).push<bool>(
         _flowRoute<bool>(
+          context,
           _PinStep(
             phoneNumber: widget.phoneNumber,
             verificationCode: widget.verificationCode,
@@ -387,6 +398,7 @@ class _PinStepState extends State<_PinStep> {
       setState(() {
         _errorMessage = AppLocalizations.of(context).codeMismatch;
         _pin = '';
+        _pinController.clear();
       });
       return;
     }
@@ -395,6 +407,9 @@ class _PinStepState extends State<_PinStep> {
     String? error;
     try {
       final bloc = context.read<AuthBloc>();
+      final resultFuture = bloc.stream.firstWhere(
+        (state) => state is AuthPinResetSuccess || state is AuthFailure,
+      );
       bloc.add(
         PinResetRequested(
           phoneNumber: widget.phoneNumber,
@@ -402,9 +417,7 @@ class _PinStepState extends State<_PinStep> {
           newPin: widget.newPin!,
         ),
       );
-      final result = await bloc.stream.firstWhere(
-        (state) => state is AuthPinResetSuccess || state is AuthFailure,
-      );
+      final result = await resultFuture;
       if (result is AuthFailure) error = result.errorMessage;
     } catch (exception) {
       error = _cleanError(exception);
@@ -416,6 +429,7 @@ class _PinStepState extends State<_PinStep> {
         _isSubmitting = false;
         _errorMessage = error;
         _pin = '';
+        _pinController.clear();
       });
       return;
     }
@@ -438,8 +452,12 @@ class _FlowFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final background = isDarkMode ? AppColors.darkBackground : const Color(0xFFFCFCFD);
-    final foreground = isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+    final background = isDarkMode
+        ? AppColors.darkBackground
+        : const Color(0xFFFCFCFD);
+    final foreground = isDarkMode
+        ? AppColors.darkPrimaryText
+        : AppColors.lightPrimaryText;
 
     return Scaffold(
       backgroundColor: background,
@@ -503,7 +521,9 @@ class _PhoneInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final foreground = isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+    final foreground = isDarkMode
+        ? AppColors.darkPrimaryText
+        : AppColors.lightPrimaryText;
     final display = value.isEmpty ? '77 XXX XX XX' : _formatPartialPhone(value);
 
     return Container(
@@ -546,6 +566,52 @@ class _PhoneInput extends StatelessWidget {
   }
 }
 
+class _CodeInput extends StatelessWidget {
+  const _CodeInput({
+    required this.controller,
+    required this.focusNode,
+    required this.value,
+    required this.total,
+    required this.label,
+    required this.textFieldKey,
+    required this.onChanged,
+    this.enabled = true,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String value;
+  final int total;
+  final String label;
+  final Key textFieldKey;
+  final ValueChanged<String> onChanged;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Semantics(
+          label: label,
+          button: true,
+          child: GestureDetector(
+            onTap: enabled ? focusNode.requestFocus : null,
+            child: _CodeBoxes(value: value, total: total),
+          ),
+        ),
+        NativeNumericInput(
+          controller: controller,
+          focusNode: focusNode,
+          maxLength: total,
+          textFieldKey: textFieldKey,
+          enabled: enabled,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
 class _CodeBoxes extends StatelessWidget {
   const _CodeBoxes({required this.value, required this.total});
 
@@ -555,39 +621,57 @@ class _CodeBoxes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final foreground = isDarkMode ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+    final foreground = isDarkMode
+        ? AppColors.darkPrimaryText
+        : AppColors.lightPrimaryText;
     final border = isDarkMode ? AppColors.darkBorder : AppColors.lightBorder;
 
-    return Row(
-      children: List.generate(total, (index) {
-        final filled = index < value.length;
-        final active = index == value.length && value.length < total;
-        return Expanded(
-          child: Container(
-            height: 58,
-            margin: EdgeInsets.only(right: index == total - 1 ? 0 : 7),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: filled || active
-                  ? (isDarkMode ? AppColors.darkControl : AppColors.brandSurfaceSoft)
-                  : (isDarkMode ? AppColors.darkTile : AppColors.lightSurface),
-              border: Border.all(
-                color: active ? AppColors.brand : border,
-                width: active ? 1.5 : 1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gap = total > 4 ? 8.0 : 10.0;
+        final boxSize = ((constraints.maxWidth - gap * (total - 1)) / total)
+            .clamp(46.0, 68.0)
+            .toDouble();
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(total, (index) {
+            final filled = index < value.length;
+            final active = index == value.length && value.length < total;
+            return Padding(
+              padding: EdgeInsets.only(right: index == total - 1 ? 0 : gap),
+              child: SizedBox.square(
+                dimension: boxSize,
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: filled || active
+                        ? (isDarkMode
+                              ? AppColors.darkControl
+                              : AppColors.brandSurfaceSoft)
+                        : (isDarkMode
+                              ? AppColors.darkTile
+                              : AppColors.lightSurface),
+                    border: Border.all(
+                      color: active ? AppColors.brand : border,
+                      width: active ? 1.5 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    filled ? value[index] : '',
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Text(
-              filled ? value[index] : '',
-              style: TextStyle(
-                color: foreground,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
+            );
+          }),
         );
-      }),
+      },
     );
   }
 }
@@ -688,7 +772,9 @@ class _ErrorText extends StatelessWidget {
 TextStyle _bodyTextStyle(BuildContext context) {
   final isDarkMode = Theme.of(context).brightness == Brightness.dark;
   return TextStyle(
-    color: isDarkMode ? AppColors.darkSecondaryText : AppColors.lightSecondaryText,
+    color: isDarkMode
+        ? AppColors.darkSecondaryText
+        : AppColors.lightSecondaryText,
     fontSize: 13,
     height: 1.45,
   );
@@ -716,9 +802,10 @@ String _cleanError(Object error) {
   return error.toString().replaceFirst('Exception: ', '');
 }
 
-PageRoute<T> _flowRoute<T>(Widget child) {
+PageRoute<T> _flowRoute<T>(BuildContext context, Widget child) {
   return PageRouteBuilder<T>(
-    pageBuilder: (context, animation, secondaryAnimation) => child,
+    pageBuilder: (routeContext, animation, secondaryAnimation) =>
+        BlocProvider.value(value: context.read<AuthBloc>(), child: child),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
   );

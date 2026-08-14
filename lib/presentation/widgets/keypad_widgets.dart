@@ -1,13 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
+
+class NativeNumericInput extends StatelessWidget {
+  const NativeNumericInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.maxLength,
+    required this.onChanged,
+    this.textFieldKey,
+    this.enabled = true,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final int maxLength;
+  final ValueChanged<String> onChanged;
+  final Key? textFieldKey;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: 0.01,
+      child: SizedBox(
+        height: 48,
+        child: TextField(
+          key: textFieldKey,
+          controller: controller,
+          focusNode: focusNode,
+          enabled: enabled,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(maxLength),
+          ],
+          showCursor: false,
+          enableInteractiveSelection: false,
+          style: const TextStyle(color: Colors.transparent, fontSize: 1),
+          cursorColor: Colors.transparent,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            counterText: '',
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
 
 class NumericKeypad extends StatelessWidget {
   const NumericKeypad({
     super.key,
     required this.onDigitTap,
     required this.onBackspace,
+    this.leadingLabel,
+    this.onLeadingTap,
+    this.fontSize = 17,
+    this.fontWeight = FontWeight.w600,
     this.foregroundColor = AppColors.lightPrimaryText,
     this.buttonBackgroundColor,
     this.buttonBorderColor,
@@ -15,6 +72,10 @@ class NumericKeypad extends StatelessWidget {
 
   final ValueChanged<String> onDigitTap;
   final VoidCallback onBackspace;
+  final String? leadingLabel;
+  final VoidCallback? onLeadingTap;
+  final double fontSize;
+  final FontWeight fontWeight;
   final Color foregroundColor;
   final Color? buttonBackgroundColor;
   final Color? buttonBorderColor;
@@ -42,6 +103,8 @@ class NumericKeypad extends StatelessWidget {
                         child: KeypadButton(
                           label: digit,
                           height: buttonHeight,
+                          fontSize: fontSize,
+                          fontWeight: fontWeight,
                           foregroundColor: foregroundColor,
                           backgroundColor: buttonBackgroundColor,
                           borderColor: buttonBorderColor,
@@ -53,11 +116,27 @@ class NumericKeypad extends StatelessWidget {
               ),
             Row(
               children: [
-                const Expanded(child: SizedBox()),
+                Expanded(
+                  child: leadingLabel == null
+                      ? const SizedBox()
+                      : KeypadButton(
+                          label: leadingLabel,
+                          semanticLabel: AppLocalizations.of(context).forgotPin,
+                          height: buttonHeight,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          foregroundColor: foregroundColor,
+                          backgroundColor: buttonBackgroundColor,
+                          borderColor: buttonBorderColor,
+                          onTap: onLeadingTap ?? () {},
+                        ),
+                ),
                 Expanded(
                   child: KeypadButton(
                     label: '0',
                     height: buttonHeight,
+                    fontSize: fontSize,
+                    fontWeight: fontWeight,
                     foregroundColor: foregroundColor,
                     backgroundColor: buttonBackgroundColor,
                     borderColor: buttonBorderColor,
@@ -92,6 +171,8 @@ class KeypadButton extends StatelessWidget {
     this.semanticLabel,
     required this.height,
     required this.onTap,
+    this.fontSize = 17,
+    this.fontWeight = FontWeight.w600,
     this.foregroundColor = AppColors.lightPrimaryText,
     this.backgroundColor,
     this.borderColor,
@@ -102,6 +183,8 @@ class KeypadButton extends StatelessWidget {
   final String? semanticLabel;
   final double height;
   final VoidCallback onTap;
+  final double fontSize;
+  final FontWeight fontWeight;
   final Color foregroundColor;
   final Color? backgroundColor;
   final Color? borderColor;
@@ -136,8 +219,8 @@ class KeypadButton extends StatelessWidget {
                   : Text(
                       label ?? '',
                       style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                        fontSize: fontSize,
+                        fontWeight: fontWeight,
                         color: foregroundColor,
                       ),
                     ),

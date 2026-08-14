@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -189,38 +188,6 @@ class _QrScreenState extends State<QrScreen> {
                     ),
                     if (_showScanner) ...[
                       const SizedBox(height: 16),
-                      if (kDebugMode)
-                        OutlinedButton.icon(
-                          onPressed: () => _openPaymentFlow('1234'),
-                          icon: Icon(
-                            Icons.flash_on_outlined,
-                            size: 16,
-                            color: isDarkMode
-                                ? palette.primaryText
-                                : palette.mutedText,
-                          ),
-                          label: Text(
-                            AppLocalizations.of(context).testQr,
-                            style: TextStyle(
-                              color: isDarkMode
-                                  ? palette.primaryText
-                                  : palette.mutedText,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: palette.accent.withValues(alpha: 0.4),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
                       if (_qrErrorMessage != null) ...[
                         const SizedBox(height: 14),
                         Text(

@@ -55,24 +55,30 @@ void main() {
     );
 
     expect(find.text('Code reçu par WhatsApp'), findsOneWidget);
-    for (final digit in '123456'.split('')) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pump();
-    }
+    await tester.enterText(
+      find.byKey(const ValueKey('native-otp-text-field')),
+      '123456',
+    );
+    await tester.pump();
+    expect(find.text('Vérifier le code'), findsOneWidget);
     await tester.tap(find.text('Vérifier le code'));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Nouveau code secret'), findsOneWidget);
 
-    for (final digit in '5678'.split('')) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pump();
-    }
+    await tester.enterText(
+      find.byKey(const ValueKey('native-secret-code-text-field')),
+      '5678',
+    );
+    await tester.pump();
     await tester.tap(find.text('Continuer'));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('Confirmation'), findsOneWidget);
 
-    for (final digit in '5678'.split('')) {
-      await tester.tap(find.byKey(ValueKey('keypad-$digit')));
-      await tester.pump();
-    }
+    await tester.enterText(
+      find.byKey(const ValueKey('native-secret-code-confirmation-text-field')),
+      '5678',
+    );
+    await tester.pump();
     await tester.tap(find.text('Valider'));
     await tester.pumpAndSettle();
 

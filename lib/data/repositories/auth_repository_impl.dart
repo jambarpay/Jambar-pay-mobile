@@ -5,20 +5,24 @@ import '../datasources/remote/auth_remote_datasource.dart';
 import '../datasources/local/auth_local_datasource.dart';
 import '../models/dto/user_dto.dart';
 import '../../core/session/current_user_session.dart';
+import '../../core/storage/secure_session_storage.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
   final AuthLocalDataSource _localDataSource;
   final bool _useLocalAuth;
   final CurrentUserSession? _currentUserSession;
+  final SecureSessionStorage? _sessionStorage;
 
   AuthRepositoryImpl(
     this._remoteDataSource,
     this._localDataSource, {
     bool useLocalAuth = false,
     CurrentUserSession? currentUserSession,
+    SecureSessionStorage? sessionStorage,
   }) : _useLocalAuth = useLocalAuth,
-       _currentUserSession = currentUserSession;
+       _currentUserSession = currentUserSession,
+       _sessionStorage = sessionStorage;
 
   @override
   Future<void> sendOtp(PhoneNumber phone) async {
@@ -57,6 +61,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final userDto = UserDto.fromJson(response);
       final user = userDto.toDomain();
       _currentUserSession?.setUserId(user.id);
+      await _rememberPhone(phone);
       return user;
     } catch (e) {
       throw Exception('Échec de la vérification: ${e.toString()}');
@@ -74,6 +79,7 @@ class AuthRepositoryImpl implements AuthRepository {
           : await _remoteDataSource.loginWithPin(phone: phone.digits, pin: pin);
       final user = UserDto.fromJson(response).toDomain();
       _currentUserSession?.setUserId(user.id);
+      await _rememberPhone(phone);
       return user;
     } catch (e) {
       throw Exception('Échec de la connexion: ${e.toString()}');
@@ -121,6 +127,16 @@ class AuthRepositoryImpl implements AuthRepository {
         verificationCode: verificationCode,
         newPin: newPin,
       );
+    }
+    await _rememberPhone(phone);
+  }
+
+  Future<void> _rememberPhone(PhoneNumber phone) async {
+    try {
+      await _sessionStorage?.saveRememberedPhone(phone.digits);
+    } catch (_) {
+      // A storage failure must not turn a successful authentication into an
+      // error. The phone is only a convenience for the next login.
     }
   }
 
