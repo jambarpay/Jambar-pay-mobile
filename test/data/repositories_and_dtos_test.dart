@@ -131,6 +131,7 @@ void main() {
         'qrContent': 'qr-token',
         'amount': 3500,
         'currency': 'XOF',
+        'pin': '1234',
       });
 
       await repository.cancelPayment('payment-1');
@@ -268,6 +269,7 @@ class _RepositoryApiService extends ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
+    bool includeAuthorization = true,
     Duration timeout = const Duration(seconds: 30),
   }) async {
     lastData = data;

@@ -126,6 +126,12 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
     () => AuthRemoteDataSource(
       sl<ApiService>(instanceName: _userApi),
       sl<SecureSessionStorage>(),
+      authenticatedClients: [
+        sl<ApiService>(instanceName: _restaurantApi),
+        sl<ApiService>(instanceName: _paymentApi),
+        sl<ApiService>(instanceName: _walletApi),
+        sl<ApiService>(instanceName: _qrApi),
+      ],
     ),
   );
   sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());

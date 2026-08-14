@@ -181,5 +181,22 @@ void main() {
 
       expect(const ApiException('failure').toString(), 'failure');
     });
+
+    test('can omit an existing token for public POST requests', () async {
+      final client = MockClient((request) async {
+        expect(request.headers.containsKey('authorization'), isFalse);
+        return http.Response('{}', 200);
+      });
+      final service = ApiService(
+        baseUrl: 'https://example.test',
+        client: client,
+        token: 'stale-token',
+      );
+      addTearDown(service.dispose);
+
+      await service.post('/public/login', const {
+        'pin': '1501',
+      }, includeAuthorization: false);
+    });
   });
 }

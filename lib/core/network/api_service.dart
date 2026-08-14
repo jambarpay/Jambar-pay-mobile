@@ -118,10 +118,14 @@ class ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
+    bool includeAuthorization = true,
     Duration timeout = const Duration(seconds: 30),
   }) {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
+    if (!includeAuthorization) {
+      merged.remove('Authorization');
+    }
     return _request(
       _client
           .post(uri, headers: merged, body: json.encode(data))

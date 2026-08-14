@@ -27,6 +27,30 @@ void main() {
       expect(api.lastData, {'phoneNumber': '771234567', 'otp': '1234'});
     });
 
+    test('shares a new employee token with every backend client', () async {
+      final userApi = _RecordingApiService()
+        ..postResponses[BaseUrl.authEmployeeLogin()] = {
+          'data': {
+            'accessToken': 'fresh-token',
+            'profile': {'id': 'employee-1', 'name': 'Salarié Test'},
+          },
+        };
+      final paymentApi = _RecordingApiService()..token = 'stale-token';
+      final restaurantApi = _RecordingApiService();
+      final source = AuthRemoteDataSource(
+        userApi,
+        _RecordingSessionStorage(),
+        authenticatedClients: [paymentApi, restaurantApi],
+      );
+
+      await source.loginWithPin(phone: '782917770', pin: '1501');
+
+      expect(userApi.token, 'fresh-token');
+      expect(paymentApi.token, 'fresh-token');
+      expect(restaurantApi.token, 'fresh-token');
+      expect(userApi.lastIncludeAuthorization, isFalse);
+    });
+
     test('accepts a flat user response and rejects invalid payloads', () async {
       final api = _RecordingApiService();
       final source = AuthRemoteDataSource(api, _RecordingSessionStorage());
@@ -72,11 +96,8 @@ void main() {
 
         await source.sendOtp('771234567');
         expect(api.lastEndpoint, BaseUrl.authRegisterResend());
-        expect(api.lastData, {
-          'phoneNumber': '771234567',
-          'firstName': 'Utilisateur',
-          'lastName': 'Jambaar Pay',
-        });
+        expect(api.lastData, {'phoneNumber': '771234567'});
+        expect(api.lastIncludeAuthorization, isFalse);
 
         await expectLater(
           source.changePin(currentPin: '1234', newPin: '5678'),
@@ -200,6 +221,7 @@ class _RecordingApiService extends ApiService {
   String? lastEndpoint;
   Map<String, dynamic>? lastData;
   Map<String, String>? lastQueryParameters;
+  bool? lastIncludeAuthorization;
   Object? postError;
 
   @override
@@ -219,10 +241,12 @@ class _RecordingApiService extends ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
+    bool includeAuthorization = true,
     Duration timeout = const Duration(seconds: 30),
   }) async {
     lastEndpoint = endpoint;
     lastData = data;
+    lastIncludeAuthorization = includeAuthorization;
     final error = postError;
     if (error != null) throw error;
     return postResponses[endpoint] ?? const <String, dynamic>{};

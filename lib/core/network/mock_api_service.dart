@@ -334,6 +334,7 @@ final class MockApiService extends ApiService {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? headers,
+    bool includeAuthorization = true,
     Duration timeout = const Duration(seconds: 30),
   }) async {
     await Future.delayed(Duration(milliseconds: 800)); // Simulate delay

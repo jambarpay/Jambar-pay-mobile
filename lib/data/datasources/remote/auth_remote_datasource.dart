@@ -5,8 +5,19 @@ import '../../../core/storage/secure_session_storage.dart';
 class AuthRemoteDataSource {
   final ApiService apiService;
   final SecureSessionStorage sessionStorage;
+  final Set<ApiService> _authenticatedClients;
 
-  AuthRemoteDataSource(this.apiService, this.sessionStorage);
+  AuthRemoteDataSource(
+    this.apiService,
+    this.sessionStorage, {
+    Iterable<ApiService> authenticatedClients = const <ApiService>[],
+  }) : _authenticatedClients = {apiService, ...authenticatedClients};
+
+  void _setAccessToken(String? token) {
+    for (final client in _authenticatedClients) {
+      client.setToken(token);
+    }
+  }
 
   Future<void> sendOtp(
     String phone, {
@@ -15,7 +26,9 @@ class AuthRemoteDataSource {
   }) async {
     // Employees are provisioned by their enterprise. The mobile app only
     // requests a new OTP for an already-provisioned employee account.
-    await apiService.post(BaseUrl.authRegisterResend(), {'phoneNumber': phone});
+    await apiService.post(BaseUrl.authRegisterResend(), {
+      'phoneNumber': phone,
+    }, includeAuthorization: false);
   }
 
   Future<Map<String, dynamic>> verifyOtp({
@@ -42,7 +55,7 @@ class AuthRemoteDataSource {
       'otp': otp,
       if (pin != null) 'pin': pin,
       if (pinConfirmation != null) 'pinConfirmation': pinConfirmation,
-    });
+    }, includeAuthorization: false);
     if (response is! Map) {
       throw Exception('Invalid response format');
     }
@@ -52,7 +65,7 @@ class AuthRemoteDataSource {
         : envelope;
     final accessToken = responseMap['token']?.toString();
     if (accessToken != null && accessToken.isNotEmpty) {
-      apiService.setToken(accessToken);
+      _setAccessToken(accessToken);
       await sessionStorage.saveTokens(
         accessToken: accessToken,
         refreshToken: responseMap['refreshToken']?.toString(),
@@ -73,7 +86,7 @@ class AuthRemoteDataSource {
       final loginResponse = await apiService.post(BaseUrl.authEmployeeLogin(), {
         'phoneNumber': phone,
         'pin': pin,
-      });
+      }, includeAuthorization: false);
       if (loginResponse is Map) {
         final loginEnvelope = Map<String, dynamic>.from(loginResponse);
         final loginData = loginEnvelope['data'] is Map
@@ -81,7 +94,7 @@ class AuthRemoteDataSource {
             : loginEnvelope;
         final loginToken = loginData['accessToken']?.toString();
         if (loginToken != null && loginToken.isNotEmpty) {
-          apiService.setToken(loginToken);
+          _setAccessToken(loginToken);
           await sessionStorage.saveTokens(accessToken: loginToken);
         }
       }
@@ -96,7 +109,7 @@ class AuthRemoteDataSource {
     final response = await apiService.post(BaseUrl.authEmployeeLogin(), {
       'phoneNumber': phone,
       'pin': pin,
-    });
+    }, includeAuthorization: false);
     if (response is! Map) {
       throw const ApiException('Invalid login response format');
     }
@@ -110,7 +123,7 @@ class AuthRemoteDataSource {
       throw const ApiException('Invalid login response');
     }
 
-    apiService.setToken(accessToken);
+    _setAccessToken(accessToken);
     await sessionStorage.saveTokens(accessToken: accessToken);
 
     final profile = responseMap['profile'];
@@ -158,7 +171,7 @@ class AuthRemoteDataSource {
         await apiService.post(BaseUrl.authLogout(), const {});
       }
     } finally {
-      apiService.setToken(null);
+      _setAccessToken(null);
       await sessionStorage.clear();
     }
   }

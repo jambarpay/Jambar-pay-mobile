@@ -322,25 +322,30 @@ class PinDots extends StatelessWidget {
       ).pinDigitsEntered(enteredDigits, pinLength),
       liveRegion: true,
       child: ExcludeSemantics(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(pinLength, (index) {
-            final isFilled = index < enteredDigits;
-            return Container(
-              width: 16,
-              height: 16,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isFilled
-                    ? (filledColor ?? AppColors.lightPrimaryText)
-                    : (emptyColor ?? Colors.transparent),
-                border: showEmptyBorder && !isFilled
-                    ? Border.all(color: AppColors.neutralBorder)
-                    : null,
-              ),
-            );
-          }),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(pinLength, (index) {
+              final isFilled = index < enteredDigits;
+              return Padding(
+                padding: EdgeInsets.only(right: index < pinLength - 1 ? 8 : 0),
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isFilled
+                        ? (filledColor ?? AppColors.lightPrimaryText)
+                        : (emptyColor ?? Colors.transparent),
+                    border: showEmptyBorder && !isFilled
+                        ? Border.all(color: AppColors.neutralBorder)
+                        : null,
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
