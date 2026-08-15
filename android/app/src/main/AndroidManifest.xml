@@ -6,6 +6,7 @@
         android:label="Jambar Pay Mobile"
         android:name="${applicationName}"
         android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
