@@ -64,13 +64,11 @@ class HomeDashboard extends StatelessWidget {
     required this.onTabSelected,
     required this.isDarkMode,
     required this.appState,
-    required this.onTopUpTap,
   });
 
   final ValueChanged<int> onTabSelected;
   final bool isDarkMode;
   final AppState appState;
-  final VoidCallback onTopUpTap;
 
   @override
   Widget build(BuildContext context) {
@@ -142,12 +140,12 @@ class HomeDashboard extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: onTopUpTap,
-                  icon: const Icon(Icons.add_card_outlined, size: 18),
-                  label: const Text('Recharger avec Kkiapay'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: palette.onHeader,
+                child: Text(
+                  'Recharge employeur',
+                  style: TextStyle(
+                    color: palette.onHeaderMuted,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

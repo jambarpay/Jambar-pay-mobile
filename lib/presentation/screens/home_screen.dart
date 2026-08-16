@@ -18,7 +18,6 @@ class HomeScreen extends StatelessWidget {
     required this.isDarkMode,
     required this.onDarkModeChanged,
     required this.appState,
-    required this.onTopUpTap,
     required this.onLogout,
   });
 
@@ -27,7 +26,6 @@ class HomeScreen extends StatelessWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onDarkModeChanged;
   final AppState appState;
-  final VoidCallback onTopUpTap;
   final VoidCallback onLogout;
 
   @override
@@ -38,7 +36,6 @@ class HomeScreen extends StatelessWidget {
         onTabSelected: onTabSelected,
         isDarkMode: isDarkMode,
         appState: appState,
-        onTopUpTap: onTopUpTap,
       ),
       HistoryScreen(
         isDarkMode: isDarkMode,
