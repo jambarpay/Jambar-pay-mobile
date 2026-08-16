@@ -59,6 +59,7 @@ abstract final class BaseUrl {
   static String walletTopUp(String walletId) =>
       '$apiPrefix/wallets/$walletId/top-up';
   static String payWithQr() => '$apiPrefix/payments/qr';
+  static String waveCheckoutLinks() => '$apiPrefix/wave/checkout-links';
   static String employeeQr() => '$apiPrefix/qrs/employee';
   static String qrImage(String reference) => '$apiPrefix/qrs/$reference/image';
 }

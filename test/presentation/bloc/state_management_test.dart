@@ -354,6 +354,12 @@ class _WalletTestRepository implements WalletRepository {
     required Money amount,
     required bool isCredit,
   }) async => wallet;
+
+  @override
+  Future<Wallet> topUpWithProvider({
+    required Money amount,
+    required String providerTransactionId,
+  }) async => wallet;
 }
 
 class _TransactionTestRepository implements TransactionRepository {

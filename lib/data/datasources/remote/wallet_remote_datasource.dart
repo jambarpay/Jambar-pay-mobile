@@ -52,6 +52,28 @@ class WalletRemoteDataSource {
     return Map<String, dynamic>.from(response);
   }
 
+  Future<Map<String, dynamic>> topUpWithProvider({
+    required int amount,
+    required String providerTransactionId,
+  }) async {
+    final wallet = await getWallet();
+    final walletId =
+        wallet['id']?.toString() ?? wallet['walletId']?.toString() ?? '';
+    if (walletId.isEmpty) {
+      throw const ApiException('Identifiant du portefeuille manquant.');
+    }
+
+    final response = await apiService.patch(BaseUrl.walletTopUp(walletId), {
+      'amount': amount,
+      'currency': wallet['currency']?.toString() ?? 'XOF',
+      'providerTransactionId': providerTransactionId,
+    });
+    if (response is! Map) {
+      throw Exception('Invalid top-up response');
+    }
+    return Map<String, dynamic>.from(response);
+  }
+
   Future<Map<String, dynamic>> refreshWallet() async {
     return getWallet();
   }

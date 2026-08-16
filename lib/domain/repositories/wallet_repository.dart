@@ -9,5 +9,10 @@ abstract class WalletRepository {
     required bool isCredit,
   });
 
+  Future<Wallet> topUpWithProvider({
+    required Money amount,
+    required String providerTransactionId,
+  });
+
   Future<Wallet> refreshWallet();
 }

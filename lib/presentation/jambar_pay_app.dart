@@ -19,6 +19,10 @@ import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_eve
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_state.dart';
+import 'package:jambar_pay_mobile/domain/repositories/wallet_repository.dart';
+import 'package:jambar_pay_mobile/data/services/kkiapay_checkout_service.dart';
+import 'package:jambar_pay_mobile/domain/value_objects/money.dart';
+import 'package:jambar_pay_mobile/injection.dart' as di;
 import 'screens/login_screen.dart';
 import 'screens/pin_screen.dart';
 import 'screens/home_screen.dart';
@@ -244,6 +248,7 @@ class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
   late bool _isDarkMode;
   late AppState _appState;
+  bool _topUpInProgress = false;
 
   @override
   void initState() {
@@ -277,6 +282,38 @@ class _HomeShellState extends State<HomeShell> {
     context.read<AuthBloc>().add(const LogoutRequested());
   }
 
+  Future<void> _onTopUpTap() async {
+    if (_topUpInProgress) return;
+
+    final amount = await _askTopUpAmount(context);
+    if (amount == null || !mounted) return;
+
+    setState(() => _topUpInProgress = true);
+    try {
+      final transactionId = await di.sl<KkiapayCheckoutService>().startCheckout(
+        amount: amount,
+        name: widget.user.name,
+        phone: widget.user.phone.digits,
+      );
+      await di.sl<WalletRepository>().topUpWithProvider(
+        amount: Money.xof(amount),
+        providerTransactionId: transactionId,
+      );
+      if (!mounted) return;
+      context.read<WalletBloc>().add(const WalletRefreshRequested());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Recharge Kkiapay confirmée.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _topUpInProgress = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WalletBloc, WalletState>(
@@ -305,6 +342,7 @@ class _HomeShellState extends State<HomeShell> {
             clearWallet: wallet == null,
           ),
           onLogout: _onLogout,
+          onTopUpTap: _onTopUpTap,
         );
       },
     );
@@ -317,4 +355,39 @@ class _HomeShellState extends State<HomeShell> {
     final minute = date.minute.toString().padLeft(2, '0');
     return '$day/$month/${date.year}, ${hour}h$minute';
   }
+}
+
+Future<int?> _askTopUpAmount(BuildContext context) async {
+  final controller = TextEditingController();
+  final amount = await showDialog<int>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Recharger le portefeuille'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          labelText: 'Montant',
+          suffixText: 'FCFA',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final parsed = int.tryParse(controller.text.trim());
+            if (parsed == null || parsed < 100) return;
+            Navigator.of(dialogContext).pop(parsed);
+          },
+          child: const Text('Continuer avec Kkiapay'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return amount;
 }

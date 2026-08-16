@@ -35,6 +35,22 @@ class WalletRepositoryImpl implements WalletRepository {
   }
 
   @override
+  Future<Wallet> topUpWithProvider({
+    required Money amount,
+    required String providerTransactionId,
+  }) async {
+    try {
+      final json = await _remoteDataSource.topUpWithProvider(
+        amount: amount.amount,
+        providerTransactionId: providerTransactionId,
+      );
+      return _mapToWallet(json);
+    } catch (e) {
+      throw Exception('Impossible de confirmer la recharge: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<Wallet> refreshWallet() async {
     try {
       final json = await _remoteDataSource.refreshWallet();

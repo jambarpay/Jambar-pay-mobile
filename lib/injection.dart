@@ -15,6 +15,7 @@ import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/transaction_repository_impl.dart';
 import 'data/repositories/wallet_repository_impl.dart';
 import 'data/repositories/payment_repository_impl.dart';
+import 'data/services/kkiapay_checkout_service.dart';
 import 'data/repositories/restaurant_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/transaction_repository.dart';
@@ -168,6 +169,9 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   );
   sl.registerLazySingleton<WalletRepository>(
     () => WalletRepositoryImpl(sl<WalletRemoteDataSource>()),
+  );
+  sl.registerLazySingleton<KkiapayCheckoutService>(
+    () => KkiapayCheckoutService(sl<ApiService>(instanceName: _paymentApi)),
   );
   sl.registerLazySingleton<PaymentRepository>(
     () => PaymentRepositoryImpl(
