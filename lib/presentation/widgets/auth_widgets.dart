@@ -281,16 +281,17 @@ class PhoneField extends StatelessWidget {
   }
 
   static String _formatPhoneNumber(String raw) {
-    if (raw.isEmpty) {
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) {
       return '77 000 00 00';
     }
 
     final buffer = StringBuffer();
-    for (var index = 0; index < raw.length; index++) {
+    for (var index = 0; index < digits.length && index < 9; index++) {
       if (index == 2 || index == 5 || index == 7) {
         buffer.write(' ');
       }
-      buffer.write(raw[index]);
+      buffer.write(digits[index]);
     }
     return buffer.toString();
   }
