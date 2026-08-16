@@ -524,7 +524,7 @@ class _PhoneInput extends StatelessWidget {
     final foreground = isDarkMode
         ? AppColors.darkPrimaryText
         : AppColors.lightPrimaryText;
-    final display = value.isEmpty ? '77 XXX XX XX' : _formatPartialPhone(value);
+    final display = value.isEmpty ? '77 000 00 00' : _formatPartialPhone(value);
 
     return Container(
       height: 58,

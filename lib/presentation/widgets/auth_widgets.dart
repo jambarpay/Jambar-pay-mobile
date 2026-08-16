@@ -282,13 +282,13 @@ class PhoneField extends StatelessWidget {
 
   static String _formatPhoneNumber(String raw) {
     if (raw.isEmpty) {
-      return '77-123-45-67';
+      return '77 000 00 00';
     }
 
     final buffer = StringBuffer();
     for (var index = 0; index < raw.length; index++) {
       if (index == 2 || index == 5 || index == 7) {
-        buffer.write('-');
+        buffer.write(' ');
       }
       buffer.write(raw[index]);
     }
