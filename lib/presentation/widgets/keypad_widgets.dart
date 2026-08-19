@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
@@ -54,7 +57,13 @@ class _NativeNumericInputState extends State<NativeNumericInput> {
       // requestFocus is sufficient on most platforms. Explicitly asking the
       // text input channel also handles fields mounted after a route/BLoC
       // transition, where autofocus can run before the view is attached.
-      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+      if (!kIsWeb) {
+        unawaited(
+          SystemChannels.textInput
+              .invokeMethod<void>('TextInput.show')
+              .catchError((_) {}),
+        );
+      }
     });
   }
 
