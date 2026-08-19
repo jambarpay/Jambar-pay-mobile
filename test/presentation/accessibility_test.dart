@@ -69,6 +69,10 @@ void main() {
     );
     await tester.pump();
 
+    final pinTextField = tester.widget<TextField>(
+      find.byKey(const ValueKey('native-pin-text-field')),
+    );
+    expect(pinTextField.focusNode?.hasFocus, isTrue);
     expect(
       find.bySemanticsLabel('1 chiffre(s) saisi(s) sur 4'),
       findsOneWidget,

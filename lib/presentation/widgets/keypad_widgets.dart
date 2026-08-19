@@ -4,7 +4,7 @@ import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 
-class NativeNumericInput extends StatelessWidget {
+class NativeNumericInput extends StatefulWidget {
   const NativeNumericInput({
     super.key,
     required this.controller,
@@ -23,22 +23,58 @@ class NativeNumericInput extends StatelessWidget {
   final bool enabled;
 
   @override
+  State<NativeNumericInput> createState() => _NativeNumericInputState();
+}
+
+class _NativeNumericInputState extends State<NativeNumericInput> {
+  @override
+  void initState() {
+    super.initState();
+    _scheduleKeyboard();
+  }
+
+  @override
+  void didUpdateWidget(covariant NativeNumericInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((!oldWidget.enabled && widget.enabled) ||
+        oldWidget.focusNode != widget.focusNode) {
+      _scheduleKeyboard();
+    }
+  }
+
+  void _scheduleKeyboard() {
+    if (!widget.enabled) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.enabled || !widget.focusNode.canRequestFocus) {
+        return;
+      }
+
+      widget.focusNode.requestFocus();
+      // requestFocus is sufficient on most platforms. Explicitly asking the
+      // text input channel also handles fields mounted after a route/BLoC
+      // transition, where autofocus can run before the view is attached.
+      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Opacity(
       opacity: 0.01,
       child: SizedBox(
         height: 48,
         child: TextField(
-          key: textFieldKey,
-          controller: controller,
-          focusNode: focusNode,
-          enabled: enabled,
-          autofocus: true,
+          key: widget.textFieldKey,
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          enabled: widget.enabled,
+          autofocus: false,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.done,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(maxLength),
+            LengthLimitingTextInputFormatter(widget.maxLength),
           ],
           showCursor: false,
           enableInteractiveSelection: false,
@@ -49,7 +85,7 @@ class NativeNumericInput extends StatelessWidget {
             counterText: '',
             contentPadding: EdgeInsets.zero,
           ),
-          onChanged: onChanged,
+          onChanged: widget.onChanged,
         ),
       ),
     );
