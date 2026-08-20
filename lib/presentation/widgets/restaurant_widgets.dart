@@ -136,10 +136,12 @@ class RestaurantMap extends StatelessWidget {
     super.key,
     required this.restaurants,
     required this.isDarkMode,
+    this.height = 360,
   });
 
   final List<Restaurant> restaurants;
   final bool isDarkMode;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +149,7 @@ class RestaurantMap extends StatelessWidget {
 
     if (restaurants.isEmpty) {
       return Container(
-        height: 360,
+        height: height,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
         decoration: BoxDecoration(
           color: isDarkMode
@@ -157,7 +159,7 @@ class RestaurantMap extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          AppLocalizations.of(context).noTransactionsAvailable,
+          AppLocalizations.of(context).noRestaurantsAvailable,
           style: TextStyle(
             color: palette.secondaryText,
             fontWeight: FontWeight.w600,
@@ -169,7 +171,7 @@ class RestaurantMap extends StatelessWidget {
     final center = _averagePosition(restaurants);
 
     return Container(
-      height: 360,
+      height: height,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(

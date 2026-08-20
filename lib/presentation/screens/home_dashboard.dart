@@ -2,61 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jambar_pay_mobile/app/router/app_router.dart';
-import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
+import 'package:jambar_pay_mobile/domain/entities/restaurant.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
-import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
-import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_event.dart';
-import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_state.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_bloc.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_state.dart';
 import '../models/mobile_employee_space.dart';
 import '../widgets/app_palette.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/home_widgets.dart';
-import '../widgets/transaction_widgets.dart';
+import '../widgets/restaurant_widgets.dart';
 import 'package:jambar_pay_mobile/design_system/tokens/app_colors.dart';
-
-TransactionItemModel _toTransactionItemModel(
-  Transaction transaction,
-  BuildContext context,
-) {
-  final loc = AppLocalizations.of(context);
-
-  return TransactionItemModel(
-    id: transaction.id,
-    type: transaction.type == TransactionType.credit ? 'CREDIT' : 'DEBIT',
-    amount: MoneyModel(
-      amount: transaction.amount.amount.toDouble(),
-      currency: transaction.amount.currency,
-      formatted: transaction.amount.formatted,
-      symbol: 'F',
-    ),
-    label: transaction.label,
-    date: _formatTransactionDate(transaction.date, context),
-    status: transaction.status == TransactionStatus.validated
-        ? loc.statusValidated
-        : transaction.status == TransactionStatus.failed
-        ? loc.statusFailed
-        : loc.statusPending,
-  );
-}
-
-String _formatTransactionDate(DateTime date, BuildContext context) {
-  final loc = AppLocalizations.of(context);
-  final now = DateTime.now();
-  final time = '${date.hour}h${date.minute.toString().padLeft(2, '0')}';
-
-  if (date.year == now.year && date.month == now.month && date.day == now.day) {
-    return loc.todayAt(time);
-  }
-
-  final yesterday = now.subtract(const Duration(days: 1));
-  if (date.year == yesterday.year &&
-      date.month == yesterday.month &&
-      date.day == yesterday.day) {
-    return loc.yesterdayAt(time);
-  }
-
-  return loc.dateTime('${date.day}/${date.month}/${date.year}', time);
-}
 
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({
@@ -176,44 +132,68 @@ class HomeDashboard extends StatelessWidget {
                   isDarkMode: isDarkMode,
                 ),
                 SectionHeader(
-                  title: loc.recentTransactions,
+                  title: loc.restaurantsNearby(
+                    context.select<RestaurantBloc, int>((bloc) {
+                      final state = bloc.state;
+                      return state is RestaurantLoaded
+                          ? state.restaurants.length
+                          : 0;
+                    }),
+                  ),
                   actionLabel: loc.viewAll,
-                  onActionTap: () {
-                    final transactionBloc = context.read<TransactionBloc>();
-                    final transactionState = transactionBloc.state;
-
-                    if (transactionState is TransactionLoaded) {
-                      transactionBloc.add(const SearchCleared());
-                      transactionBloc.add(
-                        const TransactionsFilterChanged('all'),
-                      );
-                    } else {
-                      transactionBloc.add(const TransactionsLoadRequested());
-                    }
-
-                    onTabSelected(1);
-                  },
+                  onActionTap: () => onTabSelected(2),
                   isDarkMode: isDarkMode,
                 ),
                 Expanded(
-                  child: BlocBuilder<TransactionBloc, TransactionState>(
+                  child: BlocBuilder<RestaurantBloc, RestaurantState>(
                     builder: (context, state) {
-                      final recentTransactions = state is TransactionLoaded
-                          ? state.allTransactions
-                                .take(6)
-                                .map(
-                                  (transaction) => _toTransactionItemModel(
-                                    transaction,
-                                    context,
-                                  ),
-                                )
-                                .toList()
-                          : const <TransactionItemModel>[];
+                      if (state is RestaurantInitial ||
+                          state is RestaurantLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                      return TransactionsList(
-                        transactions: recentTransactions,
-                        showAmount: true,
-                        isDarkMode: isDarkMode,
+                      if (state is RestaurantFailure) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  state.message,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                FilledButton.icon(
+                                  onPressed: () => context
+                                      .read<RestaurantBloc>()
+                                      .add(const RestaurantsLoadRequested()),
+                                  icon: const Icon(Icons.refresh),
+                                  label: Text(loc.retry),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      final restaurants = state is RestaurantLoaded
+                          ? [...state.restaurants]
+                          : const <Restaurant>[];
+                      restaurants.sort(
+                        (left, right) =>
+                            left.distanceKm.compareTo(right.distanceKm),
+                      );
+
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: RestaurantMap(
+                          restaurants: restaurants
+                              .where((restaurant) => restaurant.hasCoordinates)
+                              .toList(),
+                          height: 270,
+                          isDarkMode: isDarkMode,
+                        ),
                       );
                     },
                   ),

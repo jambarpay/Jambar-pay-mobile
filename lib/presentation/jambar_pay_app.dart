@@ -16,6 +16,7 @@ import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_bloc.
 import 'package:jambar_pay_mobile/presentation/bloc/restaurants/restaurant_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_event.dart';
+import 'package:jambar_pay_mobile/presentation/bloc/transactions/transaction_state.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_state.dart';
@@ -258,13 +259,19 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionBloc>().add(const TransactionsLoadRequested());
       context.read<WalletBloc>().add(const WalletLoadRequested());
       context.read<RestaurantBloc>().add(const RestaurantsLoadRequested());
     });
   }
 
   void _onTabSelected(int index) {
+    if (index == 1) {
+      final transactionState = context.read<TransactionBloc>().state;
+      if (transactionState is TransactionInitial ||
+          transactionState is TransactionFailure) {
+        context.read<TransactionBloc>().add(const TransactionsLoadRequested());
+      }
+    }
     setState(() => _currentIndex = index);
   }
 
