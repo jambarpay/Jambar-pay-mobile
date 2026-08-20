@@ -31,7 +31,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) async {
     emit(const TransactionLoading());
     try {
-      final all = await _getTransactions();
+      final result = await _getTransactions(page: 0, size: _pageSize);
+      final all = result.transactions;
       if (all.isEmpty) {
         emit(const TransactionEmpty());
       } else {
@@ -42,8 +43,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
             filteredTransactions: filtered,
             currentFilter: 'all',
             searchQuery: null,
-            hasMore: filtered.length > _pageSize,
-            visibleCount: _pageSize,
+            hasMore: result.hasMore,
+            visibleCount: filtered.length,
+            page: result.page,
           ),
         );
       }
@@ -61,7 +63,8 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
 
     emit(const TransactionLoading());
     try {
-      final all = await _getTransactions();
+      final result = await _getTransactions(page: 0, size: _pageSize);
+      final all = result.transactions;
       final filtered = _filterTransactions(
         transactions: all,
         filter: current.currentFilter,
@@ -71,8 +74,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         current.copyWith(
           allTransactions: all,
           filteredTransactions: filtered,
-          hasMore: filtered.length > _pageSize,
-          visibleCount: _pageSize,
+          hasMore: result.hasMore,
+          visibleCount: filtered.length,
+          page: result.page,
         ),
       );
     } catch (e) {
@@ -80,20 +84,35 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     }
   }
 
-  void _onLoadMoreRequested(
+  Future<void> _onLoadMoreRequested(
     TransactionsLoadMoreRequested event,
     Emitter<TransactionState> emit,
-  ) {
+  ) async {
     if (state is! TransactionLoaded) return;
     final current = state as TransactionLoaded;
+    if (!current.hasMore) return;
 
-    final newCount = current.visibleCount + _pageSize;
-    emit(
-      current.copyWith(
-        visibleCount: newCount.clamp(0, current.filteredTransactions.length),
-        hasMore: newCount < current.filteredTransactions.length,
-      ),
-    );
+    try {
+      final result = await _getTransactions(
+        page: current.page + 1,
+        size: _pageSize,
+      );
+      final all = [...current.allTransactions, ...result.transactions];
+      final filtered = _filterTransactions(
+        transactions: all,
+        filter: current.currentFilter,
+        query: current.searchQuery,
+      );
+      emit(current.copyWith(
+        allTransactions: all,
+        filteredTransactions: filtered,
+        visibleCount: filtered.length,
+        hasMore: result.hasMore,
+        page: result.page,
+      ));
+    } catch (e) {
+      emit(TransactionFailure(e.toString()));
+    }
   }
 
   void _onFilterChanged(
@@ -114,8 +133,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         filteredTransactions: filtered,
         currentFilter: event.filter,
         searchQuery: current.searchQuery,
-        hasMore: filtered.length > _pageSize,
-        visibleCount: _pageSize,
+        hasMore: current.hasMore,
+        visibleCount: filtered.length,
+        page: current.page,
       ),
     );
   }
@@ -138,8 +158,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         filteredTransactions: filtered,
         currentFilter: current.currentFilter,
         searchQuery: event.query,
-        hasMore: filtered.length > _pageSize,
-        visibleCount: _pageSize,
+        hasMore: current.hasMore,
+        visibleCount: filtered.length,
+        page: current.page,
       ),
     );
   }
@@ -158,8 +179,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         filteredTransactions: filtered,
         currentFilter: current.currentFilter,
         searchQuery: null,
-        hasMore: filtered.length > _pageSize,
-        visibleCount: _pageSize,
+        hasMore: current.hasMore,
+        visibleCount: filtered.length,
+        page: current.page,
       ),
     );
   }
@@ -175,8 +197,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           filteredTransactions: [event.transaction],
           currentFilter: 'all',
           searchQuery: null,
-          hasMore: false,
-          visibleCount: 1,
+        hasMore: false,
+        visibleCount: 1,
+        page: 0,
         ),
       );
       return;
@@ -199,8 +222,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       current.copyWith(
         allTransactions: updatedAllTransactions,
         filteredTransactions: updatedFilteredTransactions,
-        hasMore: updatedFilteredTransactions.length > _pageSize,
-        visibleCount: _pageSize,
+        hasMore: current.hasMore,
+        visibleCount: updatedFilteredTransactions.length,
+        page: current.page,
       ),
     );
   }

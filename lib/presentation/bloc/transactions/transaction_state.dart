@@ -23,6 +23,7 @@ class TransactionLoaded extends TransactionState {
   final String? searchQuery;
   final bool hasMore;
   final int visibleCount;
+  final int page;
 
   const TransactionLoaded({
     required this.allTransactions,
@@ -31,6 +32,7 @@ class TransactionLoaded extends TransactionState {
     this.searchQuery,
     this.hasMore = true,
     this.visibleCount = 4,
+    this.page = 0,
   });
 
   List<Transaction> get visibleTransactions =>
@@ -43,6 +45,7 @@ class TransactionLoaded extends TransactionState {
     String? searchQuery,
     bool? hasMore,
     int? visibleCount,
+    int? page,
   }) {
     return TransactionLoaded(
       allTransactions: allTransactions ?? this.allTransactions,
@@ -51,6 +54,7 @@ class TransactionLoaded extends TransactionState {
       searchQuery: searchQuery ?? this.searchQuery,
       hasMore: hasMore ?? this.hasMore,
       visibleCount: visibleCount ?? this.visibleCount,
+      page: page ?? this.page,
     );
   }
 
@@ -62,6 +66,7 @@ class TransactionLoaded extends TransactionState {
     searchQuery,
     hasMore,
     visibleCount,
+    page,
   ];
 }
 

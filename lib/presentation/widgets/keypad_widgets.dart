@@ -113,6 +113,7 @@ class NumericKeypad extends StatelessWidget {
     this.foregroundColor = AppColors.lightPrimaryText,
     this.buttonBackgroundColor,
     this.buttonBorderColor,
+    this.keyPrefix = 'keypad',
   });
 
   final ValueChanged<String> onDigitTap;
@@ -124,6 +125,7 @@ class NumericKeypad extends StatelessWidget {
   final Color foregroundColor;
   final Color? buttonBackgroundColor;
   final Color? buttonBorderColor;
+  final String keyPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -153,6 +155,7 @@ class NumericKeypad extends StatelessWidget {
                           foregroundColor: foregroundColor,
                           backgroundColor: buttonBackgroundColor,
                           borderColor: buttonBorderColor,
+                          keyPrefix: keyPrefix,
                           onTap: () => onDigitTap(digit),
                         ),
                       ),
@@ -173,6 +176,7 @@ class NumericKeypad extends StatelessWidget {
                           foregroundColor: foregroundColor,
                           backgroundColor: buttonBackgroundColor,
                           borderColor: buttonBorderColor,
+                          keyPrefix: keyPrefix,
                           onTap: onLeadingTap ?? () {},
                         ),
                 ),
@@ -185,6 +189,7 @@ class NumericKeypad extends StatelessWidget {
                     foregroundColor: foregroundColor,
                     backgroundColor: buttonBackgroundColor,
                     borderColor: buttonBorderColor,
+                    keyPrefix: keyPrefix,
                     onTap: () => onDigitTap('0'),
                   ),
                 ),
@@ -196,6 +201,7 @@ class NumericKeypad extends StatelessWidget {
                     foregroundColor: foregroundColor,
                     backgroundColor: buttonBackgroundColor,
                     borderColor: buttonBorderColor,
+                    keyPrefix: keyPrefix,
                     onTap: onBackspace,
                   ),
                 ),
@@ -221,6 +227,7 @@ class KeypadButton extends StatelessWidget {
     this.foregroundColor = AppColors.lightPrimaryText,
     this.backgroundColor,
     this.borderColor,
+    this.keyPrefix = 'keypad',
   });
 
   final String? label;
@@ -233,12 +240,13 @@ class KeypadButton extends StatelessWidget {
   final Color foregroundColor;
   final Color? backgroundColor;
   final Color? borderColor;
+  final String keyPrefix;
 
   @override
   Widget build(BuildContext context) {
     final buttonKey = label != null
-        ? ValueKey('keypad-$label')
-        : const ValueKey('keypad-backspace');
+        ? ValueKey('$keyPrefix-$label')
+        : ValueKey('$keyPrefix-backspace');
 
     return Semantics(
       button: true,

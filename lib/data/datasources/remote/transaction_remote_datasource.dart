@@ -11,6 +11,35 @@ class TransactionRemoteDataSource {
     return _items(response);
   }
 
+  Future<Map<String, dynamic>> getTransactionsPage({
+    required int page,
+    required int size,
+  }) async {
+    final response = await apiService.get(
+      BaseUrl.transactions(),
+      queryParameters: {'page': '$page', 'size': '$size'},
+    );
+    if (response is Map && response['content'] is List) {
+      return Map<String, dynamic>.from(response);
+    }
+    if (response is List) {
+      return {
+        'content': response,
+        'page': page,
+        'size': response.length,
+        'totalElements': response.length,
+        'totalPages': response.isEmpty ? 0 : 1,
+      };
+    }
+    return {
+      'content': const <dynamic>[],
+      'page': page,
+      'size': 0,
+      'totalElements': 0,
+      'totalPages': 0,
+    };
+  }
+
   Future<Map<String, dynamic>?> getTransactionById(String id) async {
     final response = await apiService.get(BaseUrl.transactions(id));
     if (response is! Map<String, dynamic>) return null;

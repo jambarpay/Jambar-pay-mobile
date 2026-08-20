@@ -34,10 +34,7 @@ void main() {
 
     expect(find.text('Code PIN'), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('native-pin-text-field')),
-      '1234',
-    );
+    await _tapDigits(tester, '1234', prefix: 'pin-keypad');
     await _pumpAsyncAuth(tester);
 
     expect(find.text('Transactions récentes'), findsOneWidget);
@@ -91,10 +88,7 @@ void main() {
     await tester.pumpAndSettle();
 
     for (var attempt = 0; attempt < 5; attempt++) {
-      await tester.enterText(
-        find.byKey(const ValueKey('native-pin-text-field')),
-        '0000',
-      );
+      await _tapDigits(tester, '0000', prefix: 'pin-keypad');
       await _pumpAsyncAuth(tester);
     }
 
@@ -118,10 +112,7 @@ void main() {
     }
     await tester.tap(find.text('Continuer'));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('native-pin-text-field')),
-      '1234',
-    );
+    await _tapDigits(tester, '1234', prefix: 'pin-keypad');
     await _pumpAsyncAuth(tester);
 
     expect(find.byType(HomeNavigationRail), findsOneWidget);
@@ -133,4 +124,15 @@ Future<void> _pumpAsyncAuth(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));
   await tester.pumpAndSettle();
+}
+
+Future<void> _tapDigits(
+  WidgetTester tester,
+  String value, {
+  String prefix = 'keypad',
+}) async {
+  for (final digit in value.split('')) {
+    await tester.tap(find.byKey(ValueKey('$prefix-$digit')));
+    await tester.pump();
+  }
 }

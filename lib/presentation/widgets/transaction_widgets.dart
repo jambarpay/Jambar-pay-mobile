@@ -56,11 +56,13 @@ class TransactionTile extends StatelessWidget {
     super.key,
     required this.transaction,
     this.showAmount = true,
+    this.compact = false,
     this.isDarkMode = false,
   });
 
   final TransactionItemModel transaction;
   final bool showAmount;
+  final bool compact;
   final bool isDarkMode;
 
   @override
@@ -68,7 +70,10 @@ class TransactionTile extends StatelessWidget {
     final palette = AppPalette(isDarkMode);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 12 : 16,
+        vertical: compact ? 9 : 14,
+      ),
       decoration: BoxDecoration(
         color: isDarkMode ? palette.tileBackground : Colors.white,
         border: Border.all(
@@ -86,21 +91,21 @@ class TransactionTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: compact ? 38 : 46,
+            height: compact ? 38 : 46,
             decoration: BoxDecoration(
               color: isDarkMode
                   ? AppColors.darkWarmSurface
                   : AppColors.brandSurface,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.restaurant_outlined,
-              size: 21,
+              size: compact ? 18 : 21,
               color: AppColors.brand,
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: compact ? 10 : 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,16 +113,16 @@ class TransactionTile extends StatelessWidget {
                 Text(
                   localizeTransactionLabel(context, transaction.label),
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: compact ? 13 : 15,
                     fontWeight: FontWeight.w700,
                     color: isDarkMode ? palette.primaryText : null,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: compact ? 1 : 3),
                 Text(
                   localizeRelativeDate(context, transaction.date),
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: compact ? 11 : 12.5,
                     color: isDarkMode
                         ? AppColors.darkMutedText
                         : AppColors.lightMutedText,
@@ -133,18 +138,18 @@ class TransactionTile extends StatelessWidget {
                 Text(
                   transaction.signedAmount,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: compact ? 13 : 15,
                     fontWeight: FontWeight.w700,
                     color: transaction.isCredit
                         ? AppColors.success
                         : (isDarkMode ? palette.primaryText : null),
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: compact ? 3 : 10),
                 Text(
                   _statusText(transaction.status, context),
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: compact ? 10 : 11.5,
                     color: _statusColor(transaction.status),
                     fontWeight: FontWeight.w500,
                   ),

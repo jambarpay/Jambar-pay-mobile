@@ -135,9 +135,21 @@ class JambarPayFlow extends StatelessWidget {
             subtitle: 'Saisissez à nouveau votre code PIN',
           );
         } else if (state is AuthPinLoading) {
-          return _buildPinScreen(context, state.phoneNumber, totalDigits: 4);
+          return _buildPinScreen(
+            context,
+            state.phoneNumber,
+            totalDigits: 4,
+            title: 'Code PIN',
+            subtitle: 'Saisissez votre code PIN à 4 chiffres',
+            isSubmitting: true,
+          );
         } else if (state is AuthPinResetInProgress) {
-          return _buildPinScreen(context, state.phoneNumber, totalDigits: 4);
+          return _buildPinScreen(
+            context,
+            state.phoneNumber,
+            totalDigits: 4,
+            isSubmitting: true,
+          );
         } else if (state is AuthPinResetSuccess) {
           return _buildPinScreen(context, state.phoneNumber, totalDigits: 4);
         } else if (state is AuthAuthenticated) {
@@ -206,6 +218,7 @@ class JambarPayFlow extends StatelessWidget {
     int totalDigits = 4,
     String? title,
     String? subtitle,
+    bool isSubmitting = false,
   }) {
     return PinScreen(
       pin: pin,
@@ -224,6 +237,7 @@ class JambarPayFlow extends StatelessWidget {
       totalDigits: totalDigits,
       title: title,
       subtitle: subtitle,
+      isSubmitting: isSubmitting,
     );
   }
 
@@ -261,6 +275,7 @@ class _HomeShellState extends State<HomeShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WalletBloc>().add(const WalletLoadRequested());
       context.read<RestaurantBloc>().add(const RestaurantsLoadRequested());
+      context.read<TransactionBloc>().add(const TransactionsLoadRequested());
     });
   }
 

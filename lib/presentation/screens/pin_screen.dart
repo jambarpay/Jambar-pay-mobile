@@ -24,6 +24,7 @@ class PinScreen extends StatefulWidget {
     this.totalDigits = 4,
     this.title,
     this.subtitle,
+    this.isSubmitting = false,
   });
 
   final String pin;
@@ -36,6 +37,7 @@ class PinScreen extends StatefulWidget {
   final int totalDigits;
   final String? title;
   final String? subtitle;
+  final bool isSubmitting;
 
   @override
   State<PinScreen> createState() => _PinScreenState();
@@ -44,33 +46,16 @@ class PinScreen extends StatefulWidget {
 class _PinScreenState extends State<PinScreen> {
   Timer? _countdownTimer;
   Duration _remainingLockDuration = Duration.zero;
-  late final TextEditingController _pinController;
-  late final FocusNode _pinFocusNode;
-  String _nativePin = '';
 
   @override
   void initState() {
     super.initState();
-    _pinController = TextEditingController(text: widget.pin);
-    _pinFocusNode = FocusNode();
-    _nativePin = widget.pin;
     _syncLockCountdown();
   }
 
   @override
   void didUpdateWidget(covariant PinScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.pin != widget.pin && _pinController.text != widget.pin) {
-      _pinController.value = TextEditingValue(
-        text: widget.pin,
-        selection: TextSelection.collapsed(offset: widget.pin.length),
-      );
-      _nativePin = widget.pin;
-    }
-    if (oldWidget.errorText != widget.errorText && widget.errorText != null) {
-      _pinController.clear();
-      _nativePin = '';
-    }
     if (oldWidget.pinLockedUntil != widget.pinLockedUntil) {
       _syncLockCountdown();
     }
@@ -79,8 +64,6 @@ class _PinScreenState extends State<PinScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _pinController.dispose();
-    _pinFocusNode.dispose();
     super.dispose();
   }
 
@@ -140,6 +123,14 @@ class _PinScreenState extends State<PinScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isHighDensityPhone =
+                MediaQuery.of(context).devicePixelRatio > 1.5;
+            final keypadTopSpacing = isHighDensityPhone
+                ? (constraints.maxHeight * 0.2).clamp(140.0, 200.0)
+                : constraints.maxHeight < 1000
+                ? 24.0
+                : (constraints.maxHeight * 0.1).clamp(80.0, 110.0);
+
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(28, 12, 28, 10),
               child: ConstrainedBox(
@@ -216,14 +207,6 @@ class _PinScreenState extends State<PinScreen> {
                           : AppColors.lightPrimaryText,
                       showEmptyBorder: false,
                     ),
-                    NativeNumericInput(
-                      controller: _pinController,
-                      focusNode: _pinFocusNode,
-                      maxLength: widget.totalDigits,
-                      textFieldKey: const ValueKey('native-pin-text-field'),
-                      enabled: !isLocked,
-                      onChanged: _onNativePinChanged,
-                    ),
                     if (widget.errorText != null) ...[
                       const SizedBox(height: 14),
                       Text(
@@ -257,23 +240,53 @@ class _PinScreenState extends State<PinScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
-                    if (isUnlockFlow) ...[
-                      const SizedBox(height: 18),
-                      TextButton(
-                        onPressed: isLocked
-                            ? null
-                            : () => unawaited(_openReset(context)),
-                        child: const Text(
-                          'OUBLIÉ ?',
-                          style: TextStyle(
-                            color: AppColors.brand,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                    SizedBox(height: keypadTopSpacing),
+                    if (widget.isSubmitting)
+                      SizedBox(
+                        height: 286,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(
+                                color: isDarkMode
+                                    ? AppColors.darkPrimaryText
+                                    : AppColors.brand,
+                                strokeWidth: 3,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Connexion en cours…',
+                                style: TextStyle(
+                                  color: isDarkMode
+                                      ? AppColors.darkSecondaryText
+                                      : AppColors.lightSecondaryText,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      )
+                    else
+                      SizedBox(
+                        height: 286,
+                        child: NumericKeypad(
+                          key: ValueKey(
+                            'pin-keypad-container-${widget.totalDigits}',
+                          ),
+                          onDigitTap: _onKeypadDigit,
+                          onBackspace: _onKeypadBackspace,
+                          keyPrefix: 'pin-keypad',
+                          leadingLabel: isUnlockFlow ? 'OUBLIÉ ?' : null,
+                          onLeadingTap: isUnlockFlow
+                              ? () => unawaited(_openReset(context))
+                              : null,
+                          foregroundColor: foreground,
+                        ),
                       ),
-                    ],
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
@@ -284,20 +297,16 @@ class _PinScreenState extends State<PinScreen> {
     );
   }
 
-  void _onNativePinChanged(String value) {
-    if (value == _nativePin) return;
-
-    if (value.length > _nativePin.length) {
-      for (final digit in value.substring(_nativePin.length).split('')) {
-        widget.onDigitTap(digit);
-      }
-    } else if (value.length < _nativePin.length) {
-      for (var index = value.length; index < _nativePin.length; index++) {
-        widget.onBackspace();
-      }
+  void _onKeypadDigit(String digit) {
+    if (isLocked || widget.isSubmitting || widget.pin.length >= widget.totalDigits) {
+      return;
     }
+    widget.onDigitTap(digit);
+  }
 
-    _nativePin = value;
+  void _onKeypadBackspace() {
+    if (isLocked || widget.isSubmitting) return;
+    widget.onBackspace();
   }
 
   Future<void> _openReset(BuildContext context) async {

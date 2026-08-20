@@ -161,14 +161,10 @@ class _OtpStepState extends State<_OtpStep> {
   String? _errorMessage;
   bool _isSending = false;
   bool _isVerifying = false;
-  late final TextEditingController _otpController;
-  late final FocusNode _otpFocusNode;
 
   @override
   void initState() {
     super.initState();
-    _otpController = TextEditingController();
-    _otpFocusNode = FocusNode();
     if (widget.sendOnOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(_sendOtp());
@@ -178,8 +174,6 @@ class _OtpStepState extends State<_OtpStep> {
 
   @override
   void dispose() {
-    _otpController.dispose();
-    _otpFocusNode.dispose();
     super.dispose();
   }
 
@@ -187,6 +181,9 @@ class _OtpStepState extends State<_OtpStep> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final formattedPhone = PhoneNumber(widget.phoneNumber).formatted;
+    final keypadForeground = Theme.of(context).brightness == Brightness.dark
+        ? AppColors.darkPrimaryText
+        : AppColors.lightPrimaryText;
 
     return _FlowFrame(
       title: loc.whatsappCode,
@@ -196,24 +193,26 @@ class _OtpStepState extends State<_OtpStep> {
         children: [
           Text(loc.otpSentTo(formattedPhone), style: _bodyTextStyle(context)),
           const SizedBox(height: 34),
-          _CodeInput(
-            controller: _otpController,
-            focusNode: _otpFocusNode,
-            value: _otp,
-            total: 6,
+          Semantics(
             label: loc.whatsappCode,
-            textFieldKey: const ValueKey('native-otp-text-field'),
-            enabled: !_isVerifying,
-            onChanged: (value) => setState(() {
-              _errorMessage = null;
-              _otp = value;
-            }),
+            button: true,
+            child: _CodeBoxes(value: _otp, total: 6),
+          ),
+          const SizedBox(height: 58),
+          SizedBox(
+            height: 286,
+            child: NumericKeypad(
+              key: const ValueKey('secret-otp-keypad'),
+              onDigitTap: _onOtpDigit,
+              onBackspace: _onOtpBackspace,
+              foregroundColor: keypadForeground,
+            ),
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
             _ErrorText(_errorMessage!),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _PrimaryButton(
             label: loc.verifyCode,
             onPressed: _otp.length == 6 && !_isVerifying
@@ -236,15 +235,26 @@ class _OtpStepState extends State<_OtpStep> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Utilisez le clavier numérique de votre téléphone.',
-            textAlign: TextAlign.center,
-            style: _bodyTextStyle(context).copyWith(fontSize: 12),
-          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
+  }
+
+  void _onOtpDigit(String digit) {
+    if (_isVerifying || _otp.length >= 6) return;
+    setState(() {
+      _errorMessage = null;
+      _otp += digit;
+    });
+  }
+
+  void _onOtpBackspace() {
+    if (_isVerifying || _otp.isEmpty) return;
+    setState(() {
+      _errorMessage = null;
+      _otp = _otp.substring(0, _otp.length - 1);
+    });
   }
 
   Future<void> _sendOtp() async {
@@ -300,29 +310,21 @@ class _PinStepState extends State<_PinStep> {
   String _pin = '';
   String? _errorMessage;
   bool _isSubmitting = false;
-  late final TextEditingController _pinController;
-  late final FocusNode _pinFocusNode;
 
   bool get _isConfirmation => widget.kind == _PinStepKind.confirmation;
 
   @override
   void initState() {
     super.initState();
-    _pinController = TextEditingController();
-    _pinFocusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _pinController.dispose();
-    _pinFocusNode.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final title = _isConfirmation ? loc.confirmation : loc.newSecretCode;
+    final keypadForeground = Theme.of(context).brightness == Brightness.dark
+        ? AppColors.darkPrimaryText
+        : AppColors.lightPrimaryText;
 
     return _FlowFrame(
       title: title,
@@ -337,28 +339,30 @@ class _PinStepState extends State<_PinStep> {
             style: _bodyTextStyle(context),
           ),
           const SizedBox(height: 34),
-          _CodeInput(
-            controller: _pinController,
-            focusNode: _pinFocusNode,
-            value: _pin,
-            total: 4,
+          Semantics(
             label: title,
-            textFieldKey: ValueKey(
-              _isConfirmation
-                  ? 'native-secret-code-confirmation-text-field'
-                  : 'native-secret-code-text-field',
+            button: true,
+            child: _CodeBoxes(value: _pin, total: 4),
+          ),
+          const SizedBox(height: 58),
+          SizedBox(
+            height: 286,
+            child: NumericKeypad(
+              key: ValueKey(
+                _isConfirmation
+                    ? 'secret-pin-confirmation-keypad'
+                    : 'secret-pin-keypad',
+              ),
+              onDigitTap: _onPinDigit,
+              onBackspace: _onPinBackspace,
+              foregroundColor: keypadForeground,
             ),
-            enabled: !_isSubmitting,
-            onChanged: (value) => setState(() {
-              _errorMessage = null;
-              _pin = value;
-            }),
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
             _ErrorText(_errorMessage!),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _PrimaryButton(
             label: _isConfirmation ? 'Valider' : loc.continueLabel,
             onPressed: _pin.length == 4 && !_isSubmitting
@@ -366,15 +370,26 @@ class _PinStepState extends State<_PinStep> {
                 : null,
             isLoading: _isSubmitting,
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Utilisez le clavier numérique de votre téléphone.',
-            textAlign: TextAlign.center,
-            style: _bodyTextStyle(context).copyWith(fontSize: 12),
-          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
+  }
+
+  void _onPinDigit(String digit) {
+    if (_isSubmitting || _pin.length >= 4) return;
+    setState(() {
+      _errorMessage = null;
+      _pin += digit;
+    });
+  }
+
+  void _onPinBackspace() {
+    if (_isSubmitting || _pin.isEmpty) return;
+    setState(() {
+      _errorMessage = null;
+      _pin = _pin.substring(0, _pin.length - 1);
+    });
   }
 
   Future<void> _continue() async {
@@ -398,7 +413,6 @@ class _PinStepState extends State<_PinStep> {
       setState(() {
         _errorMessage = AppLocalizations.of(context).codeMismatch;
         _pin = '';
-        _pinController.clear();
       });
       return;
     }
@@ -429,7 +443,6 @@ class _PinStepState extends State<_PinStep> {
         _isSubmitting = false;
         _errorMessage = error;
         _pin = '';
-        _pinController.clear();
       });
       return;
     }
@@ -566,52 +579,6 @@ class _PhoneInput extends StatelessWidget {
   }
 }
 
-class _CodeInput extends StatelessWidget {
-  const _CodeInput({
-    required this.controller,
-    required this.focusNode,
-    required this.value,
-    required this.total,
-    required this.label,
-    required this.textFieldKey,
-    required this.onChanged,
-    this.enabled = true,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final String value;
-  final int total;
-  final String label;
-  final Key textFieldKey;
-  final ValueChanged<String> onChanged;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Semantics(
-          label: label,
-          button: true,
-          child: GestureDetector(
-            onTap: enabled ? focusNode.requestFocus : null,
-            child: _CodeBoxes(value: value, total: total),
-          ),
-        ),
-        NativeNumericInput(
-          controller: controller,
-          focusNode: focusNode,
-          maxLength: total,
-          textFieldKey: textFieldKey,
-          enabled: enabled,
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-}
-
 class _CodeBoxes extends StatelessWidget {
   const _CodeBoxes({required this.value, required this.total});
 
@@ -630,7 +597,7 @@ class _CodeBoxes extends StatelessWidget {
       builder: (context, constraints) {
         final gap = total > 4 ? 8.0 : 10.0;
         final boxSize = ((constraints.maxWidth - gap * (total - 1)) / total)
-            .clamp(46.0, 68.0)
+            .clamp(total > 4 ? 36.0 : 46.0, 68.0)
             .toDouble();
 
         return Row(

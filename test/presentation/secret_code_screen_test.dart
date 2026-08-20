@@ -87,35 +87,32 @@ void main() {
     );
 
     expect(find.text('Code reçu par WhatsApp'), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const ValueKey('native-otp-text-field')),
-      '123456',
-    );
+    await _tapKeypadDigits(tester, '123456');
     await tester.pump();
     expect(find.text('Vérifier le code'), findsOneWidget);
     await tester.tap(find.text('Vérifier le code'));
     await tester.pumpAndSettle();
     expect(find.text('Nouveau code secret'), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('native-secret-code-text-field')),
-      '5678',
-    );
+    await _tapKeypadDigits(tester, '5678');
     await tester.pump();
     await tester.tap(find.text('Continuer'));
     await tester.pumpAndSettle();
     expect(find.text('Confirmation'), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('native-secret-code-confirmation-text-field')),
-      '5678',
-    );
+    await _tapKeypadDigits(tester, '5678');
     await tester.pump();
     await tester.tap(find.text('Valider'));
     await tester.pumpAndSettle();
 
     expect(repository.resetCall, ('771234567', '123456', '5678'));
   });
+}
+
+Future<void> _tapKeypadDigits(WidgetTester tester, String value) async {
+  for (final digit in value.split('')) {
+    await tester.tap(find.byKey(ValueKey('keypad-$digit')));
+  }
 }
 
 class _RecordingAuthRepository implements AuthRepository {

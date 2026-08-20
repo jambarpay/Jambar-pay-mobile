@@ -1,9 +1,12 @@
 import '../../domain/repositories/transaction_repository.dart';
+import '../../domain/repositories/paginated_transaction_repository.dart';
 import '../../domain/entities/transaction.dart';
+import '../../domain/entities/transaction_page.dart';
 import '../datasources/remote/transaction_remote_datasource.dart';
 import '../models/dto/transaction_dto.dart';
 
-class TransactionRepositoryImpl implements TransactionRepository {
+class TransactionRepositoryImpl
+    implements TransactionRepository, PaginatedTransactionRepository {
   final TransactionRemoteDataSource _remoteDataSource;
 
   TransactionRepositoryImpl(this._remoteDataSource);
@@ -14,6 +17,27 @@ class TransactionRepositoryImpl implements TransactionRepository {
     return response
         .map((json) => TransactionDto.fromJson(json).toDomain())
         .toList();
+  }
+
+  @override
+  Future<TransactionPage> getTransactionsPage({
+    required int page,
+    required int size,
+  }) async {
+    final response = await _remoteDataSource.getTransactionsPage(
+      page: page,
+      size: size,
+    );
+    final content = (response['content'] as List<dynamic>? ?? const [])
+        .map((json) => TransactionDto.fromJson(json).toDomain())
+        .toList(growable: false);
+    return TransactionPage(
+      transactions: content,
+      page: (response['page'] as num?)?.toInt() ?? page,
+      size: (response['size'] as num?)?.toInt() ?? size,
+      totalElements: (response['totalElements'] as num?)?.toInt() ?? content.length,
+      totalPages: (response['totalPages'] as num?)?.toInt() ?? (content.isEmpty ? 0 : 1),
+    );
   }
 
   @override

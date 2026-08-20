@@ -28,8 +28,8 @@ class ScannerPreview extends StatelessWidget {
         final availableWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
-        final cardWidth = availableWidth.clamp(260.0, 360.0).toDouble();
-        final scannerSize = (cardWidth - 48).clamp(212.0, 312.0).toDouble();
+        final cardWidth = availableWidth.clamp(220.0, 360.0).toDouble();
+        final scannerSize = (cardWidth - 44).clamp(176.0, 312.0).toDouble();
         final cardHeight = (scannerSize + 118).clamp(330.0, 450.0).toDouble();
         final scannerTop =
             ((cardHeight - scannerSize) / 2) + (scannerSize * 0.5);
@@ -132,7 +132,7 @@ class LargeQrCard extends StatelessWidget {
         final availableWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
-        final cardSize = availableWidth.clamp(250.0, 330.0).toDouble();
+        final cardSize = availableWidth.clamp(220.0, 330.0).toDouble();
 
         return Container(
           key: key,

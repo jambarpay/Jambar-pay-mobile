@@ -47,6 +47,7 @@ abstract final class BaseUrl {
   static String transactions([String? id]) => id == null
       ? '$apiPrefix/payments/transactions'
       : '$apiPrefix/payments/transactions/$id';
+  static String homeSummary() => '$apiPrefix/mobile/home-summary';
   static String restaurants() => '$apiPrefix/restaurants';
 
   static String authRegisterStart() => '$apiPrefix/auth/register/start';
