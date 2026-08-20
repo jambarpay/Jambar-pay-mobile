@@ -126,7 +126,9 @@ class _PinScreenState extends State<PinScreen> {
             final isHighDensityPhone =
                 MediaQuery.of(context).devicePixelRatio > 1.5;
             final keypadTopSpacing = isHighDensityPhone
-                ? (constraints.maxHeight * 0.2).clamp(140.0, 200.0)
+                ? (widget.errorText != null || isLocked
+                      ? 60.0
+                      : (constraints.maxHeight * 0.15).clamp(120.0, 150.0))
                 : constraints.maxHeight < 1000
                 ? 24.0
                 : (constraints.maxHeight * 0.1).clamp(80.0, 110.0);
@@ -151,8 +153,8 @@ class _PinScreenState extends State<PinScreen> {
                     if (!isUnlockFlow) const SizedBox(height: 4),
                     Image.asset(
                       'assets/images/IconeAppli.png',
-                      width: 104,
-                      height: 74,
+                      width: 150,
+                      height: 110,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 34),
