@@ -32,7 +32,7 @@ class AppLocalizations {
       'supportUnavailable':
           'Impossible d’ouvrir WhatsApp. Veuillez réessayer plus tard.',
       'email': 'Email : support@jambarpay.com',
-      'phone': 'Téléphone : +221 33 123 45 67',
+      'phone': 'Téléphone : +221 76 483 14 41',
       'ok': 'OK',
       'secretCodeChanged': 'Code secret modifié avec succès.',
       'logout': 'Déconnexion',
@@ -174,7 +174,7 @@ class AppLocalizations {
       'contactSupport': 'Contact support',
       'supportUnavailable': 'Unable to open WhatsApp. Please try again later.',
       'email': 'Email: support@jambarpay.com',
-      'phone': 'Phone: +221 33 123 45 67',
+      'phone': 'Phone: +221 76 483 14 41',
       'ok': 'OK',
       'secretCodeChanged': 'Secret code changed successfully.',
       'logout': 'Logout',

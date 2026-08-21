@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   static const _supportWhatsAppNumber = String.fromEnvironment(
     'SUPPORT_WHATSAPP_NUMBER',
-    defaultValue: '221331234567',
+    defaultValue: '221764831441',
   );
 
   Future<void> _contactSupport() async {
