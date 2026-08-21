@@ -6,7 +6,6 @@ import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 
 import '../models/mobile_employee_space.dart';
 import 'app_palette.dart';
-import 'auth_widgets.dart';
 import 'keypad_widgets.dart';
 
 class PaymentForm extends StatelessWidget {
@@ -15,17 +14,10 @@ class PaymentForm extends StatelessWidget {
     required this.isDarkMode,
     required this.merchantName,
     required this.amountDigits,
-    required this.pinDigits,
-    required this.pinController,
-    required this.pinFocusNode,
     required this.isSubmitting,
-    required this.isPinStep,
     required this.onClose,
     required this.onAmountDigitTap,
     required this.onAmountBackspace,
-    required this.onPinDigitTap,
-    required this.onPinBackspace,
-    required this.onNativePinChanged,
     required this.onSubmit,
     this.availableBalance,
     this.errorMessage,
@@ -35,18 +27,11 @@ class PaymentForm extends StatelessWidget {
   final String merchantName;
   final MoneyModel? availableBalance;
   final String amountDigits;
-  final String pinDigits;
-  final TextEditingController pinController;
-  final FocusNode pinFocusNode;
   final String? errorMessage;
   final bool isSubmitting;
-  final bool isPinStep;
   final VoidCallback onClose;
   final ValueChanged<String> onAmountDigitTap;
   final VoidCallback onAmountBackspace;
-  final ValueChanged<String> onPinDigitTap;
-  final VoidCallback onPinBackspace;
-  final ValueChanged<String> onNativePinChanged;
   final VoidCallback onSubmit;
 
   @override
@@ -95,9 +80,7 @@ class PaymentForm extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          isPinStep
-                              ? loc.enterYourPinCode
-                              : loc.enterAmountToPay,
+                          loc.enterAmountToPay,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -106,7 +89,7 @@ class PaymentForm extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        if (!isPinStep && availableBalance != null)
+                        if (availableBalance != null)
                           Text(
                             loc.availableBalance(availableBalance!.formatted),
                             style: TextStyle(
@@ -116,30 +99,14 @@ class PaymentForm extends StatelessWidget {
                             ),
                           ),
                         const SizedBox(height: 26),
-                        if (isPinStep)
-                          Column(
-                            children: [
-                              PinDots(length: pinDigits.length),
-                              NativeNumericInput(
-                                controller: pinController,
-                                focusNode: pinFocusNode,
-                                maxLength: 4,
-                                textFieldKey: const ValueKey(
-                                  'native-payment-pin-text-field',
-                                ),
-                                onChanged: onNativePinChanged,
-                              ),
-                            ],
-                          )
-                        else
-                          _AmountField(
-                            amountLabel: amountDigits.isEmpty
-                                ? loc.amount
-                                : MoneyModel.xof(
-                                    amount,
-                                  ).formatted.replaceAll(' Fcfa', ''),
-                            isDarkMode: isDarkMode,
-                          ),
+                        _AmountField(
+                          amountLabel: amountDigits.isEmpty
+                              ? loc.amount
+                              : MoneyModel.xof(
+                                  amount,
+                                ).formatted.replaceAll(' Fcfa', ''),
+                          isDarkMode: isDarkMode,
+                        ),
                         const SizedBox(height: 16),
                         _PaymentError(message: errorMessage),
                         SizedBox(
@@ -161,19 +128,18 @@ class PaymentForm extends StatelessWidget {
                                       color: Colors.white,
                                     ),
                                   )
-                                : Text(isPinStep ? loc.pay : loc.continueLabel),
+                                : Text(loc.pay),
                           ),
                         ),
                         const SizedBox(height: 26),
-                        if (!isPinStep)
-                          SizedBox(
-                            height: keypadHeight.toDouble(),
-                            child: NumericKeypad(
-                              onDigitTap: onAmountDigitTap,
-                              onBackspace: onAmountBackspace,
-                              foregroundColor: contentColor,
-                            ),
+                        SizedBox(
+                          height: keypadHeight.toDouble(),
+                          child: NumericKeypad(
+                            onDigitTap: onAmountDigitTap,
+                            onBackspace: onAmountBackspace,
+                            foregroundColor: contentColor,
                           ),
+                        ),
                       ],
                     ),
                   ),

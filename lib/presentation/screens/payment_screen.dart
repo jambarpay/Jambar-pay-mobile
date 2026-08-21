@@ -45,26 +45,8 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   String _amountDigits = '';
-  String _pinDigits = '';
-  late final TextEditingController _pinController;
-  late final FocusNode _pinFocusNode;
   String? _errorMessage;
   bool _isSubmitting = false;
-  bool _isPinStep = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _pinController = TextEditingController();
-    _pinFocusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _pinController.dispose();
-    _pinFocusNode.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,19 +60,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
           merchantName: widget.merchantName,
           availableBalance: widget.availableBalance,
           amountDigits: _amountDigits,
-          pinDigits: _pinDigits,
-          pinController: _pinController,
-          pinFocusNode: _pinFocusNode,
           errorMessage: _errorMessage,
           isSubmitting: _isSubmitting,
-          isPinStep: _isPinStep,
           onClose: () => Navigator.of(context).pop(),
           onAmountDigitTap: _onAmountDigitTap,
           onAmountBackspace: _onAmountBackspace,
-          onPinDigitTap: _onPinDigitTap,
-          onPinBackspace: _onPinBackspace,
-          onNativePinChanged: _onNativePinChanged,
-          onSubmit: _isPinStep ? _confirmPayment : _startPayment,
+          onSubmit: _startPayment,
         ),
       ),
     );
@@ -109,29 +84,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() {
       _errorMessage = null;
       _amountDigits = _amountDigits.substring(0, _amountDigits.length - 1);
-    });
-  }
-
-  void _onPinDigitTap(String digit) {
-    if (_pinDigits.length >= 4) return;
-    setState(() {
-      _errorMessage = null;
-      _pinDigits = '$_pinDigits$digit';
-    });
-  }
-
-  void _onPinBackspace() {
-    if (_pinDigits.isEmpty) return;
-    setState(() {
-      _errorMessage = null;
-      _pinDigits = _pinDigits.substring(0, _pinDigits.length - 1);
-    });
-  }
-
-  void _onNativePinChanged(String value) {
-    setState(() {
-      _errorMessage = null;
-      _pinDigits = value;
     });
   }
 
@@ -161,34 +113,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  void _confirmPayment() {
-    if (_pinDigits.length != 4) {
-      setState(
-        () => _errorMessage = AppLocalizations.of(context).enterYourPinCode,
-      );
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
-    context.read<PaymentBloc>().add(PaymentConfirmed(_pinDigits));
-  }
-
   void _onPaymentStateChanged(BuildContext context, PaymentState state) {
     switch (state) {
       case PaymentQrScanned():
         setState(() {
-          _isSubmitting = false;
-          _isPinStep = true;
-          _pinDigits = '';
-          _pinController.clear();
+          _isSubmitting = true;
+          _errorMessage = null;
         });
+        // The employee already authenticated with the PIN at app unlock.
+        // The payment API authorizes this session without asking for it again.
+        context.read<PaymentBloc>().add(const PaymentConfirmed(''));
       case PaymentFailure():
         setState(() {
           _isSubmitting = false;
-          _pinDigits = '';
-          _pinController.clear();
           _errorMessage = state.errorMessage;
         });
       case PaymentSuccess():

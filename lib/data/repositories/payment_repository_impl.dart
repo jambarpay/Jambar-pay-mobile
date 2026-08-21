@@ -35,7 +35,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     required String paymentToken,
     required String pin,
   }) async {
-    if (!RegExp(r'^\d{4}$').hasMatch(pin)) {
+    if (pin.isNotEmpty && !RegExp(r'^\d{4}$').hasMatch(pin)) {
       throw const ApiException('Le code secret doit contenir 4 chiffres.');
     }
     final payerUserId = _currentUserSession?.userId;
@@ -46,13 +46,14 @@ class PaymentRepositoryImpl implements PaymentRepository {
     if (amount == null) {
       throw const ApiException('Montant du paiement introuvable.');
     }
-    final response = await _apiService.post(BaseUrl.payWithQr(), {
+    final request = <String, dynamic>{
       'payerUserId': payerUserId,
       'qrContent': paymentToken,
       'amount': amount.amount,
       'currency': amount.currency,
-      'pin': pin,
-    });
+    };
+    if (pin.isNotEmpty) request['pin'] = pin;
+    final response = await _apiService.post(BaseUrl.payWithQr(), request);
     if (response is! Map) {
       throw const ApiException('Réponse de confirmation invalide.');
     }
