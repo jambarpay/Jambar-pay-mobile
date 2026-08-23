@@ -23,7 +23,9 @@ class RestaurantRepositoryImpl
       return _cachedRestaurants!;
     }
 
-    final response = await _remoteDataSource.getRestaurants();
+    final response = await _remoteDataSource.getRestaurants(
+      forceRefresh: forceRefresh,
+    );
     final restaurants = response
         .whereType<Map>()
         .map((json) => RestaurantDto.fromJson(Map<String, dynamic>.from(json)))

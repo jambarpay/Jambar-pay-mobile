@@ -129,6 +129,9 @@ class AppLocalizations {
       'scan': 'Scanner',
       'myQr': 'Mon QR',
       'invalidQrCode': 'Code QR invalide.',
+      'qrOffline': 'QR temporairement hors ligne. Appuyez sur actualiser.',
+      'qrExpiredOffline':
+          'QR expiré hors ligne. Reconnectez-vous pour obtenir un nouveau QR.',
       'cameraUnavailable':
           'La caméra est indisponible. Vérifiez les autorisations.',
       'transactionCountOne': '1 transaction',
@@ -269,6 +272,8 @@ class AppLocalizations {
       'scan': 'Scan',
       'myQr': 'My QR',
       'invalidQrCode': 'Invalid QR code.',
+      'qrOffline': 'QR temporarily offline. Tap refresh to try again.',
+      'qrExpiredOffline': 'QR expired offline. Reconnect to get a new QR code.',
       'cameraUnavailable': 'The camera is unavailable. Check permissions.',
       'transactionCountOne': '1 transaction',
       'transactionCountMany': '{count} transactions',
@@ -436,6 +441,8 @@ class AppLocalizations {
   String get scan => _translate('scan');
   String get myQr => _translate('myQr');
   String get invalidQrCode => _translate('invalidQrCode');
+  String get qrOffline => _translate('qrOffline');
+  String get qrExpiredOffline => _translate('qrExpiredOffline');
   String get cameraUnavailable => _translate('cameraUnavailable');
   String transactionCount(int count) => _translateWithArgs(
     count == 1 ? 'transactionCountOne' : 'transactionCountMany',

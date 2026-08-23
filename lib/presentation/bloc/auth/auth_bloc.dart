@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../domain/entities/user.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 import 'auth_message_provider.dart';
@@ -37,6 +38,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required ResetPin resetPin,
     required AuthMessageProvider messages,
     String? initialPhone,
+    User? initialUser,
   }) : _sendOtp = sendOtp,
        _verifyOtp = verifyOtp,
        _loginWithPin = loginWithPin,
@@ -44,7 +46,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _resetPin = resetPin,
        _messages = messages,
        _currentPhone = PhoneNumber(initialPhone ?? '').digits,
-       super(_initialState(initialPhone)) {
+       super(_initialState(initialPhone, initialUser)) {
     on<PhoneNumberChanged>(_onPhoneNumberChanged);
     on<PhoneNumberBackspace>(_onPhoneNumberBackspace);
     on<PhoneNumberSubmitted>(_onPhoneNumberSubmitted);
@@ -56,7 +58,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutRequested>(_onLogoutRequested);
   }
 
-  static AuthState _initialState(String? phone) {
+  static AuthState _initialState(String? phone, User? user) {
+    if (user != null) {
+      return AuthAuthenticated(user);
+    }
     final rememberedPhone = PhoneNumber(phone ?? '');
     if (rememberedPhone.isValid) {
       return AuthPinEntry(rememberedPhone.formatted);

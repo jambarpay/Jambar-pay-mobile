@@ -15,6 +15,7 @@ import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_state.dart';
 import 'package:jambar_pay_mobile/data/datasources/remote/qr_remote_datasource.dart';
+import 'package:jambar_pay_mobile/core/storage/secure_session_storage.dart';
 import 'package:jambar_pay_mobile/injection.dart' as di;
 import '../models/mobile_employee_space.dart';
 import 'payment_screen.dart';
@@ -40,7 +41,11 @@ class _QrScreenState extends State<QrScreen> {
   late PaymentResultModel? _paymentResult;
   String? _qrErrorMessage;
   String? _employeeQrContent;
+  DateTime? _employeeQrExpiresAt;
+  Timer? _employeeQrRefreshTimer;
+  bool _isLoadingEmployeeQr = false;
   final QrRemoteDataSource _qrDataSource = di.sl<QrRemoteDataSource>();
+  final SecureSessionStorage _sessionStorage = di.sl<SecureSessionStorage>();
 
   void _clearQrError() {
     _qrErrorMessage = null;
@@ -70,6 +75,7 @@ class _QrScreenState extends State<QrScreen> {
 
   @override
   void dispose() {
+    _employeeQrRefreshTimer?.cancel();
     unawaited(_scannerController.dispose());
     super.dispose();
   }
@@ -84,13 +90,16 @@ class _QrScreenState extends State<QrScreen> {
     });
 
     if (value) {
+      _clearQrError();
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => unawaited(_startScanner()),
       );
       return;
     }
 
+    _clearQrError();
     await _stopScanner();
+    unawaited(_loadEmployeeQr());
   }
 
   Future<void> _startScanner() async {
@@ -156,6 +165,15 @@ class _QrScreenState extends State<QrScreen> {
                       fontSize: 13,
                     ),
                   ),
+                  const Spacer(),
+                  if (!_showScanner)
+                    IconButton(
+                      tooltip: 'Rafraîchir le QR',
+                      onPressed: _isLoadingEmployeeQr
+                          ? null
+                          : () => unawaited(_loadEmployeeQr()),
+                      icon: const Icon(Icons.refresh),
+                    ),
                 ],
               ),
             ),
@@ -195,6 +213,7 @@ class _QrScreenState extends State<QrScreen> {
                                   userProfile: userProfile,
                                   scanResult: _scanResult,
                                   employeeQrContent: _employeeQrContent,
+                                  qrErrorMessage: _qrErrorMessage,
                                 ),
                         ),
                       ),
@@ -221,16 +240,26 @@ class _QrScreenState extends State<QrScreen> {
                         scanResult: _scanResult,
                         paymentResult: _paymentResult,
                       ),
-                    if (!_showScanner) const SizedBox(height: 18),
-                    if (!_showScanner)
-                      TogglePill(
-                        leftLabel: AppLocalizations.of(context).scan,
-                        rightLabel: AppLocalizations.of(context).myQr,
-                        isLeftSelected: _showScanner,
-                        onLeftTap: () => _setScannerMode(true),
-                        onRightTap: () => _setScannerMode(false),
-                        isDarkMode: isDarkMode,
+                    if (!_showScanner && _qrErrorMessage != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        _qrErrorMessage!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: palette.secondaryText,
+                          fontSize: 12,
+                        ),
                       ),
+                    ],
+                    const SizedBox(height: 18),
+                    TogglePill(
+                      leftLabel: AppLocalizations.of(context).scan,
+                      rightLabel: AppLocalizations.of(context).myQr,
+                      isLeftSelected: _showScanner,
+                      onLeftTap: () => _setScannerMode(true),
+                      onRightTap: () => _setScannerMode(false),
+                      isDarkMode: isDarkMode,
+                    ),
                   ],
                 ),
               ),
@@ -250,20 +279,87 @@ class _QrScreenState extends State<QrScreen> {
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated || authState.user.id.isEmpty) return;
 
+    if (_isLoadingEmployeeQr) return;
+    _isLoadingEmployeeQr = true;
+    _employeeQrRefreshTimer?.cancel();
+
+    // Keep the last signed payload available while the service is contacted.
+    // It remains valid only until the expiry returned by qr-service.
+    try {
+      final cached = await _sessionStorage.readEmployeeQr(
+        userId: authState.user.id,
+      );
+      if (cached != null && mounted) {
+        setState(() {
+          _employeeQrContent = cached.content;
+          _employeeQrExpiresAt = cached.expiresAt;
+          _qrErrorMessage = cached.isExpired
+              ? AppLocalizations.of(context).qrExpiredOffline
+              : null;
+        });
+        if (cached.isUsable) {
+          _scheduleEmployeeQrRefresh(cached.expiresAt);
+        }
+      }
+    } catch (_) {
+      // Continue with the network request.
+    }
+
     try {
       final response = await _qrDataSource.generateEmployeeQr(
         authState.user.id,
       );
+      final content = response['qrContent']?.toString().trim() ?? '';
+      final expiresAt = DateTime.tryParse(
+        response['expiresAt']?.toString() ?? '',
+      );
+      if (content.isEmpty) {
+        throw StateError('QR employé vide');
+      }
+
+      try {
+        await _sessionStorage.saveEmployeeQr(
+          userId: authState.user.id,
+          content: content,
+          expiresAt: expiresAt,
+        );
+      } catch (_) {
+        // The fresh QR can still be displayed if the cache write fails.
+      }
       if (!mounted) return;
       setState(() {
-        _employeeQrContent = response['qrContent']?.toString();
+        _employeeQrContent = content;
+        _employeeQrExpiresAt = expiresAt;
+        _qrErrorMessage = null;
       });
+      _scheduleEmployeeQrRefresh(expiresAt);
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _qrErrorMessage = AppLocalizations.of(context).invalidQrCode;
+        _qrErrorMessage = _employeeQrContent == null
+            ? AppLocalizations.of(context).invalidQrCode
+            : _employeeQrExpiresAt != null &&
+                  !_employeeQrExpiresAt!.isAfter(DateTime.now())
+            ? AppLocalizations.of(context).qrExpiredOffline
+            : AppLocalizations.of(context).qrOffline;
       });
+    } finally {
+      _isLoadingEmployeeQr = false;
     }
+  }
+
+  void _scheduleEmployeeQrRefresh(DateTime? expiresAt) {
+    _employeeQrRefreshTimer?.cancel();
+    if (expiresAt == null || !mounted) return;
+
+    final delay =
+        expiresAt.difference(DateTime.now()) - const Duration(seconds: 5);
+    _employeeQrRefreshTimer = Timer(
+      delay.isNegative || delay < const Duration(seconds: 10)
+          ? const Duration(seconds: 10)
+          : delay,
+      () => unawaited(_loadEmployeeQr()),
+    );
   }
 
   Future<void> _openPaymentFlow(String rawValue) async {

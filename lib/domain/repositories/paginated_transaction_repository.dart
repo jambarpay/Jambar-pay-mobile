@@ -4,5 +4,6 @@ abstract interface class PaginatedTransactionRepository {
   Future<TransactionPage> getTransactionsPage({
     required int page,
     required int size,
+    bool forceRefresh = false,
   });
 }

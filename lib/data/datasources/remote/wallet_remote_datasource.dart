@@ -1,6 +1,7 @@
 import '../../../core/network/api_service.dart';
 import '../../../core/network/base_url.dart';
 import '../../../core/session/current_user_session.dart';
+import '../../../core/storage/secure_session_storage.dart';
 
 class WalletRemoteDataSource {
   final ApiService apiService;
@@ -8,9 +9,12 @@ class WalletRemoteDataSource {
   WalletRemoteDataSource(
     this.apiService, [
     CurrentUserSession? currentUserSession,
-  ]) : _currentUserSession = currentUserSession;
+    SecureSessionStorage? sessionStorage,
+  ]) : _currentUserSession = currentUserSession,
+       _sessionStorage = sessionStorage;
 
   final CurrentUserSession? _currentUserSession;
+  final SecureSessionStorage? _sessionStorage;
 
   String get _ownerId {
     final ownerId = _currentUserSession?.userId;
@@ -22,12 +26,36 @@ class WalletRemoteDataSource {
     return ownerId;
   }
 
-  Future<Map<String, dynamic>> getWallet() async {
-    final response = await apiService.get(BaseUrl.walletByOwner(_ownerId));
-    if (response is! Map) {
-      throw Exception('Invalid wallet response');
+  Future<Map<String, dynamic>> getWallet({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      try {
+        final cached = await _sessionStorage?.readWalletCache();
+        if (cached != null) return cached;
+      } catch (_) {
+        // Continue with the network request when the cache is unavailable.
+      }
     }
-    return Map<String, dynamic>.from(response);
+    try {
+      final response = await apiService.get(BaseUrl.walletByOwner(_ownerId));
+      if (response is! Map) {
+        throw Exception('Invalid wallet response');
+      }
+      final wallet = Map<String, dynamic>.from(response);
+      try {
+        await _sessionStorage?.saveWalletCache(wallet);
+      } catch (_) {
+        // Cache failures must not affect a successful network response.
+      }
+      return wallet;
+    } catch (error) {
+      try {
+        final cached = await _sessionStorage?.readWalletCache();
+        if (cached != null) return cached;
+      } catch (_) {
+        // Fall through to the original network error.
+      }
+      throw error;
+    }
   }
 
   Future<Map<String, dynamic>> updateBalanceAfterPayment({
@@ -75,6 +103,6 @@ class WalletRemoteDataSource {
   }
 
   Future<Map<String, dynamic>> refreshWallet() async {
-    return getWallet();
+    return getWallet(forceRefresh: true);
   }
 }

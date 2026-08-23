@@ -116,17 +116,19 @@ class LargeQrCard extends StatelessWidget {
     required this.userProfile,
     this.scanResult,
     this.employeeQrContent,
+    this.qrErrorMessage,
   });
 
   final bool isDarkMode;
   final UserProfileModel userProfile;
   final QRScanResultModel? scanResult;
   final String? employeeQrContent;
+  final String? qrErrorMessage;
 
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette(isDarkMode);
-    final qrPayload = scanResult?.token ?? employeeQrContent ?? '';
+    final qrPayload = employeeQrContent ?? '';
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth.isFinite
@@ -154,7 +156,15 @@ class LargeQrCard extends StatelessWidget {
             children: [
               Expanded(
                 child: qrPayload.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: qrErrorMessage == null
+                            ? const CircularProgressIndicator()
+                            : Text(
+                                qrErrorMessage!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: palette.secondaryText),
+                              ),
+                      )
                     : QrBlock(data: qrPayload, borderRadius: 18),
               ),
               const SizedBox(height: 12),
@@ -169,7 +179,7 @@ class LargeQrCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                scanResult?.token ?? AppLocalizations.of(context).employeeQr,
+                AppLocalizations.of(context).employeeQr,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 11, color: palette.secondaryText),

@@ -6,7 +6,16 @@ Frontend Flutter de Jambar Pay pour Android, iOS, Web et Linux. L’application 
 
 ```bash
 flutter pub get
-flutter run -d chrome
+flutter run -d chrome --no-web-resources-cdn
+```
+
+Le bootstrap Web utilise CanvasKit local et Roboto est embarqué dans
+l’application. Pour conserver ces ressources dans le cache PWA de production :
+
+```bash
+flutter build web --release \
+  --no-web-resources-cdn \
+  --pwa-strategy offline-first
 ```
 
 L’application utilise le backend réel par défaut, y compris en mode debug. Les sources mock/locales sont réservées aux tests et doivent être activées explicitement avec les `--dart-define` ci-dessous.
@@ -114,7 +123,9 @@ Le pipeline [Flutter CI](.github/workflows/flutter_ci.yml) vérifie à chaque pu
 Web :
 
 ```bash
-flutter build web --release
+flutter build web --release \
+  --no-web-resources-cdn \
+  --pwa-strategy offline-first
 ```
 
 Android debug :

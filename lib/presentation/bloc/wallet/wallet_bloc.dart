@@ -9,8 +9,10 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   WalletBloc({
     required GetWallet getWallet,
     required RefreshWallet refreshWallet,
+    bool backgroundSync = true,
   }) : _getWallet = getWallet,
        _refreshWallet = refreshWallet,
+       _backgroundSync = backgroundSync,
        super(const WalletInitial()) {
     on<WalletLoadRequested>(_onLoadRequested);
     on<WalletRefreshRequested>(_onRefreshRequested);
@@ -19,6 +21,7 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
 
   final GetWallet _getWallet;
   final RefreshWallet _refreshWallet;
+  final bool _backgroundSync;
 
   Future<void> _onLoadRequested(
     WalletLoadRequested event,
@@ -27,6 +30,13 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
     emit(const WalletLoading());
     try {
       emit(WalletLoaded(await _getWallet()));
+      if (_backgroundSync) {
+        try {
+          emit(WalletLoaded(await _refreshWallet()));
+        } catch (_) {
+          // The cached wallet remains usable while the device is offline.
+        }
+      }
     } catch (error) {
       emit(WalletFailure(error.toString()));
     }

@@ -23,10 +23,12 @@ class TransactionRepositoryImpl
   Future<TransactionPage> getTransactionsPage({
     required int page,
     required int size,
+    bool forceRefresh = false,
   }) async {
     final response = await _remoteDataSource.getTransactionsPage(
       page: page,
       size: size,
+      forceRefresh: forceRefresh,
     );
     final content = (response['content'] as List<dynamic>? ?? const [])
         .map((json) => TransactionDto.fromJson(json).toDomain())
@@ -35,8 +37,11 @@ class TransactionRepositoryImpl
       transactions: content,
       page: (response['page'] as num?)?.toInt() ?? page,
       size: (response['size'] as num?)?.toInt() ?? size,
-      totalElements: (response['totalElements'] as num?)?.toInt() ?? content.length,
-      totalPages: (response['totalPages'] as num?)?.toInt() ?? (content.isEmpty ? 0 : 1),
+      totalElements:
+          (response['totalElements'] as num?)?.toInt() ?? content.length,
+      totalPages:
+          (response['totalPages'] as num?)?.toInt() ??
+          (content.isEmpty ? 0 : 1),
     );
   }
 

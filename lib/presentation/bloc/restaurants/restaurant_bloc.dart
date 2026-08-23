@@ -5,14 +5,18 @@ import 'restaurant_event.dart';
 import 'restaurant_state.dart';
 
 class RestaurantBloc extends Bloc<RestaurantEvent, RestaurantState> {
-  RestaurantBloc({required GetRestaurants getRestaurants})
-    : _getRestaurants = getRestaurants,
-      super(const RestaurantInitial()) {
+  RestaurantBloc({
+    required GetRestaurants getRestaurants,
+    bool backgroundSync = true,
+  }) : _getRestaurants = getRestaurants,
+       _backgroundSync = backgroundSync,
+       super(const RestaurantInitial()) {
     on<RestaurantsLoadRequested>(_load);
     on<RestaurantsRefreshRequested>(_refresh);
   }
 
   final GetRestaurants _getRestaurants;
+  final bool _backgroundSync;
 
   Future<void> _load(
     RestaurantsLoadRequested event,
@@ -21,6 +25,13 @@ class RestaurantBloc extends Bloc<RestaurantEvent, RestaurantState> {
     emit(const RestaurantLoading());
     try {
       emit(RestaurantLoaded(await _getRestaurants()));
+      if (_backgroundSync) {
+        try {
+          emit(RestaurantLoaded(await _getRestaurants(forceRefresh: true)));
+        } catch (_) {
+          // The cached restaurants remain usable while the device is offline.
+        }
+      }
     } catch (error) {
       emit(RestaurantFailure(error.toString()));
     }

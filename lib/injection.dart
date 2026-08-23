@@ -5,6 +5,7 @@ import 'core/network/mock_api_service.dart';
 import 'core/config/app_environment.dart';
 import 'core/storage/secure_session_storage.dart';
 import 'core/session/current_user_session.dart';
+import 'data/models/dto/user_dto.dart';
 import 'data/datasources/remote/auth_remote_datasource.dart';
 import 'data/datasources/local/auth_local_datasource.dart';
 import 'data/datasources/remote/transaction_remote_datasource.dart';
@@ -22,6 +23,7 @@ import 'domain/repositories/transaction_repository.dart';
 import 'domain/repositories/wallet_repository.dart';
 import 'domain/repositories/payment_repository.dart';
 import 'domain/repositories/restaurant_repository.dart';
+import 'domain/entities/user.dart';
 import 'domain/use_cases/auth/send_otp.dart';
 import 'domain/use_cases/auth/verify_otp.dart';
 import 'domain/use_cases/auth/login_with_pin.dart';
@@ -68,9 +70,18 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   final rememberedPhone = shouldUseMockApi
       ? null
       : await sessionStorage.readRememberedPhone();
+  final cachedUser = shouldUseMockApi
+      ? null
+      : await _readCachedUser(sessionStorage);
+  final SecureSessionStorage? cacheStorage = shouldUseMockApi
+      ? null
+      : sessionStorage;
 
   sl.registerSingleton<SecureSessionStorage>(sessionStorage);
   sl.registerSingleton<CurrentUserSession>(CurrentUserSession());
+  if (cachedUser != null) {
+    sl<CurrentUserSession>().setUserId(cachedUser.id);
+  }
 
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
@@ -137,18 +148,22 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   );
   sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());
   sl.registerLazySingleton<TransactionRemoteDataSource>(
-    () =>
-        TransactionRemoteDataSource(sl<ApiService>(instanceName: _paymentApi)),
+    () => TransactionRemoteDataSource(
+      sl<ApiService>(instanceName: _paymentApi),
+      cacheStorage,
+    ),
   );
   sl.registerLazySingleton<WalletRemoteDataSource>(
     () => WalletRemoteDataSource(
       sl<ApiService>(instanceName: _walletApi),
       sl<CurrentUserSession>(),
+      cacheStorage,
     ),
   );
   sl.registerLazySingleton<RestaurantRemoteDataSource>(
     () => RestaurantRemoteDataSource(
       sl<ApiService>(instanceName: _restaurantApi),
+      cacheStorage,
     ),
   );
   sl.registerLazySingleton<QrRemoteDataSource>(
@@ -161,6 +176,8 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
       sl<AuthLocalDataSource>(),
       useLocalAuth: shouldUseLocalAuth,
       currentUserSession: sl<CurrentUserSession>(),
+      // The mock UI has no native secure-storage plugin in widget tests. The
+      // real mobile configuration still receives the encrypted storage.
       sessionStorage: shouldUseMockApi ? null : sl<SecureSessionStorage>(),
     ),
   );
@@ -215,12 +232,14 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
       resetPin: sl<ResetPin>(),
       messages: sl<AuthMessageProvider>(),
       initialPhone: rememberedPhone,
+      initialUser: cachedUser,
     ),
   );
   sl.registerFactory<TransactionBloc>(
     () => TransactionBloc(
       getTransactions: sl<GetTransactions>(),
       filterTransactions: sl<FilterTransactions>(),
+      backgroundSync: !shouldUseMockApi,
     ),
   );
   sl.registerFactory<PaymentBloc>(
@@ -236,9 +255,22 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
     () => WalletBloc(
       getWallet: sl<GetWallet>(),
       refreshWallet: sl<RefreshWallet>(),
+      backgroundSync: !shouldUseMockApi,
     ),
   );
   sl.registerFactory<RestaurantBloc>(
-    () => RestaurantBloc(getRestaurants: sl<GetRestaurants>()),
+    () => RestaurantBloc(
+      getRestaurants: sl<GetRestaurants>(),
+      backgroundSync: !shouldUseMockApi,
+    ),
   );
+}
+
+Future<User?> _readCachedUser(SecureSessionStorage storage) async {
+  try {
+    final profile = await storage.readUserProfile();
+    return profile == null ? null : UserDto.fromJson(profile).toDomain();
+  } catch (_) {
+    return null;
+  }
 }

@@ -62,6 +62,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = userDto.toDomain();
       _currentUserSession?.setUserId(user.id);
       await _rememberPhone(phone);
+      await _rememberUser(user);
       return user;
     } catch (e) {
       throw Exception('Échec de la vérification: ${e.toString()}');
@@ -80,6 +81,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = UserDto.fromJson(response).toDomain();
       _currentUserSession?.setUserId(user.id);
       await _rememberPhone(phone);
+      await _rememberUser(user);
       return user;
     } catch (e) {
       throw Exception('Échec de la connexion: ${e.toString()}');
@@ -140,6 +142,20 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<void> _rememberUser(User user) async {
+    try {
+      await _sessionStorage?.saveUserProfile(
+        id: user.id,
+        name: user.name,
+        phone: user.phone.value,
+        avatarUrl: user.avatarUrl,
+      );
+    } catch (_) {
+      // Secure storage is a cache for the authenticated profile. A storage
+      // issue must not make a valid authentication fail.
+    }
+  }
+
   @override
   Future<void> logout() async {
     try {
@@ -154,6 +170,7 @@ class AuthRepositoryImpl implements AuthRepository {
       _currentUserSession?.clear();
       try {
         await _sessionStorage?.clearRememberedPhone();
+        await _sessionStorage?.clear();
       } catch (_) {
         // The local auth state must still be cleared when storage is
         // temporarily unavailable.

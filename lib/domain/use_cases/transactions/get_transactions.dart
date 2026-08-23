@@ -7,10 +7,18 @@ class GetTransactions {
 
   GetTransactions(this._transactionRepository);
 
-  Future<TransactionPage> call({int page = 0, int size = 4}) async {
+  Future<TransactionPage> call({
+    int page = 0,
+    int size = 4,
+    bool forceRefresh = false,
+  }) async {
     if (_transactionRepository is PaginatedTransactionRepository) {
       return (_transactionRepository as PaginatedTransactionRepository)
-          .getTransactionsPage(page: page, size: size);
+          .getTransactionsPage(
+            page: page,
+            size: size,
+            forceRefresh: forceRefresh,
+          );
     }
 
     // Compatibility fallback for local/test repositories that have not yet

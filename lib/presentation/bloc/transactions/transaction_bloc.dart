@@ -3,18 +3,22 @@ import 'transaction_event.dart';
 import 'transaction_state.dart';
 import '../../../domain/use_cases/transactions/get_transactions.dart';
 import '../../../domain/use_cases/transactions/filter_transactions.dart';
+import '../../../domain/entities/transaction_page.dart';
 
 class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   final GetTransactions _getTransactions;
   final FilterTransactions _filterTransactions;
+  final bool _backgroundSync;
 
   static const int _pageSize = 4;
 
   TransactionBloc({
     required GetTransactions getTransactions,
     required FilterTransactions filterTransactions,
+    bool backgroundSync = true,
   }) : _getTransactions = getTransactions,
        _filterTransactions = filterTransactions,
+       _backgroundSync = backgroundSync,
        super(const TransactionInitial()) {
     on<TransactionsLoadRequested>(_onLoadRequested);
     on<TransactionsRefreshRequested>(_onRefreshRequested);
@@ -31,27 +35,53 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   ) async {
     emit(const TransactionLoading());
     try {
-      final result = await _getTransactions(page: 0, size: _pageSize);
+      final result = await _getTransactions(
+        page: 0,
+        size: _pageSize,
+        forceRefresh: false,
+      );
       final all = result.transactions;
       if (all.isEmpty) {
         emit(const TransactionEmpty());
       } else {
-        final filtered = _filterTransactions(transactions: all, filter: 'all');
-        emit(
-          TransactionLoaded(
-            allTransactions: all,
-            filteredTransactions: filtered,
-            currentFilter: 'all',
-            searchQuery: null,
-            hasMore: result.hasMore,
-            visibleCount: filtered.length,
-            page: result.page,
-          ),
-        );
+        _emitLoadedPage(result, emit);
+      }
+
+      if (_backgroundSync) {
+        try {
+          final freshResult = await _getTransactions(
+            page: 0,
+            size: _pageSize,
+            forceRefresh: true,
+          );
+          if (freshResult.transactions.isEmpty) {
+            emit(const TransactionEmpty());
+          } else {
+            _emitLoadedPage(freshResult, emit);
+          }
+        } catch (_) {
+          // The cached transactions remain usable while the device is offline.
+        }
       }
     } catch (e) {
       emit(TransactionFailure(e.toString()));
     }
+  }
+
+  void _emitLoadedPage(TransactionPage result, Emitter<TransactionState> emit) {
+    final all = result.transactions;
+    final filtered = _filterTransactions(transactions: all, filter: 'all');
+    emit(
+      TransactionLoaded(
+        allTransactions: all,
+        filteredTransactions: filtered,
+        currentFilter: 'all',
+        searchQuery: null,
+        hasMore: result.hasMore,
+        visibleCount: filtered.length,
+        page: result.page,
+      ),
+    );
   }
 
   Future<void> _onRefreshRequested(
@@ -63,7 +93,11 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
 
     emit(const TransactionLoading());
     try {
-      final result = await _getTransactions(page: 0, size: _pageSize);
+      final result = await _getTransactions(
+        page: 0,
+        size: _pageSize,
+        forceRefresh: true,
+      );
       final all = result.transactions;
       final filtered = _filterTransactions(
         transactions: all,
@@ -96,6 +130,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
       final result = await _getTransactions(
         page: current.page + 1,
         size: _pageSize,
+        forceRefresh: true,
       );
       final all = [...current.allTransactions, ...result.transactions];
       final filtered = _filterTransactions(
@@ -103,13 +138,15 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
         filter: current.currentFilter,
         query: current.searchQuery,
       );
-      emit(current.copyWith(
-        allTransactions: all,
-        filteredTransactions: filtered,
-        visibleCount: filtered.length,
-        hasMore: result.hasMore,
-        page: result.page,
-      ));
+      emit(
+        current.copyWith(
+          allTransactions: all,
+          filteredTransactions: filtered,
+          visibleCount: filtered.length,
+          hasMore: result.hasMore,
+          page: result.page,
+        ),
+      );
     } catch (e) {
       emit(TransactionFailure(e.toString()));
     }
@@ -197,9 +234,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           filteredTransactions: [event.transaction],
           currentFilter: 'all',
           searchQuery: null,
-        hasMore: false,
-        visibleCount: 1,
-        page: 0,
+          hasMore: false,
+          visibleCount: 1,
+          page: 0,
         ),
       );
       return;
