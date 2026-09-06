@@ -63,6 +63,7 @@ class AuthRepositoryImpl implements AuthRepository {
       _currentUserSession?.setUserId(user.id);
       await _rememberPhone(phone);
       await _rememberUser(user);
+      await _rememberPin(user, pin);
       return user;
     } catch (e) {
       throw Exception('Échec de la vérification: ${e.toString()}');
@@ -82,8 +83,11 @@ class AuthRepositoryImpl implements AuthRepository {
       _currentUserSession?.setUserId(user.id);
       await _rememberPhone(phone);
       await _rememberUser(user);
+      await _rememberPin(user, pin);
       return user;
     } catch (e) {
+      final offlineUser = await _tryOfflineLogin(phone: phone, pin: pin);
+      if (offlineUser != null) return offlineUser;
       throw Exception('Échec de la connexion: ${e.toString()}');
     }
   }
@@ -109,6 +113,8 @@ class AuthRepositoryImpl implements AuthRepository {
     } else {
       await _remoteDataSource.changePin(currentPin: currentPin, newPin: newPin);
     }
+    final user = await _readCachedUser();
+    if (user != null) await _rememberPin(user, newPin);
   }
 
   @override
@@ -131,6 +137,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     }
     await _rememberPhone(phone);
+    final user = await _readCachedUser();
+    if (user != null) await _rememberPin(user, newPin);
   }
 
   Future<void> _rememberPhone(PhoneNumber phone) async {
@@ -153,6 +161,44 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       // Secure storage is a cache for the authenticated profile. A storage
       // issue must not make a valid authentication fail.
+    }
+  }
+
+  Future<void> _rememberPin(User user, String? pin) async {
+    if (pin == null) return;
+    try {
+      await _sessionStorage?.savePinVerifier(userId: user.id, pin: pin);
+    } catch (_) {
+      // Local PIN verification is an offline convenience; a storage failure
+      // must not invalidate an otherwise successful online login.
+    }
+  }
+
+  Future<User?> _tryOfflineLogin({
+    required PhoneNumber phone,
+    required String pin,
+  }) async {
+    try {
+      final user = await _readCachedUser();
+      if (user == null || user.phone.digits != phone.digits) return null;
+      final verified = await _sessionStorage?.verifyPin(
+        userId: user.id,
+        pin: pin,
+      );
+      if (verified != true) return null;
+      _currentUserSession?.setUserId(user.id);
+      return user;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<User?> _readCachedUser() async {
+    try {
+      final profile = await _sessionStorage?.readUserProfile();
+      return profile == null ? null : UserDto.fromJson(profile).toDomain();
+    } catch (_) {
+      return null;
     }
   }
 

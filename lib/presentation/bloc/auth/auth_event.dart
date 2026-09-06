@@ -63,3 +63,7 @@ class BackToPhoneRequested extends AuthEvent {
 class LogoutRequested extends AuthEvent {
   const LogoutRequested();
 }
+
+class AppLockRequested extends AuthEvent {
+  const AppLockRequested();
+}

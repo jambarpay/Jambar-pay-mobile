@@ -32,11 +32,28 @@ class JambarPayApp extends StatefulWidget {
   State<JambarPayApp> createState() => _JambarPayAppState();
 }
 
-class _JambarPayAppState extends State<JambarPayApp> {
+class _JambarPayAppState extends State<JambarPayApp>
+    with WidgetsBindingObserver {
   late final GoRouter _router = AppRouter.create();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      context.read<AuthBloc>().add(const AppLockRequested());
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _router.dispose();
     super.dispose();
   }

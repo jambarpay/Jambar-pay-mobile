@@ -41,7 +41,6 @@ class _QrScreenState extends State<QrScreen> {
   late PaymentResultModel? _paymentResult;
   String? _qrErrorMessage;
   String? _employeeQrContent;
-  DateTime? _employeeQrExpiresAt;
   Timer? _employeeQrRefreshTimer;
   bool _isLoadingEmployeeQr = false;
   final QrRemoteDataSource _qrDataSource = di.sl<QrRemoteDataSource>();
@@ -283,8 +282,8 @@ class _QrScreenState extends State<QrScreen> {
     _isLoadingEmployeeQr = true;
     _employeeQrRefreshTimer?.cancel();
 
-    // Keep the last signed payload available while the service is contacted.
-    // It remains valid only until the expiry returned by qr-service.
+    // Restore the last signed payload before contacting the service. Online,
+    // the service can issue a newer QR; offline, this last QR stays visible.
     try {
       final cached = await _sessionStorage.readEmployeeQr(
         userId: authState.user.id,
@@ -292,14 +291,11 @@ class _QrScreenState extends State<QrScreen> {
       if (cached != null && mounted) {
         setState(() {
           _employeeQrContent = cached.content;
-          _employeeQrExpiresAt = cached.expiresAt;
-          _qrErrorMessage = cached.isExpired
-              ? AppLocalizations.of(context).qrExpiredOffline
-              : null;
+          // Never hide a QR already stored locally while a refresh is failing.
+          // Its expiry is enforced again as soon as the service is reachable.
+          _qrErrorMessage = null;
         });
-        if (cached.isUsable) {
-          _scheduleEmployeeQrRefresh(cached.expiresAt);
-        }
+        _scheduleEmployeeQrRefresh(cached.expiresAt);
       }
     } catch (_) {
       // Continue with the network request.
@@ -329,20 +325,21 @@ class _QrScreenState extends State<QrScreen> {
       if (!mounted) return;
       setState(() {
         _employeeQrContent = content;
-        _employeeQrExpiresAt = expiresAt;
         _qrErrorMessage = null;
       });
       _scheduleEmployeeQrRefresh(expiresAt);
     } catch (_) {
       if (!mounted) return;
       setState(() {
+        // Keep the last QR rendered on screen when the network is offline.
+        // Only show an error when there is no local QR to fall back to.
         _qrErrorMessage = _employeeQrContent == null
             ? AppLocalizations.of(context).invalidQrCode
-            : _employeeQrExpiresAt != null &&
-                  !_employeeQrExpiresAt!.isAfter(DateTime.now())
-            ? AppLocalizations.of(context).qrExpiredOffline
-            : AppLocalizations.of(context).qrOffline;
+            : null;
       });
+      if (_employeeQrContent != null) {
+        _scheduleEmployeeQrRetry();
+      }
     } finally {
       _isLoadingEmployeeQr = false;
     }
@@ -358,6 +355,16 @@ class _QrScreenState extends State<QrScreen> {
       delay.isNegative || delay < const Duration(seconds: 10)
           ? const Duration(seconds: 10)
           : delay,
+      () => unawaited(_loadEmployeeQr()),
+    );
+  }
+
+  void _scheduleEmployeeQrRetry() {
+    _employeeQrRefreshTimer?.cancel();
+    if (!mounted) return;
+
+    _employeeQrRefreshTimer = Timer(
+      const Duration(seconds: 30),
       () => unawaited(_loadEmployeeQr()),
     );
   }

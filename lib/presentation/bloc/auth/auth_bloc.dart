@@ -45,7 +45,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _logout = logout,
        _resetPin = resetPin,
        _messages = messages,
-       _currentPhone = PhoneNumber(initialPhone ?? '').digits,
+       _currentPhone = PhoneNumber(
+         initialPhone ?? initialUser?.phone.value ?? '',
+       ).digits,
        super(_initialState(initialPhone, initialUser)) {
     on<PhoneNumberChanged>(_onPhoneNumberChanged);
     on<PhoneNumberBackspace>(_onPhoneNumberBackspace);
@@ -56,17 +58,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<PinResetRequested>(_onPinResetRequested);
     on<BackToPhoneRequested>(_onBackToPhoneRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<AppLockRequested>(_onAppLockRequested);
   }
 
   static AuthState _initialState(String? phone, User? user) {
     if (user != null) {
-      return AuthAuthenticated(user);
+      // A persisted session identifies the employee but never unlocks the
+      // interface by itself. The PIN must be entered again after relaunch.
+      return AuthPinEntry(user.phone.formatted);
     }
     final rememberedPhone = PhoneNumber(phone ?? '');
     if (rememberedPhone.isValid) {
       return AuthPinEntry(rememberedPhone.formatted);
     }
     return const AuthPhoneInitial();
+  }
+
+  void _onAppLockRequested(AppLockRequested event, Emitter<AuthState> emit) {
+    final authenticated = state;
+    if (authenticated is! AuthAuthenticated) return;
+
+    _currentPhone = authenticated.user.phone.digits;
+    _currentPin = '';
+    emit(AuthPinEntry(authenticated.user.phone.formatted));
   }
 
   void _onPhoneNumberChanged(

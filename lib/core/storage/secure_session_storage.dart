@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class CachedEmployeeQr {
@@ -27,6 +28,7 @@ class SecureSessionStorage {
   static const _accessTokenKey = 'auth.access_token';
   static const _refreshTokenKey = 'auth.refresh_token';
   static const _rememberedPhoneKey = 'auth.remembered_phone';
+  static const _pinVerifierKey = 'auth.pin_verifier';
   static const _userProfileKey = 'auth.user_profile';
   static const _employeeQrKey = 'auth.employee_qr';
   static const _walletCacheKey = 'cache.wallet';
@@ -55,6 +57,24 @@ class SecureSessionStorage {
   Future<void> clearRememberedPhone() =>
       _storage.delete(key: _rememberedPhoneKey);
 
+  Future<void> savePinVerifier({
+    required String userId,
+    required String pin,
+  }) async {
+    if (userId.trim().isEmpty || !RegExp(r'^\d{4}$').hasMatch(pin)) return;
+
+    await _storage.write(key: _pinVerifierKey, value: _pinDigest(userId, pin));
+  }
+
+  Future<bool> verifyPin({required String userId, required String pin}) async {
+    final storedVerifier = await _storage.read(key: _pinVerifierKey);
+    if (storedVerifier == null || storedVerifier.isEmpty) return false;
+    return storedVerifier == _pinDigest(userId, pin);
+  }
+
+  String _pinDigest(String userId, String pin) =>
+      sha256.convert(utf8.encode('${userId.trim()}:$pin')).toString();
+
   Future<void> saveTokens({
     required String accessToken,
     String? refreshToken,
@@ -70,7 +90,8 @@ class SecureSessionStorage {
   /// Stores non-secret profile data in the platform secure storage.
   ///
   /// `FlutterSecureStorage` uses Keychain on iOS and Keystore-backed
-  /// encrypted storage on Android. The PIN is intentionally never persisted.
+  /// encrypted storage on Android. Only a PIN verifier is persisted; the PIN
+  /// itself is never stored.
   Future<void> saveUserProfile({
     required String id,
     required String name,
@@ -198,6 +219,7 @@ class SecureSessionStorage {
       _storage.delete(key: _accessTokenKey),
       _storage.delete(key: _refreshTokenKey),
       _storage.delete(key: _userProfileKey),
+      _storage.delete(key: _pinVerifierKey),
       _storage.delete(key: _employeeQrKey),
       _storage.delete(key: _walletCacheKey),
       _storage.delete(key: _transactionsCacheKey),
