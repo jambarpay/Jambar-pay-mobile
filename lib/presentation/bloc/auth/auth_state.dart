@@ -45,6 +45,17 @@ class AuthPhoneInvalid extends AuthState {
   List<Object?> get props => [errorMessage, phoneNumber];
 }
 
+class AuthOtpEntry extends AuthState {
+  final String phoneNumber;
+  final String otp;
+  final String? errorMessage;
+
+  const AuthOtpEntry(this.phoneNumber, [this.otp = '', this.errorMessage]);
+
+  @override
+  List<Object?> get props => [phoneNumber, otp, errorMessage];
+}
+
 class AuthPinEntry extends AuthState {
   final String phoneNumber;
   final String currentPin;
@@ -89,10 +100,16 @@ class AuthPinSetupConfirmation extends AuthState {
     String confirmation = '',
     String? errorMessage,
   }) : confirmation = confirmation,
-      errorMessage = errorMessage;
+       errorMessage = errorMessage;
 
   @override
-  List<Object?> get props => [phoneNumber, otp, pin, confirmation, errorMessage];
+  List<Object?> get props => [
+    phoneNumber,
+    otp,
+    pin,
+    confirmation,
+    errorMessage,
+  ];
 }
 
 class AuthPinResetInProgress extends AuthState {

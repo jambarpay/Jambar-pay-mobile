@@ -25,11 +25,13 @@ import 'domain/repositories/payment_repository.dart';
 import 'domain/repositories/restaurant_repository.dart';
 import 'domain/entities/user.dart';
 import 'domain/use_cases/auth/send_otp.dart';
+import 'domain/use_cases/auth/start_employee_onboarding.dart';
 import 'domain/use_cases/auth/verify_otp.dart';
 import 'domain/use_cases/auth/login_with_pin.dart';
 import 'domain/use_cases/auth/change_pin.dart';
 import 'domain/use_cases/auth/logout.dart';
 import 'domain/use_cases/auth/reset_pin.dart';
+import 'domain/use_cases/auth/delete_account.dart';
 import 'domain/use_cases/transactions/get_transactions.dart';
 import 'domain/use_cases/transactions/filter_transactions.dart';
 import 'domain/use_cases/transactions/get_transaction_by_id.dart';
@@ -86,50 +88,35 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
         ? MockApiService()
-        : ApiService(
-            baseUrl: BaseUrl.userServiceBase,
-            token: persistedAccessToken,
-          ),
+        : ApiService(baseUrl: BaseUrl.base, token: persistedAccessToken),
     instanceName: _userApi,
     dispose: (service) => service.dispose(),
   );
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
         ? MockApiService()
-        : ApiService(
-            baseUrl: BaseUrl.restaurantServiceBase,
-            token: persistedAccessToken,
-          ),
+        : ApiService(baseUrl: BaseUrl.base, token: persistedAccessToken),
     instanceName: _restaurantApi,
     dispose: (service) => service.dispose(),
   );
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
         ? MockApiService()
-        : ApiService(
-            baseUrl: BaseUrl.paymentServiceBase,
-            token: persistedAccessToken,
-          ),
+        : ApiService(baseUrl: BaseUrl.base, token: persistedAccessToken),
     instanceName: _paymentApi,
     dispose: (service) => service.dispose(),
   );
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
         ? MockApiService()
-        : ApiService(
-            baseUrl: BaseUrl.walletServiceBase,
-            token: persistedAccessToken,
-          ),
+        : ApiService(baseUrl: BaseUrl.base, token: persistedAccessToken),
     instanceName: _walletApi,
     dispose: (service) => service.dispose(),
   );
   sl.registerLazySingleton<ApiService>(
     () => shouldUseMockApi
         ? MockApiService()
-        : ApiService(
-            baseUrl: BaseUrl.qrServiceBase,
-            token: persistedAccessToken,
-          ),
+        : ApiService(baseUrl: BaseUrl.base, token: persistedAccessToken),
     instanceName: _qrApi,
     dispose: (service) => service.dispose(),
   );
@@ -201,10 +188,12 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   );
 
   sl.registerFactory(() => SendOtp(sl<AuthRepository>()));
+  sl.registerFactory(() => StartEmployeeOnboarding(sl<AuthRepository>()));
   sl.registerFactory(() => VerifyOtp(sl<AuthRepository>()));
   sl.registerFactory(() => LoginWithPin(sl<AuthRepository>()));
   sl.registerFactory(() => ChangePin(sl<AuthRepository>()));
   sl.registerFactory(() => ResetPin(sl<AuthRepository>()));
+  sl.registerFactory(() => DeleteAccount(sl<AuthRepository>()));
   sl.registerFactory(() => Logout(sl<AuthRepository>()));
   sl.registerLazySingleton<AuthMessageProvider>(
     () => LocalizedAuthMessageProvider(),
@@ -226,10 +215,12 @@ Future<void> init({bool? useMockApi, bool? useLocalAuth}) async {
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
       sendOtp: sl<SendOtp>(),
+      startEmployeeOnboarding: sl<StartEmployeeOnboarding>(),
       verifyOtp: sl<VerifyOtp>(),
       loginWithPin: sl<LoginWithPin>(),
       logout: sl<Logout>(),
       resetPin: sl<ResetPin>(),
+      deleteAccount: sl<DeleteAccount>(),
       messages: sl<AuthMessageProvider>(),
       initialPhone: rememberedPhone,
       initialUser: cachedUser,

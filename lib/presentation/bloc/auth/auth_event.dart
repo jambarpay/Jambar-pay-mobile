@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 
 abstract class AuthEvent extends Equatable {
@@ -22,6 +24,23 @@ class PhoneNumberBackspace extends AuthEvent {
 
 class PhoneNumberSubmitted extends AuthEvent {
   const PhoneNumberSubmitted();
+}
+
+class OtpChanged extends AuthEvent {
+  final String otp;
+
+  const OtpChanged(this.otp);
+
+  @override
+  List<Object?> get props => [otp];
+}
+
+class OtpBackspace extends AuthEvent {
+  const OtpBackspace();
+}
+
+class OtpSubmitted extends AuthEvent {
+  const OtpSubmitted();
 }
 
 class PinChanged extends AuthEvent {
@@ -66,4 +85,10 @@ class LogoutRequested extends AuthEvent {
 
 class AppLockRequested extends AuthEvent {
   const AppLockRequested();
+}
+
+class AccountDeletionRequested extends AuthEvent {
+  const AccountDeletionRequested(this.completer);
+
+  final Completer<void> completer;
 }

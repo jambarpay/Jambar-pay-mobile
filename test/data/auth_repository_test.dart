@@ -167,6 +167,9 @@ class _LocalAuthStub extends AuthLocalDataSource {
 
   @override
   Future<void> logout() async => didLogout = true;
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 class _RemoteAuthStub extends AuthRemoteDataSource {
@@ -241,5 +244,10 @@ class _RemoteAuthStub extends AuthRemoteDataSource {
   Future<void> logout() async {
     _throwIfNeeded();
     didLogout = true;
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    _throwIfNeeded();
   }
 }

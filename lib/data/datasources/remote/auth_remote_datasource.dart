@@ -19,6 +19,22 @@ class AuthRemoteDataSource {
     }
   }
 
+  Future<bool> startEmployeeOnboarding(String phone) async {
+    final response = await apiService.post(
+      BaseUrl.authEmployeeOnboardingStart(),
+      {'phoneNumber': phone},
+      includeAuthorization: false,
+    );
+    if (response is! Map) {
+      throw const ApiException('Réponse d’activation invalide.');
+    }
+    final envelope = Map<String, dynamic>.from(response);
+    final data = envelope['data'] is Map
+        ? Map<String, dynamic>.from(envelope['data'] as Map)
+        : envelope;
+    return data['onboardingRequired'] == true;
+  }
+
   Future<void> sendOtp(
     String phone, {
     String firstName = 'Utilisateur',
@@ -163,6 +179,12 @@ class AuthRemoteDataSource {
       pin: newPin,
       pinConfirmation: newPin,
     );
+  }
+
+  Future<void> deleteAccount() async {
+    await apiService.delete(BaseUrl.authDeleteAccount());
+    _setAccessToken(null);
+    await sessionStorage.clear();
   }
 
   Future<void> logout() async {

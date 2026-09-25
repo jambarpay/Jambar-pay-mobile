@@ -19,6 +19,7 @@ class HomeScreen extends StatelessWidget {
     required this.onDarkModeChanged,
     required this.appState,
     required this.onLogout,
+    this.onDeleteAccount,
   });
 
   final int currentIndex;
@@ -27,6 +28,7 @@ class HomeScreen extends StatelessWidget {
   final ValueChanged<bool> onDarkModeChanged;
   final AppState appState;
   final VoidCallback onLogout;
+  final Future<void> Function()? onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,7 @@ class HomeScreen extends StatelessWidget {
         userProfile: appState.userProfile,
         wallet: appState.wallet,
         onLogout: onLogout,
+        onDeleteAccount: onDeleteAccount,
       ),
     ];
 

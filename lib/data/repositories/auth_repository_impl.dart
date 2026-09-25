@@ -25,6 +25,18 @@ class AuthRepositoryImpl implements AuthRepository {
        _sessionStorage = sessionStorage;
 
   @override
+  Future<bool> startEmployeeOnboarding(PhoneNumber phone) async {
+    try {
+      if (_useLocalAuth) {
+        return await _localDataSource.startEmployeeOnboarding(phone.digits);
+      }
+      return await _remoteDataSource.startEmployeeOnboarding(phone.digits);
+    } catch (e) {
+      throw Exception('Erreur réseau: ${e.toString()}');
+    }
+  }
+
+  @override
   Future<void> sendOtp(PhoneNumber phone) async {
     try {
       if (_useLocalAuth) {
@@ -199,6 +211,22 @@ class AuthRepositoryImpl implements AuthRepository {
       return profile == null ? null : UserDto.fromJson(profile).toDomain();
     } catch (_) {
       return null;
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    if (_useLocalAuth) {
+      await _localDataSource.deleteAccount();
+    } else {
+      await _remoteDataSource.deleteAccount();
+    }
+    _currentUserSession?.clear();
+    try {
+      await _sessionStorage?.clearRememberedPhone();
+      await _sessionStorage?.clear();
+    } catch (_) {
+      // The account is already disabled remotely; local cleanup is best effort.
     }
   }
 

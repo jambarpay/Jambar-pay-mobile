@@ -23,6 +23,7 @@ import 'package:jambar_pay_mobile/presentation/bloc/wallet/wallet_state.dart';
 import 'screens/login_screen.dart';
 import 'screens/pin_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/employee_otp_screen.dart';
 import 'models/mobile_employee_space.dart';
 
 class JambarPayApp extends StatefulWidget {
@@ -116,13 +117,11 @@ class JambarPayFlow extends StatelessWidget {
         } else if (state is AuthPhoneValid) {
           return _buildLoginScreen(context, state.formattedPhone);
         } else if (state is AuthPhoneLoading) {
-          return _buildPinScreen(
-            context,
-            state.phoneNumber,
-            totalDigits: 4,
-            title: 'Code PIN',
-            subtitle: 'Saisissez votre code PIN à 4 chiffres',
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
+        } else if (state is AuthOtpEntry) {
+          return _buildOtpScreen(context, state);
         } else if (state is AuthPinEntry) {
           return _buildPinScreen(
             context,
@@ -226,6 +225,23 @@ class JambarPayFlow extends StatelessWidget {
     );
   }
 
+  Widget _buildOtpScreen(BuildContext context, AuthOtpEntry state) {
+    return EmployeeOtpScreen(
+      phoneNumber: state.phoneNumber,
+      otp: state.otp,
+      errorText: state.errorMessage,
+      onDigitTap: (digit) {
+        context.read<AuthBloc>().add(OtpChanged(digit));
+      },
+      onBackspace: () {
+        context.read<AuthBloc>().add(const OtpBackspace());
+      },
+      onSubmit: () {
+        context.read<AuthBloc>().add(const OtpSubmitted());
+      },
+    );
+  }
+
   Widget _buildPinScreen(
     BuildContext context,
     String phoneNumber, {
@@ -316,6 +332,8 @@ class _HomeShellState extends State<HomeShell> {
     context.read<AuthBloc>().add(const LogoutRequested());
   }
 
+  Future<void> _onDeleteAccount() => context.read<AuthBloc>().deleteAccount();
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WalletBloc, WalletState>(
@@ -344,6 +362,7 @@ class _HomeShellState extends State<HomeShell> {
             clearWallet: wallet == null,
           ),
           onLogout: _onLogout,
+          onDeleteAccount: _onDeleteAccount,
         );
       },
     );

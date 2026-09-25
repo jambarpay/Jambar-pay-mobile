@@ -3,6 +3,11 @@ class AuthLocalDataSource {
   static const String _testUserName = 'Abdoulaye Diallo';
   String _currentPin = '1234';
 
+  Future<bool> startEmployeeOnboarding(String phone) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return false;
+  }
+
   Future<void> sendOtp(String phone) async {
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -83,6 +88,11 @@ class AuthLocalDataSource {
       throw Exception('Code de vérification incorrect.');
     }
     _currentPin = newPin;
+  }
+
+  Future<void> deleteAccount() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _currentPin = '1234';
   }
 
   Future<void> logout() async {

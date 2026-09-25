@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../presentation/jambar_pay_app.dart' show JambarPayFlow;
 import '../../presentation/models/mobile_employee_space.dart';
 import '../../presentation/screens/payment_screen.dart';
+import '../../presentation/screens/privacy_policy_screen.dart';
 import '../../presentation/screens/qr_screen.dart';
 import '../../presentation/screens/secret_code_screen.dart';
 
@@ -13,6 +14,7 @@ abstract final class AppRoutes {
   static const qrScanner = '/qr?mode=scanner';
   static const payment = '/payment';
   static const secretCode = '/secret-code';
+  static const privacyPolicy = '/privacy-policy';
 
   static String secretCodeLocation({
     required SecretCodeFlowMode mode,
@@ -68,6 +70,10 @@ abstract final class AppRouter {
             availableBalance: args.availableBalance,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.privacyPolicy,
+        builder: (context, state) => const PrivacyPolicyScreen(),
       ),
       GoRoute(
         path: AppRoutes.secretCode,

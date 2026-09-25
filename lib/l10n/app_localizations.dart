@@ -29,6 +29,34 @@ class AppLocalizations {
       'languageChangedFrench': 'Langue changée : Français',
       'languageChangedEnglish': 'Langue changée : Anglais',
       'contactSupport': 'Contacter le support',
+      'privacyPolicy': 'Politique de confidentialité',
+      'privacyPolicyIntro':
+          'Jambar Pay protège vos données et les utilise uniquement pour fournir les services de paiement, de portefeuille et d’assistance.',
+      'privacyDataTitle': 'Données collectées',
+      'privacyDataBody':
+          'Nous traitons votre numéro de téléphone, votre identité de salarié, les informations de portefeuille et l’historique des transactions nécessaires au fonctionnement du service. La caméra est utilisée uniquement lorsque vous scannez un QR code.',
+      'privacyUsageTitle': 'Utilisation des données',
+      'privacyUsageBody':
+          'Ces données servent à vous authentifier, sécuriser les paiements, afficher votre solde et votre historique, prévenir la fraude et répondre à vos demandes de support.',
+      'privacyStorageTitle': 'Conservation et sécurité',
+      'privacyStorageBody':
+          'Les données sont protégées pendant leur transmission par HTTPS. Les éléments de session conservés sur l’appareil sont stockés dans le stockage sécurisé du système. Les données sont conservées pendant la durée nécessaire aux obligations légales et financières.',
+      'privacySharingTitle': 'Partage des données',
+      'privacySharingBody':
+          'Nous ne vendons pas vos données. Elles peuvent être transmises uniquement aux services nécessaires à l’exécution des paiements, à l’hébergement et aux obligations légales.',
+      'privacyRightsTitle': 'Vos droits',
+      'privacyRightsBody':
+          'Vous pouvez demander l’accès, la rectification ou la suppression de votre compte depuis l’application. Certaines données peuvent devoir être conservées pour respecter la réglementation financière.',
+      'privacyContactTitle': 'Contact',
+      'privacyContactBody':
+          'Pour toute question relative à vos données : support@jambarpay.com.',
+      'deleteAccount': 'Supprimer mon compte',
+      'deletingAccount': 'Suppression en cours…',
+      'deleteAccountConfirmTitle': 'Supprimer le compte ?',
+      'deleteAccountConfirmBody':
+          'Cette action désactivera votre compte et vous déconnectera. Les données soumises aux obligations légales pourront être conservées.',
+      'deleteAccountFailure':
+          'La suppression n’a pas abouti. Vérifiez votre connexion et réessayez.',
       'supportUnavailable':
           'Impossible d’ouvrir WhatsApp. Veuillez réessayer plus tard.',
       'email': 'Email : support@jambarpay.com',
@@ -175,6 +203,34 @@ class AppLocalizations {
       'languageChangedFrench': 'Language changed: French',
       'languageChangedEnglish': 'Language changed: English',
       'contactSupport': 'Contact support',
+      'privacyPolicy': 'Privacy policy',
+      'privacyPolicyIntro':
+          'Jambar Pay protects your data and uses it only to provide payment, wallet and support services.',
+      'privacyDataTitle': 'Data we collect',
+      'privacyDataBody':
+          'We process your phone number, employee identity, wallet information and transaction history needed to operate the service. The camera is used only when you scan a QR code.',
+      'privacyUsageTitle': 'How we use data',
+      'privacyUsageBody':
+          'This data is used to authenticate you, secure payments, display your balance and history, prevent fraud and answer support requests.',
+      'privacyStorageTitle': 'Retention and security',
+      'privacyStorageBody':
+          'Data is protected in transit with HTTPS. Session information kept on the device is stored in the system secure storage. Data is retained only as long as needed for legal and financial obligations.',
+      'privacySharingTitle': 'Data sharing',
+      'privacySharingBody':
+          'We do not sell your data. It may be shared only with services needed to process payments, host the service and meet legal obligations.',
+      'privacyRightsTitle': 'Your rights',
+      'privacyRightsBody':
+          'You can request access, correction or deletion of your account from the app. Some data may need to be retained to comply with financial regulations.',
+      'privacyContactTitle': 'Contact',
+      'privacyContactBody':
+          'For questions about your data: support@jambarpay.com.',
+      'deleteAccount': 'Delete my account',
+      'deletingAccount': 'Deletion in progress…',
+      'deleteAccountConfirmTitle': 'Delete account?',
+      'deleteAccountConfirmBody':
+          'This will disable your account and sign you out. Data subject to legal obligations may be retained.',
+      'deleteAccountFailure':
+          'Deletion did not complete. Check your connection and try again.',
       'supportUnavailable': 'Unable to open WhatsApp. Please try again later.',
       'email': 'Email: support@jambarpay.com',
       'phone': 'Phone: +221 76 483 14 41',
@@ -331,6 +387,26 @@ class AppLocalizations {
   String get languageChangedFrench => _translate('languageChangedFrench');
   String get languageChangedEnglish => _translate('languageChangedEnglish');
   String get contactSupport => _translate('contactSupport');
+  String get privacyPolicy => _translate('privacyPolicy');
+  String get privacyPolicyIntro => _translate('privacyPolicyIntro');
+  String get privacyDataTitle => _translate('privacyDataTitle');
+  String get privacyDataBody => _translate('privacyDataBody');
+  String get privacyUsageTitle => _translate('privacyUsageTitle');
+  String get privacyUsageBody => _translate('privacyUsageBody');
+  String get privacyStorageTitle => _translate('privacyStorageTitle');
+  String get privacyStorageBody => _translate('privacyStorageBody');
+  String get privacySharingTitle => _translate('privacySharingTitle');
+  String get privacySharingBody => _translate('privacySharingBody');
+  String get privacyRightsTitle => _translate('privacyRightsTitle');
+  String get privacyRightsBody => _translate('privacyRightsBody');
+  String get privacyContactTitle => _translate('privacyContactTitle');
+  String get privacyContactBody => _translate('privacyContactBody');
+  String get deleteAccount => _translate('deleteAccount');
+  String get deletingAccount => _translate('deletingAccount');
+  String get deleteAccountConfirmTitle =>
+      _translate('deleteAccountConfirmTitle');
+  String get deleteAccountConfirmBody => _translate('deleteAccountConfirmBody');
+  String get deleteAccountFailure => _translate('deleteAccountFailure');
   String get supportUnavailable => _translate('supportUnavailable');
   String get email => _translate('email');
   String get phone => _translate('phone');

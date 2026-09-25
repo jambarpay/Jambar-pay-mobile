@@ -21,6 +21,7 @@ class ProfileScreen extends StatefulWidget {
     required this.userProfile,
     required this.wallet,
     required this.onLogout,
+    this.onDeleteAccount,
   });
 
   final VoidCallback onBackHome;
@@ -29,6 +30,7 @@ class ProfileScreen extends StatefulWidget {
   final UserProfileModel userProfile;
   final WalletSummaryModel? wallet;
   final VoidCallback onLogout;
+  final Future<void> Function()? onDeleteAccount;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -36,6 +38,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Locale _selectedLanguage;
+  bool _isDeletingAccount = false;
 
   @override
   void initState() {
@@ -111,6 +114,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
           content: Text(AppLocalizations.of(context).supportUnavailable),
         ),
       );
+    }
+  }
+
+  Future<void> _requestAccountDeletion() async {
+    final loc = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(loc.deleteAccountConfirmTitle),
+        content: Text(loc.deleteAccountConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(loc.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              loc.deleteAccount,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || widget.onDeleteAccount == null) {
+      return;
+    }
+
+    setState(() => _isDeletingAccount = true);
+    try {
+      await widget.onDeleteAccount!();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.deleteAccountFailure)));
+      }
+    } finally {
+      if (mounted) setState(() => _isDeletingAccount = false);
     }
   }
 
@@ -204,6 +247,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   label: AppLocalizations.of(context).contactSupport,
                   isDarkMode: widget.isDarkMode,
                   onTap: () => unawaited(_contactSupport()),
+                ),
+                const SizedBox(height: 18),
+                ProfileActionTile(
+                  icon: Icons.delete_forever_outlined,
+                  label: _isDeletingAccount
+                      ? AppLocalizations.of(context).deletingAccount
+                      : AppLocalizations.of(context).deleteAccount,
+                  color: Colors.red,
+                  isDarkMode: widget.isDarkMode,
+                  onTap: widget.onDeleteAccount == null || _isDeletingAccount
+                      ? null
+                      : () => unawaited(_requestAccountDeletion()),
+                ),
+                const SizedBox(height: 18),
+                ProfileActionTile(
+                  icon: Icons.privacy_tip_outlined,
+                  label: AppLocalizations.of(context).privacyPolicy,
+                  isDarkMode: widget.isDarkMode,
+                  onTap: () => context.push(AppRoutes.privacyPolicy),
                 ),
                 const SizedBox(height: 18),
                 ProfileActionTile(

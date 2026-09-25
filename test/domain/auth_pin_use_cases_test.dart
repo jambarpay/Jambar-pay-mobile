@@ -100,7 +100,13 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> logout() async {}
 
   @override
+  Future<void> deleteAccount() async {}
+
+  @override
   Future<String> refreshToken(String refreshToken) async => refreshToken;
+
+  @override
+  Future<bool> startEmployeeOnboarding(PhoneNumber phone) async => false;
 
   @override
   Future<void> sendOtp(PhoneNumber phone) async {}

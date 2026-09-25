@@ -4,6 +4,10 @@ import '../value_objects/phone_number.dart';
 abstract class AuthRepository {
   Future<void> sendOtp(PhoneNumber phone);
 
+  /// Returns true when this phone belongs to a pending employee and an OTP was sent.
+  /// The default keeps lightweight test/fallback repositories compatible.
+  Future<bool> startEmployeeOnboarding(PhoneNumber phone) async => false;
+
   Future<User> verifyOtp({
     required PhoneNumber phone,
     required String otp,
@@ -21,4 +25,5 @@ abstract class AuthRepository {
     required String newPin,
   });
   Future<void> logout();
+  Future<void> deleteAccount();
 }
