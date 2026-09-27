@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/network/api_service.dart';
 import '../../../domain/entities/user.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -217,7 +218,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         _currentPin = '';
         emit(AuthPinEntry(phone.formatted));
       }
-    } catch (error) {
+    } on ApiException catch (error) {
+      emit(AuthFailure(error.message, phone.formatted));
+    } catch (_) {
       emit(AuthFailure(_messages.loginServiceUnavailable, phone.formatted));
     }
   }
