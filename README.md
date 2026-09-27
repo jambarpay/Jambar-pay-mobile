@@ -32,7 +32,7 @@ Si Android n’apparaît pas, connecter un téléphone avec le débogage USB act
 
 Les valeurs sont injectées à la compilation avec `--dart-define` :
 
-- `API_BASE` : origine publique du front Web qui relaie `/api/v1` vers la gateway ; valeur de production `https://jambaarpay.com`.
+- `API_BASE` : origine publique du front Web qui relaie `/api/v1` vers la gateway ; valeur de production `https://www.jambaarpay.com`.
 - `USE_MOCK_API` : utilise les réponses locales de développement.
 - `USE_LOCAL_AUTH` : utilise l’authentification locale de développement.
 
@@ -50,19 +50,19 @@ Exécution contre un backend :
 flutter run -d chrome \
   --dart-define=USE_MOCK_API=false \
   --dart-define=USE_LOCAL_AUTH=false \
-  --dart-define=API_BASE=https://jambaarpay.com
+  --dart-define=API_BASE=https://www.jambaarpay.com
 ```
 
 Test Android actuel sur le VPS :
 
 ```bash
 flutter run -d RF8W30AMCYW \
-  --dart-define=API_BASE=https://jambaarpay.com
+  --dart-define=API_BASE=https://www.jambaarpay.com
 ```
 
 Le Web utilise `/api/v1` sur la même origine et Vercel relaie ces requêtes vers
 la gateway. Sur mobile, `API_BASE` doit donc être l’origine HTTPS
-`https://jambaarpay.com` (sans `/api/v1`, ajouté par le client). Le domaine et
+`https://www.jambaarpay.com` (sans `/api/v1`, ajouté par le client). Le domaine et
 sa réécriture Vercel doivent rester disponibles en production.
 
 Le mobile consomme les contrats `/api/v1/auth`, `/api/v1/restaurants`, `/api/v1/qrs` et `/api/v1/payments`. `API_BASE` doit désigner une gateway qui conserve ces chemins. La gateway présente dans le dépôt doit encore être corrigée avant un test bout en bout réel.
