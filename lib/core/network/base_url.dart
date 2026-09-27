@@ -1,5 +1,6 @@
 abstract final class BaseUrl {
-  static const String defaultApiBase = 'https://api.jambaarpay.com';
+  // Match the web app's same-origin /api/v1 Vercel rewrite.
+  static const String defaultApiBase = 'https://jambaarpay.com';
   static const String apiPrefix = '/api/v1';
 
   static String get base =>
