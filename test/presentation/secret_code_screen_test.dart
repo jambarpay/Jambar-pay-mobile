@@ -123,7 +123,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Code reçu par WhatsApp'), findsOneWidget);
+    expect(find.text('Code de vérification reçu'), findsOneWidget);
     await _tapKeypadDigits(tester, '123456');
     await tester.pump();
     expect(find.text('Vérifier le code'), findsOneWidget);
