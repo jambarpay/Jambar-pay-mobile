@@ -1,3 +1,5 @@
+import '../../../core/network/api_service.dart';
+
 class AuthLocalDataSource {
   static const String _testUserId = 'test-user-123';
   static const String _testUserName = 'Abdoulaye Diallo';
@@ -10,6 +12,16 @@ class AuthLocalDataSource {
 
   Future<void> sendOtp(String phone) async {
     await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  Future<void> checkEmployeeOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (otp != '123456') {
+      throw const ApiException('Code OTP incorrect.', statusCode: 401);
+    }
   }
 
   Future<Map<String, dynamic>> verifyOtp({

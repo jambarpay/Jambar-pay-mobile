@@ -49,11 +49,17 @@ class AuthOtpEntry extends AuthState {
   final String phoneNumber;
   final String otp;
   final String? errorMessage;
+  final bool isSubmitting;
 
-  const AuthOtpEntry(this.phoneNumber, [this.otp = '', this.errorMessage]);
+  const AuthOtpEntry(this.phoneNumber, [this.otp = '', this.errorMessage])
+    : isSubmitting = false;
+
+  const AuthOtpEntry.checking(this.phoneNumber, this.otp)
+    : errorMessage = null,
+      isSubmitting = true;
 
   @override
-  List<Object?> get props => [phoneNumber, otp, errorMessage];
+  List<Object?> get props => [phoneNumber, otp, errorMessage, isSubmitting];
 }
 
 class AuthPinEntry extends AuthState {

@@ -20,6 +20,7 @@ void main() {
     );
 
     await repository.sendOtp(phone);
+    await repository.checkEmployeeOtp(phone: phone, otp: '123456');
     final user = await repository.verifyOtp(phone: phone, otp: '1234');
     expect(user.id, 'local-user');
     expect(
@@ -36,6 +37,7 @@ void main() {
     await repository.logout();
 
     expect(local.sentPhone, phone.digits);
+    expect(local.checkedOtp, (phone.digits, '123456'));
     expect(local.changedPin, ('1234', '5678'));
     expect(local.resetCall, ('771234567', '9876', '5678'));
     expect(local.didLogout, isTrue);
@@ -51,6 +53,7 @@ void main() {
     );
 
     await repository.sendOtp(phone);
+    await repository.checkEmployeeOtp(phone: phone, otp: '123456');
     final user = await repository.verifyOtp(phone: phone, otp: '1234');
     expect(user.id, 'remote-user');
     expect(
@@ -67,10 +70,33 @@ void main() {
     await repository.logout();
 
     expect(remote.sentPhone, phone.digits);
+    expect(remote.checkedOtp, (phone.digits, '123456'));
     expect(remote.changedPin, ('1234', '5678'));
     expect(remote.resetCall, ('771234567', '9876', '5678'));
     expect(remote.didLogout, isTrue);
   });
+
+  test(
+    'a remote OTP rejection never falls back to local authentication',
+    () async {
+      final remote = _RemoteAuthStub()
+        ..error = const ApiException('Invalid OTP', statusCode: 401);
+      final local = _LocalAuthStub();
+      final repository = AuthRepositoryImpl(remote, local, useLocalAuth: false);
+
+      await expectLater(
+        repository.checkEmployeeOtp(phone: phone, otp: '123456'),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.statusCode,
+            'status',
+            401,
+          ),
+        ),
+      );
+      expect(local.checkedOtp, isNull);
+    },
+  );
 
   test(
     'AuthRepositoryImpl contextualizes errors and keeps logout safe',
@@ -127,6 +153,16 @@ class _RecordingSessionStorage extends SecureSessionStorage {
 }
 
 class _LocalAuthStub extends AuthLocalDataSource {
+  (String, String)? checkedOtp;
+
+  @override
+  Future<void> checkEmployeeOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    checkedOtp = (phone, otp);
+  }
+
   String? sentPhone;
   (String, String)? changedPin;
   (String, String, String)? resetCall;
@@ -180,6 +216,16 @@ class _RemoteAuthStub extends AuthRemoteDataSource {
   (String, String, String)? resetCall;
   bool didLogout = false;
   Object? error;
+  (String, String)? checkedOtp;
+
+  @override
+  Future<void> checkEmployeeOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    _throwIfNeeded();
+    checkedOtp = (phone, otp);
+  }
 
   void _throwIfNeeded() {
     if (error case final value?) throw value;

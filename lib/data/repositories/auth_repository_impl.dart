@@ -6,6 +6,7 @@ import '../datasources/local/auth_local_datasource.dart';
 import '../models/dto/user_dto.dart';
 import '../../core/session/current_user_session.dart';
 import '../../core/storage/secure_session_storage.dart';
+import '../../core/network/api_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -50,6 +51,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> checkEmployeeOtp({
+    required PhoneNumber phone,
+    required String otp,
+  }) {
+    // No offline fallback, user/session persistence, or PIN creation on this path.
+    return _useLocalAuth
+        ? _localDataSource.checkEmployeeOtp(phone: phone.digits, otp: otp)
+        : _remoteDataSource.checkEmployeeOtp(phone: phone.digits, otp: otp);
+  }
+
+  @override
   Future<User> verifyOtp({
     required PhoneNumber phone,
     required String otp,
@@ -77,6 +89,8 @@ class AuthRepositoryImpl implements AuthRepository {
       await _rememberUser(user);
       await _rememberPin(user, pin);
       return user;
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('Échec de la vérification: ${e.toString()}');
     }

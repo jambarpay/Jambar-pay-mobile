@@ -14,6 +14,8 @@ class EmployeeOtpScreen extends StatelessWidget {
     required this.onBackspace,
     required this.onSubmit,
     this.errorText,
+    this.isSubmitting = false,
+    this.onBack,
   });
 
   final String phoneNumber;
@@ -22,6 +24,8 @@ class EmployeeOtpScreen extends StatelessWidget {
   final VoidCallback onBackspace;
   final VoidCallback onSubmit;
   final String? errorText;
+  final bool isSubmitting;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +40,19 @@ class EmployeeOtpScreen extends StatelessWidget {
           SafeArea(
             child: Column(
               children: [
-                const BrandHeader(),
+                Stack(
+                  children: [
+                    const BrandHeader(),
+                    if (onBack != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          onPressed: onBack,
+                          icon: const Icon(Icons.arrow_back),
+                        ),
+                      ),
+                  ],
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -82,8 +98,12 @@ class EmployeeOtpScreen extends StatelessWidget {
                           ],
                           const SizedBox(height: 24),
                           NumericKeypad(
-                            onDigitTap: onDigitTap,
-                            onBackspace: onBackspace,
+                            onDigitTap: (digit) {
+                              if (!isSubmitting) onDigitTap(digit);
+                            },
+                            onBackspace: () {
+                              if (!isSubmitting) onBackspace();
+                            },
                             foregroundColor: AppColors.lightPrimaryText,
                             buttonBackgroundColor: AppColors.lightSurface,
                             buttonBorderColor: AppColors.lightBorder,
@@ -92,7 +112,9 @@ class EmployeeOtpScreen extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: otp.length == 6 ? onSubmit : null,
+                              onPressed: otp.length == 6 && !isSubmitting
+                                  ? onSubmit
+                                  : null,
                               style: FilledButton.styleFrom(
                                 backgroundColor: AppColors.lightPrimaryText,
                                 foregroundColor: Colors.white,
@@ -105,7 +127,14 @@ class EmployeeOtpScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              child: Text(loc.verifyCode),
+                              child: isSubmitting
+                                  ? const SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(loc.verifyCode),
                             ),
                           ),
                         ],

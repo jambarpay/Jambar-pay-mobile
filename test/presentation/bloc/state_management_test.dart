@@ -285,6 +285,14 @@ Transaction _transactionAt(int index) => Transaction(
 );
 
 class _ProfileAuthRepository implements AuthRepository {
+  @override
+  Future<void> checkEmployeeOtp({
+    required PhoneNumber phone,
+    required String otp,
+  }) async {
+    throw UnimplementedError('OTP check not used by these profile tests');
+  }
+
   (String, String)? changedPin;
   Object? changeError;
   Object? logoutError;

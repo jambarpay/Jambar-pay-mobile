@@ -347,6 +347,13 @@ final class MockApiService extends ApiService {
   }) async {
     await Future.delayed(Duration(milliseconds: 800)); // Simulate delay
 
+    if (endpoint == BaseUrl.authEmployeeOnboardingCheckOtp()) {
+      if (data['otp'] != '123456') {
+        throw const ApiException('Code OTP incorrect.', statusCode: 401);
+      }
+      return {'success': true, 'data': null};
+    }
+
     if (endpoint == BaseUrl.authEmployeeLogin()) {
       if (data['pin']?.toString() != '1234') {
         throw const ApiException('Téléphone ou code PIN incorrect.');

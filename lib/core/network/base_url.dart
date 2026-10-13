@@ -16,11 +16,15 @@ abstract final class BaseUrl {
   static String authRegisterResend() => '$apiPrefix/auth/register/resend';
   static String authEmployeeOnboardingStart() =>
       '$apiPrefix/auth/employee/onboarding/start';
+  static String authEmployeeOnboardingCheckOtp() =>
+      '$apiPrefix/auth/employee/onboarding/check-otp';
   static String authLogout() => '$apiPrefix/auth/logout';
   static String authDeleteAccount() => '$apiPrefix/auth/account';
   static String authEmployeeLogin() => '$apiPrefix/auth/employee/login';
-  static String walletByOwner(String ownerId) =>'$apiPrefix/wallets/owners/$ownerId';
-  static String walletTopUp(String walletId) =>'$apiPrefix/wallets/$walletId/top-up';
+  static String walletByOwner(String ownerId) =>
+      '$apiPrefix/wallets/owners/$ownerId';
+  static String walletTopUp(String walletId) =>
+      '$apiPrefix/wallets/$walletId/top-up';
   static String payWithQr() => '$apiPrefix/payments/qr';
   static String waveCheckoutLinks() => '$apiPrefix/wave/checkout-links';
   static String employeeQr() => '$apiPrefix/qrs/employee';

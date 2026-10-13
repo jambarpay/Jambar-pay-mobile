@@ -8,6 +8,12 @@ abstract class AuthRepository {
   /// The default keeps lightweight test/fallback repositories compatible.
   Future<bool> startEmployeeOnboarding(PhoneNumber phone) async => false;
 
+  /// Server-side, non-consuming OTP check before allowing the first PIN to be chosen.
+  Future<void> checkEmployeeOtp({
+    required PhoneNumber phone,
+    required String otp,
+  });
+
   Future<User> verifyOtp({
     required PhoneNumber phone,
     required String otp,

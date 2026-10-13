@@ -76,6 +76,14 @@ void main() {
 }
 
 class _FakeAuthRepository implements AuthRepository {
+  @override
+  Future<void> checkEmployeeOtp({
+    required PhoneNumber phone,
+    required String otp,
+  }) async {
+    throw UnimplementedError('OTP check not used by these PIN tests');
+  }
+
   (String, String)? changedPin;
   (String, String, String)? reset;
 

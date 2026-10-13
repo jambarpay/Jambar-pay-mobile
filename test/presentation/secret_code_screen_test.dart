@@ -11,6 +11,7 @@ import 'package:jambar_pay_mobile/domain/use_cases/auth/reset_pin.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/send_otp.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/start_employee_onboarding.dart';
 import 'package:jambar_pay_mobile/domain/use_cases/auth/verify_otp.dart';
+import 'package:jambar_pay_mobile/domain/use_cases/auth/check_employee_otp.dart';
 import 'package:jambar_pay_mobile/domain/value_objects/phone_number.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_bloc.dart';
@@ -30,6 +31,7 @@ void main() {
         sendOtp: SendOtp(repository),
         startEmployeeOnboarding: StartEmployeeOnboarding(repository),
         verifyOtp: VerifyOtp(repository),
+        checkEmployeeOtp: CheckEmployeeOtp(repository),
         loginWithPin: LoginWithPin(repository),
         logout: Logout(repository),
         resetPin: ResetPin(repository),
@@ -61,6 +63,7 @@ void main() {
     final authBloc = AuthBloc(
       sendOtp: SendOtp(repository),
       verifyOtp: VerifyOtp(repository),
+      checkEmployeeOtp: CheckEmployeeOtp(repository),
       loginWithPin: LoginWithPin(repository),
       logout: Logout(repository),
       resetPin: ResetPin(repository),
@@ -96,6 +99,7 @@ void main() {
     final authBloc = AuthBloc(
       sendOtp: SendOtp(repository),
       verifyOtp: VerifyOtp(repository),
+      checkEmployeeOtp: CheckEmployeeOtp(repository),
       loginWithPin: LoginWithPin(repository),
       logout: Logout(repository),
       resetPin: ResetPin(repository),
@@ -156,6 +160,14 @@ class _RecordingAuthRepository implements AuthRepository {
   (String, String, String)? resetCall;
   Object? loginError;
   Object? onboardingError;
+
+  @override
+  Future<void> checkEmployeeOtp({
+    required PhoneNumber phone,
+    required String otp,
+  }) async {
+    throw UnimplementedError('OTP check not used by these reset/login tests');
+  }
 
   @override
   Future<void> resetPin({

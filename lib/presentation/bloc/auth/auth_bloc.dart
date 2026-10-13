@@ -10,6 +10,7 @@ import '../../../domain/value_objects/phone_number.dart';
 import '../../../domain/use_cases/auth/send_otp.dart';
 import '../../../domain/use_cases/auth/start_employee_onboarding.dart';
 import '../../../domain/use_cases/auth/verify_otp.dart';
+import '../../../domain/use_cases/auth/check_employee_otp.dart';
 import '../../../domain/use_cases/auth/login_with_pin.dart';
 import '../../../domain/use_cases/auth/logout.dart';
 import '../../../domain/use_cases/auth/reset_pin.dart';
@@ -22,6 +23,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SendOtp _sendOtp;
   final StartEmployeeOnboarding? _startEmployeeOnboarding;
   final VerifyOtp _verifyOtp;
+  final CheckEmployeeOtp _checkEmployeeOtp;
   final LoginWithPin _loginWithPin;
   final Logout _logout;
   final ResetPin _resetPin;
@@ -35,6 +37,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   String _setupPin = '';
   bool _settingUpPin = false;
   bool _confirmingSetupPin = false;
+  int _otpCheckGeneration = 0;
   int _failedPinAttempts = 0;
   DateTime? _pinLockedUntil;
 
@@ -42,6 +45,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required SendOtp sendOtp,
     StartEmployeeOnboarding? startEmployeeOnboarding,
     required VerifyOtp verifyOtp,
+    required CheckEmployeeOtp checkEmployeeOtp,
     required LoginWithPin loginWithPin,
     required Logout logout,
     required ResetPin resetPin,
@@ -52,6 +56,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }) : _sendOtp = sendOtp,
        _startEmployeeOnboarding = startEmployeeOnboarding,
        _verifyOtp = verifyOtp,
+       _checkEmployeeOtp = checkEmployeeOtp,
        _loginWithPin = loginWithPin,
        _logout = logout,
        _resetPin = resetPin,
@@ -208,6 +213,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final onboardingRequired = await startEmployeeOnboarding(phone);
       if (onboardingRequired) {
+        _otpCheckGeneration++;
         _currentOtp = '';
         _otpCode = '';
         _currentPin = '';
@@ -226,6 +232,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onOtpChanged(OtpChanged event, Emitter<AuthState> emit) {
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isSubmitting) return;
     if (event.otp.isEmpty) return;
     if (!RegExp(r'^\d$').hasMatch(event.otp)) return;
     if (_currentOtp.length >= 6) return;
@@ -234,26 +241,49 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onOtpBackspace(OtpBackspace event, Emitter<AuthState> emit) {
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isSubmitting) return;
     if (_currentOtp.isEmpty) return;
     _currentOtp = _currentOtp.substring(0, _currentOtp.length - 1);
     emit(AuthOtpEntry(_formattedCurrentPhone, _currentOtp));
   }
 
-  void _onOtpSubmitted(OtpSubmitted event, Emitter<AuthState> emit) {
+  Future<void> _onOtpSubmitted(
+    OtpSubmitted event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isSubmitting) return;
     if (_currentOtp.length != 6) {
       emit(
         AuthOtpEntry(_formattedCurrentPhone, _currentOtp, 'Code OTP invalide.'),
       );
       return;
     }
-    _otpCode = _currentOtp;
-    _currentPin = '';
-    _settingUpPin = true;
-    _confirmingSetupPin = false;
-    emit(AuthPinSetupEntry(_formattedCurrentPhone, _otpCode));
+    final phone = PhoneNumber(_currentPhone);
+    final code = _currentOtp;
+    final generation = ++_otpCheckGeneration;
+    emit(AuthOtpEntry.checking(phone.formatted, code));
+    try {
+      await _checkEmployeeOtp(phone: phone, otp: code);
+      if (generation != _otpCheckGeneration || state is! AuthOtpEntry) return;
+      _otpCode = code;
+      _currentPin = '';
+      _setupPin = '';
+      _settingUpPin = true;
+      _confirmingSetupPin = false;
+      emit(AuthPinSetupEntry(phone.formatted, code));
+    } catch (error) {
+      if (generation != _otpCheckGeneration || state is! AuthOtpEntry) return;
+      _otpCode = '';
+      _currentPin = '';
+      _setupPin = '';
+      _settingUpPin = false;
+      _confirmingSetupPin = false;
+      emit(AuthOtpEntry(phone.formatted, code, _otpErrorMessage(error)));
+    }
   }
 
   Future<void> _onPinChanged(PinChanged event, Emitter<AuthState> emit) async {
+    if (state is AuthOtpEntry) return;
     _clearPinLockIfExpired();
     if (_isPinLocked) {
       _currentPin = '';
@@ -321,6 +351,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onPinBackspace(PinBackspace event, Emitter<AuthState> emit) {
+    if (state is AuthOtpEntry) return;
     _clearPinLockIfExpired();
     if (_isPinLocked) {
       emit(
@@ -358,6 +389,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     PinSubmitted event,
     Emitter<AuthState> emit,
   ) async {
+    if (state is AuthOtpEntry) return;
     _clearPinLockIfExpired();
     if (_isPinLocked) {
       _currentPin = '';
@@ -408,6 +440,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthAuthenticated(user));
       _resetSensitiveState();
     } catch (e) {
+      if (e is ApiException &&
+          (e.statusCode == 410 ||
+              e.statusCode == 429 ||
+              (e.statusCode == 401 &&
+                  e.message.toLowerCase().contains('otp')))) {
+        _currentPin = '';
+        _setupPin = '';
+        _otpCode = '';
+        _settingUpPin = false;
+        _confirmingSetupPin = false;
+        emit(
+          AuthOtpEntry(
+            _formattedCurrentPhone,
+            _currentOtp,
+            _otpErrorMessage(e),
+          ),
+        );
+        return;
+      }
       _currentPin = '';
       _confirmingSetupPin = true;
       emit(
@@ -423,6 +474,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _resetSensitiveState() {
+    _otpCheckGeneration++;
     _failedPinAttempts = 0;
     _pinLockedUntil = null;
     _currentPin = '';
@@ -459,6 +511,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     BackToPhoneRequested event,
     Emitter<AuthState> emit,
   ) {
+    _otpCheckGeneration++;
     _currentPhone = '';
     _currentPin = '';
     _currentOtp = '';
@@ -473,12 +526,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
+    _otpCheckGeneration++;
     await _logout();
     _failedPinAttempts = 0;
     _pinLockedUntil = null;
     _currentPhone = '';
     _currentPin = '';
     emit(const AuthPhoneInitial());
+  }
+
+  String _otpErrorMessage(Object error) {
+    if (error is ApiException) {
+      return switch (error.statusCode) {
+        401 => 'Code OTP incorrect. Vérifiez le code reçu.',
+        410 =>
+          'Ce code OTP a expiré. Recommencez l’activation pour en recevoir un nouveau.',
+        429 =>
+          'Trop de tentatives. Recommencez l’activation pour recevoir un nouveau code.',
+        _ => error.message,
+      };
+    }
+    return 'Impossible de vérifier le code pour le moment. Réessayez.';
   }
 
   bool get _isPinLocked =>

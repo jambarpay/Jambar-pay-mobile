@@ -35,6 +35,23 @@ class AuthRemoteDataSource {
     return data['onboardingRequired'] == true;
   }
 
+  Future<void> checkEmployeeOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    final response = await apiService.post(
+      BaseUrl.authEmployeeOnboardingCheckOtp(),
+      {'phoneNumber': phone, 'otp': otp},
+      includeAuthorization: false,
+    );
+    // Only an explicit server acknowledgement opens PIN setup. Never persist a session here.
+    if (response is! Map || response['success'] != true) {
+      throw const ApiException(
+        'La vérification du code n’a pas été confirmée. Réessayez.',
+      );
+    }
+  }
+
   Future<void> sendOtp(
     String phone, {
     String firstName = 'Utilisateur',

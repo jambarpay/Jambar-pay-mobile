@@ -229,6 +229,10 @@ class JambarPayFlow extends StatelessWidget {
     return EmployeeOtpScreen(
       phoneNumber: state.phoneNumber,
       otp: state.otp,
+      isSubmitting: state.isSubmitting,
+      onBack: () {
+        context.read<AuthBloc>().add(const BackToPhoneRequested());
+      },
       errorText: state.errorMessage,
       onDigitTap: (digit) {
         context.read<AuthBloc>().add(OtpChanged(digit));

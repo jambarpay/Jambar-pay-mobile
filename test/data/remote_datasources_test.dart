@@ -9,6 +9,56 @@ import 'package:jambar_pay_mobile/core/session/current_user_session.dart';
 
 void main() {
   group('AuthRemoteDataSource', () {
+    test(
+      'checks OTP without PIN, authorization, token or stored session',
+      () async {
+        final api = _RecordingApiService()
+          ..token = 'existing-token'
+          ..postResponses[BaseUrl.authEmployeeOnboardingCheckOtp()] = {
+            'success': true,
+            'data': null,
+          };
+        final storage = _RecordingSessionStorage();
+        final source = AuthRemoteDataSource(api, storage);
+
+        await source.checkEmployeeOtp(phone: '771234567', otp: '123456');
+
+        expect(api.lastEndpoint, BaseUrl.authEmployeeOnboardingCheckOtp());
+        expect(api.lastData, {'phoneNumber': '771234567', 'otp': '123456'});
+        expect(api.lastIncludeAuthorization, isFalse);
+        expect(api.token, 'existing-token');
+        expect(storage.savedTokens, isNull);
+      },
+    );
+
+    test('unconfirmed or malformed OTP checks always fail closed', () async {
+      final api = _RecordingApiService();
+      final source = AuthRemoteDataSource(api, _RecordingSessionStorage());
+      for (final response in [
+        <String, dynamic>{},
+        {'success': false},
+        {'success': 'true'},
+        'OK',
+      ]) {
+        api.postResponses[BaseUrl.authEmployeeOnboardingCheckOtp()] = response;
+        await expectLater(
+          source.checkEmployeeOtp(phone: '771234567', otp: '123456'),
+          throwsA(isA<ApiException>()),
+        );
+      }
+      api.postError = const ApiException('OTP has expired', statusCode: 410);
+      await expectLater(
+        source.checkEmployeeOtp(phone: '771234567', otp: '123456'),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.statusCode,
+            'status',
+            410,
+          ),
+        ),
+      );
+    });
+
     test('persists tokens and extracts the authenticated user', () async {
       final api = _RecordingApiService()
         ..postResponses[BaseUrl.authRegisterVerify()] = {
