@@ -71,8 +71,7 @@ class ApiService {
 
       final decodedBody = await _decodeBody(response);
       final serverMessage = _serverMessage(decodedBody);
-      if (response.body.toLowerCase().contains('twilio') ||
-          response.body.toLowerCase().contains('unverified')) {
+      if (response.body.toLowerCase().contains('unverified')) {
         throw ApiException(
           ApiMessages.smsError,
           statusCode: response.statusCode,

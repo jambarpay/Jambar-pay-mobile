@@ -103,7 +103,7 @@ void main() {
       final service = ApiService(
         baseUrl: 'https://example.test',
         client: MockClient(
-          (request) async => http.Response('Twilio account unverified', 500),
+          (request) async => http.Response('Messaging sender unverified', 500),
         ),
       );
       addTearDown(service.dispose);
