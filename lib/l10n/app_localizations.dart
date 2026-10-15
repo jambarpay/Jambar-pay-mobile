@@ -79,6 +79,33 @@ class AppLocalizations {
       'home': 'Accueil',
       'history': 'Historique',
       'restaurants': 'Restaurants',
+      'services': 'Services',
+      'chooseService': 'Choisissez un service',
+      'chooseServiceDescription': 'Quel type de partenaire recherchez-vous ?',
+      'serviceRestaurant': 'Restaurant',
+      'serviceShop': 'Boutique',
+      'serviceSupermarket': 'Supermarché',
+      'serviceMarket': 'Marché',
+      'serviceOther': 'Autre partenaire',
+      'serviceRestaurantDescription': 'Restauration & snacks',
+      'serviceShopDescription': 'Commerce de détail',
+      'serviceSupermarketDescription': 'Grande surface',
+      'serviceMarketDescription': 'Marché local',
+      'serviceSelected': 'Sélectionné',
+      'viewAllPartners': 'Voir tous les partenaires',
+      'serviceFilterInfo':
+          'Ce choix filtre les partenaires par catégorie. Le fonctionnement du paiement reste identique.',
+      'filterByCategory': 'Filtrer par catégorie',
+      'searchPartner': 'Rechercher un partenaire ou une adresse',
+      'noPartnersMatch': 'Aucun partenaire ne correspond à votre recherche.',
+      'noPartnersAvailable': 'Aucun partenaire disponible pour le moment.',
+      'noPartnerLocations':
+          'La localisation de ces partenaires n’est pas encore disponible.',
+      'noPartnersInCategory':
+          'Aucun partenaire disponible dans cette catégorie pour le moment.',
+      'partnerCountOne': '1 partenaire',
+      'partnerCountMany': '{count} partenaires',
+      'payAtPartner': 'Payer chez un partenaire',
       'profile': 'Profil',
       'accountPage': 'Page du compte',
       'enterAmountToPay': 'Veuillez entrer le montant à payer',
@@ -252,6 +279,32 @@ class AppLocalizations {
       'home': 'Home',
       'history': 'History',
       'restaurants': 'Restaurants',
+      'services': 'Services',
+      'chooseService': 'Choose a service',
+      'chooseServiceDescription': 'What type of partner are you looking for?',
+      'serviceRestaurant': 'Restaurant',
+      'serviceShop': 'Shop',
+      'serviceSupermarket': 'Supermarket',
+      'serviceMarket': 'Market',
+      'serviceOther': 'Other partner',
+      'serviceRestaurantDescription': 'Dining & snacks',
+      'serviceShopDescription': 'Retail store',
+      'serviceSupermarketDescription': 'Grocery & department store',
+      'serviceMarketDescription': 'Local market',
+      'serviceSelected': 'Selected',
+      'viewAllPartners': 'View all partners',
+      'serviceFilterInfo':
+          'This choice filters partners by category. Payments work the same way.',
+      'filterByCategory': 'Filter by category',
+      'searchPartner': 'Search for a partner or address',
+      'noPartnersMatch': 'No partners match your search.',
+      'noPartnersAvailable': 'No partners available yet.',
+      'noPartnerLocations':
+          'Locations are not yet available for these partners.',
+      'noPartnersInCategory': 'No partners available in this category yet.',
+      'partnerCountOne': '1 partner',
+      'partnerCountMany': '{count} partners',
+      'payAtPartner': 'Pay at a partner',
       'profile': 'Profile',
       'accountPage': 'Account Page',
       'enterAmountToPay': 'Please enter the amount to pay',
@@ -429,6 +482,34 @@ class AppLocalizations {
   String get home => _translate('home');
   String get history => _translate('history');
   String get restaurants => _translate('restaurants');
+  String get services => _translate('services');
+  String get chooseService => _translate('chooseService');
+  String get chooseServiceDescription => _translate('chooseServiceDescription');
+  String get serviceRestaurant => _translate('serviceRestaurant');
+  String get serviceShop => _translate('serviceShop');
+  String get serviceSupermarket => _translate('serviceSupermarket');
+  String get serviceMarket => _translate('serviceMarket');
+  String get serviceOther => _translate('serviceOther');
+  String get serviceRestaurantDescription =>
+      _translate('serviceRestaurantDescription');
+  String get serviceShopDescription => _translate('serviceShopDescription');
+  String get serviceSupermarketDescription =>
+      _translate('serviceSupermarketDescription');
+  String get serviceMarketDescription => _translate('serviceMarketDescription');
+  String get serviceSelected => _translate('serviceSelected');
+  String get viewAllPartners => _translate('viewAllPartners');
+  String get serviceFilterInfo => _translate('serviceFilterInfo');
+  String get filterByCategory => _translate('filterByCategory');
+  String get searchPartner => _translate('searchPartner');
+  String get noPartnersMatch => _translate('noPartnersMatch');
+  String get noPartnersAvailable => _translate('noPartnersAvailable');
+  String get noPartnerLocations => _translate('noPartnerLocations');
+  String get noPartnersInCategory => _translate('noPartnersInCategory');
+  String partnerCount(int count) => _translateWithArgs(
+    count == 1 ? 'partnerCountOne' : 'partnerCountMany',
+    {'count': count.toString()},
+  );
+  String get payAtPartner => _translate('payAtPartner');
   String get profile => _translate('profile');
   String get accountPage => _translate('accountPage');
   String get enterAmountToPay => _translate('enterAmountToPay');

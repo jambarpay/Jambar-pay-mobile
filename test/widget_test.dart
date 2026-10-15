@@ -47,11 +47,18 @@ void main() {
     expect(find.text('6 transactions'), findsOneWidget);
     expect(find.text('Le FOOD'), findsWidgets);
 
-    await tester.tap(find.text('Restaurants').last);
+    await tester.tap(find.text('Services').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Restaurants'), findsWidgets);
-    expect(find.text('Rechercher un restaurant'), findsOneWidget);
+    expect(find.text('Choisissez un service'), findsOneWidget);
+    final allServices = find.byKey(const ValueKey('service-show-all'));
+    await tester.ensureVisible(allServices);
+    await tester.tap(allServices);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Rechercher un partenaire ou une adresse'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();

@@ -120,11 +120,11 @@ class QuickActionGrid extends StatelessWidget {
           (
             icon: Icons.photo_camera_outlined,
             title: scanLabel,
-            subtitle: 'Payer au restaurant',
+            subtitle: AppLocalizations.of(context).payAtPartner,
             onTap: onScan,
           ),
           (
-            icon: Icons.restaurant_outlined,
+            icon: Icons.storefront_outlined,
             title: restaurantsLabel,
             subtitle: 'Près de moi',
             onTap: onRestaurants,
@@ -248,7 +248,7 @@ class HomeBottomNavigation extends StatelessWidget {
     final items = <({IconData icon, String label})>[
       (icon: Icons.home_rounded, label: loc.home),
       (icon: Icons.history_rounded, label: loc.history),
-      (icon: Icons.restaurant_rounded, label: loc.restaurants),
+      (icon: Icons.storefront_rounded, label: loc.services),
       (icon: Icons.person_rounded, label: loc.profile),
     ];
 
@@ -359,7 +359,7 @@ class HomeNavigationRail extends StatelessWidget {
         ),
         NavigationRailDestination(
           icon: const Icon(Icons.storefront_outlined),
-          label: Text(loc.restaurants),
+          label: Text(loc.services),
         ),
         NavigationRailDestination(
           icon: const Icon(Icons.person_outline),

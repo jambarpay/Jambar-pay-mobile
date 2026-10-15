@@ -1,4 +1,5 @@
 import '../../../domain/entities/restaurant.dart';
+import '../../../domain/entities/partner_category.dart';
 
 class RestaurantDto {
   const RestaurantDto({
@@ -11,6 +12,7 @@ class RestaurantDto {
     required this.longitude,
     required this.address,
     required this.status,
+    this.category = PartnerCategory.restaurant,
   });
 
   final String id;
@@ -22,6 +24,7 @@ class RestaurantDto {
   final double longitude;
   final String address;
   final String status;
+  final PartnerCategory category;
 
   factory RestaurantDto.fromJson(Map<String, dynamic> json) {
     final status = json['status']?.toString().toUpperCase() ?? 'PENDING';
@@ -42,6 +45,9 @@ class RestaurantDto {
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
       address: json['address']?.toString() ?? address,
       status: status,
+      category: PartnerCategory.fromApi(
+        json['partnerType'] ?? json['category'],
+      ),
     );
   }
 
@@ -55,5 +61,6 @@ class RestaurantDto {
     longitude: longitude,
     address: address,
     status: status,
+    category: category,
   );
 }

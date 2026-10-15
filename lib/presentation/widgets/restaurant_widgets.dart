@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:jambar_pay_mobile/domain/entities/restaurant.dart';
 import 'app_palette.dart';
 import 'home_widgets.dart';
+import 'partner_service_widgets.dart';
 
 String _formatUpdatedAt(BuildContext context, DateTime date) {
   final now = DateTime.now();
@@ -19,56 +20,36 @@ String _formatUpdatedAt(BuildContext context, DateTime date) {
   return loc.dateTime('${date.day}/${date.month}/${date.year}', time);
 }
 
-class RestaurantsListView extends StatefulWidget {
+class RestaurantsListView extends StatelessWidget {
   const RestaurantsListView({
     super.key,
     required this.isDarkMode,
     required this.restaurants,
-    this.onSearchChanged,
+    required this.emptyMessage,
   });
 
   final bool isDarkMode;
   final List<Restaurant> restaurants;
-  final ValueChanged<String>? onSearchChanged;
-
-  @override
-  State<RestaurantsListView> createState() => _RestaurantsListViewState();
-}
-
-class _RestaurantsListViewState extends State<RestaurantsListView> {
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  final String emptyMessage;
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      itemCount: widget.restaurants.isEmpty ? 2 : widget.restaurants.length + 1,
+      itemCount: restaurants.isEmpty ? 1 : restaurants.length,
       separatorBuilder: (context, index) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
-        if (index == 0) {
-          return SearchBar(
-            isDarkMode: widget.isDarkMode,
-            controller: _searchController,
-            onChanged: widget.onSearchChanged,
-          );
-        }
-        if (widget.restaurants.isEmpty) {
+        if (restaurants.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 40),
             child: Center(
-              child: Text(AppLocalizations.of(context).noRestaurantsAvailable),
+              child: Text(emptyMessage, textAlign: TextAlign.center),
             ),
           );
         }
         return RestaurantCard(
-          restaurant: widget.restaurants[index - 1],
-          isDarkMode: widget.isDarkMode,
+          restaurant: restaurants[index],
+          isDarkMode: isDarkMode,
         );
       },
     );
@@ -109,7 +90,7 @@ class RestaurantsMapView extends StatelessWidget {
                 SectionHeader(
                   title: AppLocalizations.of(
                     context,
-                  ).restaurantsNearby(restaurants.length),
+                  ).partnerCount(restaurants.length),
                 ),
                 for (
                   var index = 0;
@@ -159,7 +140,8 @@ class RestaurantMap extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          AppLocalizations.of(context).noRestaurantsAvailable,
+          AppLocalizations.of(context).noPartnerLocations,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: palette.secondaryText,
             fontWeight: FontWeight.w600,
@@ -324,7 +306,7 @@ class _SearchBarState extends State<SearchBar> {
           fontSize: 13.5,
         ),
         decoration: InputDecoration(
-          hintText: AppLocalizations.of(context).searchRestaurant,
+          hintText: AppLocalizations.of(context).searchPartner,
           hintStyle: TextStyle(
             color: widget.isDarkMode ? AppColors.darkHint : AppColors.lightHint,
             fontSize: 13.5,
@@ -384,8 +366,8 @@ class RestaurantCard extends StatelessWidget {
                   : AppColors.brandSurfaceSoft,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: const Icon(
-              Icons.restaurant_outlined,
+            child: Icon(
+              restaurant.category.icon,
               size: 22,
               color: AppColors.brand,
             ),
@@ -402,6 +384,11 @@ class RestaurantCard extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     color: isDarkMode ? palette.primaryText : null,
                   ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  restaurant.category.label(AppLocalizations.of(context)),
+                  style: TextStyle(color: palette.accent, fontSize: 11.5),
                 ),
                 const SizedBox(height: 2),
                 Text(

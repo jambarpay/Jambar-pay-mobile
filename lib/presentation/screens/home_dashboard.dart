@@ -104,7 +104,7 @@ class HomeDashboard extends StatelessWidget {
               children: [
                 QuickActionGrid(
                   scanLabel: loc.scan,
-                  restaurantsLabel: loc.restaurants,
+                  restaurantsLabel: loc.services,
                   historyLabel: loc.history,
                   statementLabel: 'Relevé',
                   onScan: () async {

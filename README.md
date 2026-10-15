@@ -107,6 +107,32 @@ Les montants du domaine sont stockés en unités entières XOF. Les tokens de se
 
 Les routes ne transportent aucun callback : les écrans QR, paiement et code secret communiquent avec les BLoC et retournent uniquement des résultats de navigation typés. Les routes du code secret utilisent des paramètres d’URL simples et restent donc compatibles avec les deep links.
 
+## Choix du service et catégories de partenaires
+
+Dans l’espace salarié, l’onglet et le raccourci **Services** remplacent
+l’ancien libellé « Restaurants ». Le salarié peut choisir **Restaurant**,
+**Boutique**, **Supermarché** ou **Marché**, puis continuer vers les partenaires
+de cette catégorie. « Voir tous les partenaires » ouvre directement la liste
+complète. Les filtres et la recherche par nom/adresse s’appliquent à la liste
+et à la carte. Ils ne changent ni les identifiants des partenaires, ni les
+autorisations, ni le fonctionnement du paiement ou du QR.
+
+Le mobile lit la propriété `partnerType` de chaque réponse de
+`GET /api/v1/restaurants` (`RESTAURANT`, `SHOP`, `SUPERMARKET`, `MARKET`). Il accepte
+aussi `category` et les libellés API `BOUTIQUE`, `SUPERMARCHE`, `MARCHE`.
+Pour les anciennes réponses et les caches hors ligne sans catégorie, le défaut
+reste **Restaurant**. Une valeur inconnue reste visible dans **Tous**, sans être
+classée à tort dans une des quatre catégories.
+
+**Prérequis serveur/admin :** les catégories doivent être enregistrées et
+renvoyées par le serveur pour alimenter les nouveaux filtres. Le mobile
+n’invente pas de boutiques, supermarchés ou marchés ; une catégorie sans
+partenaire affiche un message explicite. Le champ est géré dans la création et la
+modification des partenaires de `Webjambarpay` et dans `restaurant_service` avec
+la migration `V4__add_partner_type.sql`. Déployer ce serveur avec Flyway activé
+avant l’admin et le mobile. Aucun nouveau secret ou variable d’environnement
+n’est nécessaire.
+
 ## Qualité
 
 ```bash
@@ -115,7 +141,7 @@ flutter test --coverage
 dart run tool/check_coverage.dart coverage/lcov.info 80
 ```
 
-La suite comprend 62 tests unitaires, BLoC, widgets, intégration, accessibilité et non-régression visuelle. La couverture de lignes actuelle est de 80,79 % et la CI refuse toute régression sous 80 %. Les lints renforcés vérifient notamment les futures ignorées, les flux non fermés, les impressions console et les conventions de noms.
+La suite comprend des tests unitaires, BLoC, widgets, intégration, accessibilité et non-régression visuelle. La CI exige une couverture de lignes d’au moins 80 % ; vérifier la mesure réelle avec la commande ci-dessus. Les lints renforcés vérifient notamment les futures ignorées, les flux non fermés, les impressions console et les conventions de noms.
 
 Le pipeline [Flutter CI](.github/workflows/flutter_ci.yml) vérifie à chaque pull request le formatage, l’analyse stricte, les tests, la couverture ainsi que les builds Web et Android release. Dependabot surveille les dépendances Dart et GitHub Actions.
 
