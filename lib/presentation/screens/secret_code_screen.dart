@@ -223,7 +223,9 @@ class _OtpStepState extends State<_OtpStep> {
           const SizedBox(height: 12),
           Center(
             child: TextButton.icon(
-              onPressed: _isSending ? null : () => unawaited(_sendOtp()),
+              onPressed: _isSending || _isVerifying
+                  ? null
+                  : () => unawaited(_sendOtp()),
               icon: const Icon(Icons.chat_rounded, size: 16),
               label: Text(loc.resendWhatsapp),
               style: TextButton.styleFrom(
@@ -258,7 +260,11 @@ class _OtpStepState extends State<_OtpStep> {
   }
 
   Future<void> _sendOtp() async {
-    setState(() => _isSending = true);
+    if (!mounted || _isSending || _isVerifying) return;
+    setState(() {
+      _isSending = true;
+      _errorMessage = null;
+    });
     try {
       await context.read<AuthBloc>().requestOtpForPinReset(widget.phoneNumber);
     } catch (error) {

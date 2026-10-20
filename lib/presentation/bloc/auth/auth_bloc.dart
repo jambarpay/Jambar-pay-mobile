@@ -37,6 +37,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   String _setupPin = '';
   bool _settingUpPin = false;
   bool _confirmingSetupPin = false;
+  bool _isStartingOnboarding = false;
   int _otpCheckGeneration = 0;
   int _failedPinAttempts = 0;
   DateTime? _pinLockedUntil;
@@ -188,6 +189,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     PhoneNumberSubmitted event,
     Emitter<AuthState> emit,
   ) async {
+    final canStartOnboarding =
+        state is AuthPhoneInitial ||
+        state is AuthPhoneValid ||
+        state is AuthPhoneInvalid ||
+        state is AuthPinEntry ||
+        state is AuthFailure;
+    if (_isStartingOnboarding || !canStartOnboarding) return;
     final phone = PhoneNumber(_currentPhone);
     if (!phone.isValid) {
       emit(AuthPhoneInvalid(_messages.invalidPhoneNumber, _currentPhone));
@@ -209,11 +217,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
+    _isStartingOnboarding = true;
+    final generation = ++_otpCheckGeneration;
     emit(AuthPhoneLoading(phone.formatted));
     try {
       final onboardingRequired = await startEmployeeOnboarding(phone);
+      if (generation != _otpCheckGeneration || state is! AuthPhoneLoading) {
+        return;
+      }
       if (onboardingRequired) {
-        _otpCheckGeneration++;
         _currentOtp = '';
         _otpCode = '';
         _currentPin = '';
@@ -225,9 +237,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthPinEntry(phone.formatted));
       }
     } on ApiException catch (error) {
-      emit(AuthFailure(error.message, phone.formatted));
+      if (generation != _otpCheckGeneration || state is! AuthPhoneLoading) {
+        return;
+      }
+      emit(AuthPhoneInvalid(error.message, phone.formatted));
     } catch (_) {
-      emit(AuthFailure(_messages.loginServiceUnavailable, phone.formatted));
+      if (generation != _otpCheckGeneration || state is! AuthPhoneLoading) {
+        return;
+      }
+      emit(
+        AuthPhoneInvalid(_messages.loginServiceUnavailable, phone.formatted),
+      );
+    } finally {
+      _isStartingOnboarding = false;
     }
   }
 
@@ -539,10 +561,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (error is ApiException) {
       return switch (error.statusCode) {
         401 => 'Code OTP incorrect. Vérifiez le code reçu.',
-        410 =>
-          'Ce code OTP a expiré. Recommencez l’activation pour en recevoir un nouveau.',
-        429 =>
-          'Trop de tentatives. Recommencez l’activation pour recevoir un nouveau code.',
+        410 => 'Ce code OTP a expiré.',
+        429 => error.message,
         _ => error.message,
       };
     }

@@ -25,14 +25,18 @@ class AuthRemoteDataSource {
       {'phoneNumber': phone},
       includeAuthorization: false,
     );
-    if (response is! Map) {
+    if (response is! Map || response['success'] != true) {
       throw const ApiException('Réponse d’activation invalide.');
     }
     final envelope = Map<String, dynamic>.from(response);
     final data = envelope['data'] is Map
         ? Map<String, dynamic>.from(envelope['data'] as Map)
         : envelope;
-    return data['onboardingRequired'] == true;
+    final onboardingRequired = data['onboardingRequired'];
+    if (onboardingRequired is! bool) {
+      throw const ApiException('Réponse d’activation invalide.');
+    }
+    return onboardingRequired;
   }
 
   Future<void> checkEmployeeOtp({

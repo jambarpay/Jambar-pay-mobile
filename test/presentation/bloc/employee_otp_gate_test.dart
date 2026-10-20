@@ -58,12 +58,89 @@ void main() {
     await entered;
   }
 
+  Future<void> returnToPhone() async {
+    final back = bloc.stream.firstWhere((state) => state is AuthPhoneInitial);
+    bloc.add(const BackToPhoneRequested());
+    await back;
+    final ready = bloc.stream.firstWhere((state) => state is AuthPhoneValid);
+    bloc.add(const PhoneNumberChanged('771234567'));
+    await ready;
+  }
+
+  test('rapid continue taps only issue one onboarding request', () async {
+    await returnToPhone();
+    repository.pendingOnboarding = Completer<bool>();
+    final loading = bloc.stream.firstWhere(
+      (state) => state is AuthPhoneLoading,
+    );
+    bloc.add(const PhoneNumberSubmitted());
+    bloc.add(const PhoneNumberSubmitted());
+    await loading;
+    await Future<void>.delayed(Duration.zero);
+    final calls = repository.onboardingCalls;
+    final entered = bloc.stream.firstWhere((state) => state is AuthOtpEntry);
+    repository.pendingOnboarding!.complete(true);
+    await entered;
+
+    expect(calls, 2); // One request from setUp and one from this submission.
+  });
+
+  test(
+    'onboarding errors stay on the phone screen with the server message',
+    () async {
+      await returnToPhone();
+      const message =
+          'La limite de 2 envois OTP est atteinte pour cette activation.';
+      repository.onboardingError = const ApiException(message, statusCode: 429);
+      final failed = bloc.stream.firstWhere(
+        (state) => state is AuthPhoneInvalid || state is AuthFailure,
+      );
+      bloc.add(const PhoneNumberSubmitted());
+
+      final state = await failed;
+      expect(state, isA<AuthPhoneInvalid>());
+      expect((state as AuthPhoneInvalid).errorMessage, message);
+      expect(repository.loginCalls, 0);
+    },
+  );
+
+  test(
+    'a late onboarding response does not reopen OTP after returning',
+    () async {
+      await returnToPhone();
+      repository.pendingOnboarding = Completer<bool>();
+      final loading = bloc.stream.firstWhere(
+        (state) => state is AuthPhoneLoading,
+      );
+      bloc.add(const PhoneNumberSubmitted());
+      await loading;
+      final back = bloc.stream.firstWhere((state) => state is AuthPhoneInitial);
+      bloc.add(const BackToPhoneRequested());
+      await back;
+      repository.pendingOnboarding!.complete(true);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state, isA<AuthPhoneInitial>());
+    },
+  );
+
   test('six digits alone never authorize PIN setup', () async {
     await enterCode('333333');
     expect(bloc.state, isA<AuthOtpEntry>());
     expect(repository.checkCalls, 0);
     expect(states.whereType<AuthPinSetupEntry>(), isEmpty);
   });
+
+  test(
+    'a stale continue event cannot request a second code from the OTP screen',
+    () async {
+      bloc.add(const PhoneNumberSubmitted());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.onboardingCalls, 1);
+      expect(bloc.state, isA<AuthOtpEntry>());
+    },
+  );
 
   for (final status in [401, 410, 429, 503]) {
     test(
@@ -206,6 +283,9 @@ void main() {
 }
 
 class _GateRepository implements AuthRepository {
+  Object? onboardingError;
+  Completer<bool>? pendingOnboarding;
+  int onboardingCalls = 0;
   Object? checkError;
   Object? finalError;
   Completer<void>? pendingCheck;
@@ -216,7 +296,11 @@ class _GateRepository implements AuthRepository {
   (String, String, String?, String?)? finalCall;
 
   @override
-  Future<bool> startEmployeeOnboarding(PhoneNumber phone) async => true;
+  Future<bool> startEmployeeOnboarding(PhoneNumber phone) async {
+    onboardingCalls++;
+    if (onboardingError case final error?) throw error;
+    return await pendingOnboarding?.future ?? true;
+  }
 
   @override
   Future<void> checkEmployeeOtp({

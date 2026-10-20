@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,7 +46,7 @@ void main() {
         authBloc.stream,
         emitsInOrder([
           isA<AuthPhoneLoading>(),
-          isA<AuthFailure>().having(
+          isA<AuthPhoneInvalid>().having(
             (state) => state.errorMessage,
             'message',
             message,
@@ -128,6 +130,20 @@ void main() {
     );
 
     expect(find.text('Code de vérification reçu'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(repository.otpSendCalls, 1);
+    repository.pendingOtp = Completer<void>();
+    final resend = tester
+        .widget<TextButton>(
+          find.byWidgetPredicate((widget) => widget is TextButton),
+        )
+        .onPressed!;
+    // A second tap can reach the old callback before Flutter rebuilds the button.
+    resend();
+    resend();
+    expect(repository.otpSendCalls, 2);
+    repository.pendingOtp!.complete();
+    await tester.pumpAndSettle();
     await _tapKeypadDigits(tester, '123456');
     await tester.pump();
     expect(find.text('Vérifier le code'), findsOneWidget);
@@ -160,6 +176,8 @@ class _RecordingAuthRepository implements AuthRepository {
   (String, String, String)? resetCall;
   Object? loginError;
   Object? onboardingError;
+  int otpSendCalls = 0;
+  Completer<void>? pendingOtp;
 
   @override
   Future<void> checkEmployeeOtp({
@@ -200,7 +218,10 @@ class _RecordingAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> sendOtp(PhoneNumber phone) async {}
+  Future<void> sendOtp(PhoneNumber phone) async {
+    otpSendCalls++;
+    await pendingOtp?.future;
+  }
 
   @override
   Future<User> loginWithPin({

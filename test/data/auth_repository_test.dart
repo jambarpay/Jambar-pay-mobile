@@ -9,6 +9,24 @@ import 'package:jambar_pay_mobile/domain/value_objects/phone_number.dart';
 void main() {
   const phone = PhoneNumber('771234567');
 
+  test(
+    'preserves the backend OTP send-limit error for start and resend',
+    () async {
+      const error = ApiException(
+        'La limite de 2 envois OTP est atteinte pour cette activation.',
+        statusCode: 429,
+      );
+      final remote = _RemoteAuthStub()..error = error;
+      final repository = AuthRepositoryImpl(remote, _LocalAuthStub());
+
+      await expectLater(
+        repository.startEmployeeOnboarding(phone),
+        throwsA(same(error)),
+      );
+      await expectLater(repository.sendOtp(phone), throwsA(same(error)));
+    },
+  );
+
   test('AuthRepositoryImpl delegates the complete local contract', () async {
     final local = _LocalAuthStub();
     final storage = _RecordingSessionStorage();
@@ -217,6 +235,12 @@ class _RemoteAuthStub extends AuthRemoteDataSource {
   bool didLogout = false;
   Object? error;
   (String, String)? checkedOtp;
+
+  @override
+  Future<bool> startEmployeeOnboarding(String phone) async {
+    _throwIfNeeded();
+    return true;
+  }
 
   @override
   Future<void> checkEmployeeOtp({

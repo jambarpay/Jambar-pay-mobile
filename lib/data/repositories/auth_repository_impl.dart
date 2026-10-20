@@ -32,6 +32,8 @@ class AuthRepositoryImpl implements AuthRepository {
         return await _localDataSource.startEmployeeOnboarding(phone.digits);
       }
       return await _remoteDataSource.startEmployeeOnboarding(phone.digits);
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('Erreur réseau: ${e.toString()}');
     }
@@ -45,6 +47,8 @@ class AuthRepositoryImpl implements AuthRepository {
       } else {
         await _remoteDataSource.sendOtp(phone.digits);
       }
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('Erreur réseau: ${e.toString()}');
     }

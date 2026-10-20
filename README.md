@@ -69,6 +69,15 @@ Le mobile consomme les contrats `/api/v1/auth`, `/api/v1/restaurants`, `/api/v1/
 
 Le parcours de connexion salarié utilise `/api/v1/auth/employee/login`. Une migration du `user-service` initialise le salarié de validation `782917770` avec un PIN haché. Le paiement QR de démonstration n’est pas exposé dans l’application.
 
+L'invitation SMS est déclenchée par le backend quand l'entreprise crée le salarié,
+sans intervention du mobile. La saisie du numéro dans le mobile déclenche ensuite
+`/api/v1/auth/employee/onboarding/start`. Les appuis répétés pendant cet appel
+ne produisent qu'une requête ; une réponse tardive après un retour est ignorée.
+Une erreur d'activation laisse l'utilisateur sur la saisie du numéro avec le
+message du serveur, y compris la limite des deux envois OTP (`429`). Le mobile
+ne propose l'étape suivante qu'après une décision booléenne explicite dans une
+réponse réussie. L'accusé de mise en file ne confirme pas la livraison du SMS.
+
 Le scanner Web exige `localhost` ou une origine HTTPS et l’autorisation caméra du navigateur.
 
 ## Architecture

@@ -10,6 +10,45 @@ import 'package:jambar_pay_mobile/core/session/current_user_session.dart';
 void main() {
   group('AuthRemoteDataSource', () {
     test(
+      'onboarding requires an explicit successful boolean decision',
+      () async {
+        final api = _RecordingApiService();
+        final source = AuthRemoteDataSource(api, _RecordingSessionStorage());
+        for (final response in [
+          <String, dynamic>{},
+          {
+            'success': false,
+            'data': {'onboardingRequired': false},
+          },
+          {'success': true, 'data': {}},
+          {
+            'success': true,
+            'data': {'onboardingRequired': 'false'},
+          },
+          {
+            'success': true,
+            'data': {'onboardingRequired': null},
+          },
+        ]) {
+          api.postResponses[BaseUrl.authEmployeeOnboardingStart()] = response;
+          await expectLater(
+            source.startEmployeeOnboarding('771234567'),
+            throwsA(isA<ApiException>()),
+          );
+        }
+        for (final required in [true, false]) {
+          api.postResponses[BaseUrl.authEmployeeOnboardingStart()] = {
+            'success': true,
+            'data': {'onboardingRequired': required},
+          };
+          expect(await source.startEmployeeOnboarding('771234567'), required);
+          expect(api.lastData, {'phoneNumber': '771234567'});
+          expect(api.lastIncludeAuthorization, isFalse);
+        }
+      },
+    );
+
+    test(
       'checks OTP without PIN, authorization, token or stored session',
       () async {
         final api = _RecordingApiService()
