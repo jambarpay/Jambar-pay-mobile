@@ -231,49 +231,67 @@ class PhoneField extends StatelessWidget {
       readOnly: true,
       child: ExcludeSemantics(
         child: Container(
-          height: 56,
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 56),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: AppColors.lightBorder),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: AppColors.lightDivider),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+              final phoneStyle = TextStyle(
+                fontSize: 16,
+                color: Colors.black.withValues(alpha: 0.55),
+              );
+              const prefixStyle = TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              );
+              if (constraints.maxWidth < 240 * textScale) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('+221', style: prefixStyle),
+                      const SizedBox(height: 4),
+                      Text(formattedPhone, style: phoneStyle),
+                    ],
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      '🇸🇳',
-                      style: TextStyle(fontSize: 22, height: 1),
+                );
+              }
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '+221',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        right: BorderSide(color: AppColors.lightDivider),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  formattedPhone,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black.withValues(alpha: 0.55),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '🇸🇳',
+                          style: TextStyle(fontSize: 22, height: 1),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('+221', style: prefixStyle),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                  const SizedBox(width: 16),
+                  Expanded(child: Text(formattedPhone, style: phoneStyle)),
+                ],
+              );
+            },
           ),
         ),
       ),
