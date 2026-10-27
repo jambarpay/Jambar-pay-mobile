@@ -230,6 +230,12 @@ class JambarPayFlow extends StatelessWidget {
       phoneNumber: state.phoneNumber,
       otp: state.otp,
       isSubmitting: state.isSubmitting,
+      isResending: state.isResending,
+      remainingResendDelay: () =>
+          context.read<AuthBloc>().remainingOtpResendDelay(state.phoneNumber),
+      onResend: () async {
+        context.read<AuthBloc>().add(const OtpResendRequested());
+      },
       onBack: () {
         context.read<AuthBloc>().add(const BackToPhoneRequested());
       },

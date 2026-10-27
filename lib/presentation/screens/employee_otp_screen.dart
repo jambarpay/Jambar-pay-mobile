@@ -4,6 +4,7 @@ import 'package:jambar_pay_mobile/design_system/tokens/app_radius.dart';
 import 'package:jambar_pay_mobile/l10n/app_localizations.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/keypad_widgets.dart';
+import '../widgets/otp_resend_button.dart';
 
 class EmployeeOtpScreen extends StatelessWidget {
   const EmployeeOtpScreen({
@@ -15,6 +16,9 @@ class EmployeeOtpScreen extends StatelessWidget {
     required this.onSubmit,
     this.errorText,
     this.isSubmitting = false,
+    this.isResending = false,
+    this.onResend,
+    this.remainingResendDelay,
     this.onBack,
   });
 
@@ -25,6 +29,9 @@ class EmployeeOtpScreen extends StatelessWidget {
   final VoidCallback onSubmit;
   final String? errorText;
   final bool isSubmitting;
+  final bool isResending;
+  final Future<void> Function()? onResend;
+  final Duration Function()? remainingResendDelay;
   final VoidCallback? onBack;
 
   @override
@@ -99,10 +106,11 @@ class EmployeeOtpScreen extends StatelessWidget {
                           const SizedBox(height: 24),
                           NumericKeypad(
                             onDigitTap: (digit) {
-                              if (!isSubmitting) onDigitTap(digit);
+                              if (!isSubmitting && !isResending)
+                                onDigitTap(digit);
                             },
                             onBackspace: () {
-                              if (!isSubmitting) onBackspace();
+                              if (!isSubmitting && !isResending) onBackspace();
                             },
                             foregroundColor: AppColors.lightPrimaryText,
                             buttonBackgroundColor: AppColors.lightSurface,
@@ -112,7 +120,10 @@ class EmployeeOtpScreen extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: otp.length == 6 && !isSubmitting
+                              onPressed:
+                                  otp.length == 6 &&
+                                      !isSubmitting &&
+                                      !isResending
                                   ? onSubmit
                                   : null,
                               style: FilledButton.styleFrom(
@@ -137,6 +148,17 @@ class EmployeeOtpScreen extends StatelessWidget {
                                   : Text(loc.verifyCode),
                             ),
                           ),
+                          if (onResend != null &&
+                              remainingResendDelay != null) ...[
+                            const SizedBox(height: 12),
+                            Center(
+                              child: OtpResendButton(
+                                remainingDelay: remainingResendDelay!,
+                                onResend: onResend!,
+                                enabled: !isSubmitting && !isResending,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

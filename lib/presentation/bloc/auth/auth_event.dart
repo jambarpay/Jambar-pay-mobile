@@ -26,6 +26,10 @@ class PhoneNumberSubmitted extends AuthEvent {
   const PhoneNumberSubmitted();
 }
 
+class OtpResendRequested extends AuthEvent {
+  const OtpResendRequested();
+}
+
 class OtpChanged extends AuthEvent {
   final String otp;
 

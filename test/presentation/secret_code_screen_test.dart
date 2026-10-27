@@ -98,6 +98,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _RecordingAuthRepository();
+    var now = DateTime.utc(2026, 10, 27);
     final authBloc = AuthBloc(
       sendOtp: SendOtp(repository),
       verifyOtp: VerifyOtp(repository),
@@ -106,6 +107,7 @@ void main() {
       logout: Logout(repository),
       resetPin: ResetPin(repository),
       messages: LocalizedAuthMessageProvider(),
+      now: () => now,
     );
     addTearDown(authBloc.close);
 
@@ -132,6 +134,28 @@ void main() {
     expect(find.text('Code de vérification reçu'), findsOneWidget);
     await tester.pumpAndSettle();
     expect(repository.otpSendCalls, 1);
+    expect(find.text('Renvoyer le code dans 02:00'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextButton>(
+            find.byWidgetPredicate((widget) => widget is TextButton),
+          )
+          .onPressed,
+      isNull,
+    );
+    now = now.add(const Duration(seconds: 119));
+    await tester.pump(const Duration(seconds: 119));
+    expect(find.text('Renvoyer le code dans 00:01'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextButton>(
+            find.byWidgetPredicate((widget) => widget is TextButton),
+          )
+          .onPressed,
+      isNull,
+    );
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
     repository.pendingOtp = Completer<void>();
     final resend = tester
         .widget<TextButton>(
@@ -144,6 +168,15 @@ void main() {
     expect(repository.otpSendCalls, 2);
     repository.pendingOtp!.complete();
     await tester.pumpAndSettle();
+    expect(find.text('Renvoyer le code dans 02:00'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextButton>(
+            find.byWidgetPredicate((widget) => widget is TextButton),
+          )
+          .onPressed,
+      isNull,
+    );
     await _tapKeypadDigits(tester, '123456');
     await tester.pump();
     expect(find.text('Vérifier le code'), findsOneWidget);
@@ -163,6 +196,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.resetCall, ('771234567', '123456', '5678'));
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
 

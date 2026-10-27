@@ -176,6 +176,7 @@ class AppLocalizations {
       'otpSentTo': 'Entrez le code envoyé au {phone}',
       'verifyCode': 'Vérifier le code',
       'resendWhatsapp': 'Pas reçu ? Renvoyer le code',
+      'resendCodeIn': 'Renvoyer le code dans {duration}',
       'verificationCodeShort': 'Vérification',
       'enterVerificationCode':
           'Saisissez le code OTP à 6 chiffres reçu pour continuer.',
@@ -373,6 +374,7 @@ class AppLocalizations {
       'otpSentTo': 'Enter the code sent to {phone}',
       'verifyCode': 'Verify the code',
       'resendWhatsapp': 'Didn’t receive it? Resend the code',
+      'resendCodeIn': 'Resend the code in {duration}',
       'verificationCodeShort': 'Verification',
       'enterVerificationCode':
           'Enter the 6-digit OTP you received to continue.',
@@ -590,6 +592,8 @@ class AppLocalizations {
       _translateWithArgs('otpSentTo', {'phone': phone});
   String get verifyCode => _translate('verifyCode');
   String get resendWhatsapp => _translate('resendWhatsapp');
+  String resendCodeIn(String duration) =>
+      _translateWithArgs('resendCodeIn', {'duration': duration});
   String get verificationCodeShort => _translate('verificationCodeShort');
   String get enterVerificationCode => _translate('enterVerificationCode');
   String accountForPhone(String phone) =>

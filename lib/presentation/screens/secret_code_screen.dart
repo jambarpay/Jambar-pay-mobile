@@ -11,6 +11,7 @@ import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_event.dart';
 import 'package:jambar_pay_mobile/presentation/bloc/auth/auth_state.dart';
 
 import '../widgets/keypad_widgets.dart';
+import '../widgets/otp_resend_button.dart';
 
 enum SecretCodeFlowMode { change, reset }
 
@@ -222,19 +223,12 @@ class _OtpStepState extends State<_OtpStep> {
           ),
           const SizedBox(height: 12),
           Center(
-            child: TextButton.icon(
-              onPressed: _isSending || _isVerifying
-                  ? null
-                  : () => unawaited(_sendOtp()),
-              icon: const Icon(Icons.chat_rounded, size: 16),
-              label: Text(loc.resendWhatsapp),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.success,
-                textStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            child: OtpResendButton(
+              remainingDelay: () => context
+                  .read<AuthBloc>()
+                  .remainingOtpResendDelay(widget.phoneNumber),
+              onResend: _sendOtp,
+              enabled: !_isSending && !_isVerifying,
             ),
           ),
           const SizedBox(height: 12),

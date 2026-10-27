@@ -22,9 +22,11 @@ void main() {
   late AuthBloc bloc;
   late List<AuthState> states;
   late StreamSubscription<AuthState> subscription;
+  late DateTime now;
 
   setUp(() async {
     repository = _GateRepository();
+    now = DateTime.utc(2026, 10, 27);
     bloc = AuthBloc(
       sendOtp: SendOtp(repository),
       startEmployeeOnboarding: StartEmployeeOnboarding(repository),
@@ -35,6 +37,7 @@ void main() {
       resetPin: ResetPin(repository),
       messages: LocalizedAuthMessageProvider(),
       initialPhone: '771234567',
+      now: () => now,
     );
     states = [];
     subscription = bloc.stream.listen(states.add);
@@ -66,6 +69,120 @@ void main() {
     bloc.add(const PhoneNumberChanged('771234567'));
     await ready;
   }
+
+  test(
+    'resending is blocked for the full two minutes and restarts after success',
+    () async {
+      expect(
+        bloc.remainingOtpResendDelay('77 123 45 67'),
+        const Duration(minutes: 2),
+      );
+      bloc.add(const OtpResendRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.sendCalls, 0);
+
+      now = now.add(const Duration(seconds: 119, milliseconds: 999));
+      bloc.add(const OtpResendRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.sendCalls, 0);
+
+      now = now.add(const Duration(milliseconds: 1));
+      repository.pendingSend = Completer<void>();
+      final sending = bloc.stream.firstWhere(
+        (state) => state is AuthOtpEntry && state.isResending,
+      );
+      bloc.add(const OtpResendRequested());
+      await sending;
+      bloc.add(const OtpResendRequested());
+      bloc.add(const OtpSubmitted());
+      bloc.add(const OtpChanged('1'));
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.sendCalls, 1);
+      expect(repository.checkCalls, 0);
+      expect((bloc.state as AuthOtpEntry).otp, isEmpty);
+
+      final sent = bloc.stream.firstWhere(
+        (state) => state is AuthOtpEntry && !state.isResending,
+      );
+      repository.pendingSend!.complete();
+      await sent;
+      expect(
+        bloc.remainingOtpResendDelay('771234567'),
+        const Duration(minutes: 2),
+      );
+      bloc.add(const OtpResendRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.sendCalls, 1);
+    },
+  );
+
+  test('a failed resend preserves the entered code and allows retry', () async {
+    await enterCode('333333');
+    now = now.add(const Duration(minutes: 2));
+    repository.sendError = const ApiException(
+      'Envoi indisponible',
+      statusCode: 503,
+    );
+    final failed = bloc.stream.firstWhere(
+      (state) => state is AuthOtpEntry && state.errorMessage != null,
+    );
+    bloc.add(const OtpResendRequested());
+    final result = await failed as AuthOtpEntry;
+    expect(result.errorMessage, 'Envoi indisponible');
+    expect(result.otp, '333333');
+    expect(result.isResending, isFalse);
+    expect(bloc.remainingOtpResendDelay('771234567'), Duration.zero);
+
+    repository.sendError = null;
+    final sent = bloc.stream.firstWhere(
+      (state) =>
+          state is AuthOtpEntry &&
+          !state.isResending &&
+          state.errorMessage == null,
+    );
+    bloc.add(const OtpResendRequested());
+    await sent;
+    expect(repository.sendCalls, 2);
+    expect((bloc.state as AuthOtpEntry).otp, isEmpty);
+  });
+
+  test('a late resend cannot reopen OTP after navigating back', () async {
+    now = now.add(const Duration(minutes: 2));
+    repository.pendingSend = Completer<void>();
+    final sending = bloc.stream.firstWhere(
+      (state) => state is AuthOtpEntry && state.isResending,
+    );
+    bloc.add(const OtpResendRequested());
+    await sending;
+    await returnToPhone();
+    repository.pendingSend!.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state, isA<AuthPhoneValid>());
+    expect(
+      bloc.remainingOtpResendDelay('771234567'),
+      const Duration(minutes: 2),
+    );
+  });
+
+  test(
+    'PIN reset shares the cooldown per normalized number and prevents parallel sends',
+    () async {
+      await bloc.requestOtpForPinReset('77 123 45 67');
+      expect(repository.sendCalls, 0);
+      repository.pendingSend = Completer<void>();
+      final sending = bloc.requestOtpForPinReset('781234567');
+      await bloc.requestOtpForPinReset('78 123 45 67');
+      expect(repository.sendCalls, 1);
+      repository.pendingSend!.complete();
+      await sending;
+      await bloc.requestOtpForPinReset('781234567');
+      expect(repository.sendCalls, 1);
+      expect(
+        bloc.remainingOtpResendDelay('781234567'),
+        const Duration(minutes: 2),
+      );
+    },
+  );
 
   test('rapid continue taps only issue one onboarding request', () async {
     await returnToPhone();
@@ -189,10 +306,12 @@ void main() {
       await checking;
       bloc.add(const OtpSubmitted());
       bloc.add(const OtpChanged('9'));
+      bloc.add(const OtpResendRequested());
       bloc.add(const PinChanged('2468'));
       bloc.add(const PinSubmitted());
       await Future<void>.delayed(Duration.zero);
       expect(repository.checkCalls, 1);
+      expect(repository.sendCalls, 0);
       expect(repository.loginCalls, 0);
       expect(bloc.state, isA<AuthOtpEntry>());
       expect(states.whereType<AuthPinSetupEntry>(), isEmpty);
@@ -286,6 +405,9 @@ class _GateRepository implements AuthRepository {
   Object? onboardingError;
   Completer<bool>? pendingOnboarding;
   int onboardingCalls = 0;
+  int sendCalls = 0;
+  Object? sendError;
+  Completer<void>? pendingSend;
   Object? checkError;
   Object? finalError;
   Completer<void>? pendingCheck;
@@ -336,7 +458,12 @@ class _GateRepository implements AuthRepository {
   }
 
   @override
-  Future<void> sendOtp(PhoneNumber phone) async {}
+  Future<void> sendOtp(PhoneNumber phone) async {
+    sendCalls++;
+    if (sendError case final error?) throw error;
+    await pendingSend?.future;
+  }
+
   @override
   Future<void> logout() async {}
   @override

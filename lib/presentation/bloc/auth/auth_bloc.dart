@@ -19,6 +19,7 @@ import '../../../domain/use_cases/auth/delete_account.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   static const int _maxPinAttempts = 5;
   static const Duration _pinLockDuration = Duration(minutes: 2);
+  static const Duration _otpResendDelay = Duration(minutes: 2);
 
   final SendOtp _sendOtp;
   final StartEmployeeOnboarding? _startEmployeeOnboarding;
@@ -29,6 +30,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ResetPin _resetPin;
   final DeleteAccount? _deleteAccount;
   final AuthMessageProvider _messages;
+  final DateTime Function() _now;
+  final Map<String, DateTime> _otpResendAvailableAt = {};
+  final Set<String> _otpRequestsInFlight = {};
 
   String _currentPhone = '';
   String _currentPin = '';
@@ -54,6 +58,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required AuthMessageProvider messages,
     String? initialPhone,
     User? initialUser,
+    DateTime Function()? now,
   }) : _sendOtp = sendOtp,
        _startEmployeeOnboarding = startEmployeeOnboarding,
        _verifyOtp = verifyOtp,
@@ -63,6 +68,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _resetPin = resetPin,
        _deleteAccount = deleteAccount,
        _messages = messages,
+       _now = now ?? DateTime.now,
        _currentPhone = PhoneNumber(
          initialPhone ?? initialUser?.phone.value ?? '',
        ).digits,
@@ -73,6 +79,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<OtpChanged>(_onOtpChanged);
     on<OtpBackspace>(_onOtpBackspace);
     on<OtpSubmitted>(_onOtpSubmitted);
+    on<OtpResendRequested>(_onOtpResendRequested);
     on<PinChanged>(_onPinChanged);
     on<PinBackspace>(_onPinBackspace);
     on<PinSubmitted>(_onPinSubmitted);
@@ -222,6 +229,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthPhoneLoading(phone.formatted));
     try {
       final onboardingRequired = await startEmployeeOnboarding(phone);
+      if (onboardingRequired) _startOtpResendDelay(phone);
       if (generation != _otpCheckGeneration || state is! AuthPhoneLoading) {
         return;
       }
@@ -254,7 +262,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onOtpChanged(OtpChanged event, Emitter<AuthState> emit) {
-    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isSubmitting) return;
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isBusy) return;
     if (event.otp.isEmpty) return;
     if (!RegExp(r'^\d$').hasMatch(event.otp)) return;
     if (_currentOtp.length >= 6) return;
@@ -263,7 +271,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onOtpBackspace(OtpBackspace event, Emitter<AuthState> emit) {
-    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isSubmitting) return;
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isBusy) return;
     if (_currentOtp.isEmpty) return;
     _currentOtp = _currentOtp.substring(0, _currentOtp.length - 1);
     emit(AuthOtpEntry(_formattedCurrentPhone, _currentOtp));
@@ -273,7 +281,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     OtpSubmitted event,
     Emitter<AuthState> emit,
   ) async {
-    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isSubmitting) return;
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isBusy) return;
     if (_currentOtp.length != 6) {
       emit(
         AuthOtpEntry(_formattedCurrentPhone, _currentOtp, 'Code OTP invalide.'),
@@ -446,8 +454,59 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> requestOtpForPinReset(String phoneNumber) {
-    return _sendOtp(PhoneNumber(phoneNumber));
+  Duration remainingOtpResendDelay(String phoneNumber) {
+    final deadline = _otpResendAvailableAt[PhoneNumber(phoneNumber).digits];
+    final remaining = deadline?.difference(_now()) ?? Duration.zero;
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  void _startOtpResendDelay(PhoneNumber phone) {
+    final now = _now();
+    _otpResendAvailableAt.removeWhere((_, deadline) => !deadline.isAfter(now));
+    _otpResendAvailableAt[phone.digits] = now.add(_otpResendDelay);
+  }
+
+  Future<void> requestOtpForPinReset(String phoneNumber) async {
+    final phone = PhoneNumber(phoneNumber);
+    if (remainingOtpResendDelay(phone.digits) > Duration.zero ||
+        !_otpRequestsInFlight.add(phone.digits)) {
+      return;
+    }
+    try {
+      await _sendOtp(phone);
+      _startOtpResendDelay(phone);
+    } finally {
+      _otpRequestsInFlight.remove(phone.digits);
+    }
+  }
+
+  Future<void> _onOtpResendRequested(
+    OtpResendRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is! AuthOtpEntry || (state as AuthOtpEntry).isBusy) return;
+    final phone = PhoneNumber(_currentPhone);
+    if (remainingOtpResendDelay(phone.digits) > Duration.zero) return;
+    final generation = ++_otpCheckGeneration;
+    emit(AuthOtpEntry.resending(phone.formatted, _currentOtp));
+    try {
+      await requestOtpForPinReset(phone.digits);
+      if (generation != _otpCheckGeneration || state is! AuthOtpEntry) return;
+      _currentOtp = '';
+      _otpCode = '';
+      emit(AuthOtpEntry(phone.formatted));
+    } catch (error) {
+      if (generation != _otpCheckGeneration || state is! AuthOtpEntry) return;
+      emit(
+        AuthOtpEntry(
+          phone.formatted,
+          _currentOtp,
+          error is ApiException
+              ? error.message
+              : _messages.loginServiceUnavailable,
+        ),
+      );
+    }
   }
 
   Future<void> _completeEmployeeOnboarding(Emitter<AuthState> emit) async {

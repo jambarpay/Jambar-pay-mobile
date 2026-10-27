@@ -50,16 +50,32 @@ class AuthOtpEntry extends AuthState {
   final String otp;
   final String? errorMessage;
   final bool isSubmitting;
+  final bool isResending;
+
+  bool get isBusy => isSubmitting || isResending;
 
   const AuthOtpEntry(this.phoneNumber, [this.otp = '', this.errorMessage])
-    : isSubmitting = false;
+    : isSubmitting = false,
+      isResending = false;
 
   const AuthOtpEntry.checking(this.phoneNumber, this.otp)
     : errorMessage = null,
-      isSubmitting = true;
+      isSubmitting = true,
+      isResending = false;
+
+  const AuthOtpEntry.resending(this.phoneNumber, this.otp)
+    : errorMessage = null,
+      isSubmitting = false,
+      isResending = true;
 
   @override
-  List<Object?> get props => [phoneNumber, otp, errorMessage, isSubmitting];
+  List<Object?> get props => [
+    phoneNumber,
+    otp,
+    errorMessage,
+    isSubmitting,
+    isResending,
+  ];
 }
 
 class AuthPinEntry extends AuthState {

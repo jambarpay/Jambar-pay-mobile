@@ -111,6 +111,7 @@ void main() {
         loc.phoneNumberLabel,
         loc.resetSecretCode,
         loc.verificationCode,
+        loc.resendCodeIn('02:00'),
         loc.verificationCodeShort,
         loc.enterVerificationCode,
         loc.accountForPhone('77 123 45 67'),
