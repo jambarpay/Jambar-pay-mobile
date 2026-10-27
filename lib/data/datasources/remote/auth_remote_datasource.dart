@@ -70,9 +70,15 @@ class AuthRemoteDataSource {
   }) async {
     // Employees are provisioned by their enterprise. The mobile app only
     // requests a new OTP for an already-provisioned employee account.
-    await apiService.post(BaseUrl.authRegisterResend(), {
+    final response = await apiService.post(BaseUrl.authRegisterResend(), {
       'phoneNumber': phone,
     }, includeAuthorization: false);
+    if (response is! Map || response['success'] != true) {
+      throw const ApiException(
+        'Le renvoi du code n’a pas été confirmé.',
+        kind: FailureKind.invalidResponse,
+      );
+    }
   }
 
   Future<Map<String, dynamic>> verifyOtp({

@@ -183,6 +183,7 @@ void main() {
         final storage = _RecordingSessionStorage();
         final source = AuthRemoteDataSource(api, storage);
 
+        api.postResponses[BaseUrl.authRegisterResend()] = {'success': true};
         await source.sendOtp('771234567');
         expect(api.lastEndpoint, BaseUrl.authRegisterResend());
         expect(api.lastData, {'phoneNumber': '771234567'});

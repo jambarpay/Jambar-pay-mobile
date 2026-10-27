@@ -78,6 +78,13 @@ message du serveur, y compris la limite des deux envois OTP (`429`). Le mobile
 ne propose l'étape suivante qu'après une décision booléenne explicite dans une
 réponse réussie. L'accusé de mise en file ne confirme pas la livraison du SMS.
 
+Après deux minutes, le bouton « Renvoyer le code » appelle
+`POST /api/v1/auth/register/resend` avec le numéro du salarié. Une réponse
+`success: true` efface l'ancien code saisi et relance les deux minutes d'attente.
+Un refus ou une réponse invalide affiche une erreur sans annoncer un renvoi
+réussi. Le serveur doit autoriser le remplacement d'un OTP expiré ; la limite
+de deux envois par activation continue de s'appliquer.
+
 Le scanner Web exige `localhost` ou une origine HTTPS et l’autorisation caméra du navigateur.
 
 ## Architecture
