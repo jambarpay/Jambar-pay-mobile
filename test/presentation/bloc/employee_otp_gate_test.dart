@@ -128,7 +128,8 @@ void main() {
     );
     bloc.add(const OtpResendRequested());
     final result = await failed as AuthOtpEntry;
-    expect(result.errorMessage, 'Envoi indisponible');
+    expect(result.errorMessage, isNot(contains('Envoi indisponible')));
+    expect(result.errorMessage, contains('serveur'));
     expect(result.otp, '333333');
     expect(result.isResending, isFalse);
     expect(bloc.remainingOtpResendDelay('771234567'), Duration.zero);

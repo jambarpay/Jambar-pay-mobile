@@ -255,17 +255,29 @@ void main() {
       expect(await source.getTransactions(), hasLength(1));
     });
 
-    test('returns safe empty values for malformed responses', () async {
-      final api = _RecordingApiService();
-      final source = TransactionRemoteDataSource(api);
-      api.getResponses[BaseUrl.transactions()] = {'invalid': true};
-      api.getResponses[BaseUrl.transactions('tx-1')] = <Object>[];
+    test(
+      'rejects malformed responses instead of inventing empty results',
+      () async {
+        final api = _RecordingApiService();
+        final source = TransactionRemoteDataSource(api);
+        api.getResponses[BaseUrl.transactions()] = {'invalid': true};
+        api.getResponses[BaseUrl.transactions('tx-1')] = <Object>[];
 
-      expect(await source.getTransactions(), isEmpty);
-      expect(await source.getTransactionById('tx-1'), isNull);
-      expect(await source.getFilteredTransactions(), isEmpty);
-      expect(api.lastQueryParameters, isNull);
-    });
+        await expectLater(
+          source.getTransactions(),
+          throwsA(isA<ApiException>()),
+        );
+        await expectLater(
+          source.getTransactionById('tx-1'),
+          throwsA(isA<ApiException>()),
+        );
+        await expectLater(
+          source.getFilteredTransactions(),
+          throwsA(isA<ApiException>()),
+        );
+        expect(api.lastQueryParameters, isNull);
+      },
+    );
   });
 
   group('WalletRemoteDataSource', () {

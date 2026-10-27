@@ -133,9 +133,9 @@ void main() {
         offlineService.get('/resource'),
         throwsA(
           isA<ApiException>().having(
-            (error) => error.message,
-            'message',
-            contains('offline'),
+            (error) => error.kind,
+            'kind',
+            FailureKind.network,
           ),
         ),
       );
@@ -156,9 +156,9 @@ void main() {
         ),
         throwsA(
           isA<ApiException>().having(
-            (error) => error.message,
-            'message',
-            contains('timeout'),
+            (error) => error.kind,
+            'kind',
+            FailureKind.timeout,
           ),
         ),
       );

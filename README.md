@@ -144,6 +144,40 @@ n’est nécessaire.
 
 ## Qualité
 
+### Gestion des erreurs
+
+`AppFailure` porte une catégorie explicite, le statut HTTP et, si le serveur les
+fournit, le code métier, `Retry-After` en secondes et l’identifiant de corrélation.
+`ApiException` conserve son interface existante. Les repositories propagent les
+erreurs sans les convertir en `Exception` génériques ; les décisions ne doivent
+jamais dépendre des mots contenus dans un message.
+
+- La connexion locale de secours reste possible uniquement après une panne
+  réseau ou un délai dépassé sans réponse HTTP. Un refus serveur, notamment
+  `401`, `403` ou `429`, ne déclenche jamais cette connexion.
+- Les lectures peuvent utiliser le cache après une panne réseau, un délai
+  dépassé ou une erreur serveur `5xx`. Une réponse invalide ou un refus métier
+  est remonté à l’appelant. Un échec d’écriture du cache ne transforme pas une
+  réponse réseau réussie en échec.
+- `failureMessage` produit les messages français et anglais des écrans. Les
+  erreurs techniques ne sont pas affichées telles quelles ; certains messages
+  métier structurés `4xx` sont conservés après filtrage.
+- Une confirmation de paiement interrompue présente un résultat incertain et
+  invite à consulter l’historique avant de payer à nouveau. Aucun renvoi
+  automatique du paiement n’est effectué.
+- Un montant absent, non numérique ou non fini, ou une date non interprétable,
+  produit une erreur de réponse invalide, sans inventer un zéro ou une date.
+- `FailureDiagnostics` journalise l’opération, la catégorie, le statut et la
+  corrélation validée, avec la pile d’appels. Le message brut, le contenu HTTP,
+  le PIN et le jeton de session ne sont pas ajoutés aux journaux.
+
+Les tests de `failure_handling_test.dart`, `error_policies_test.dart` et
+`payment_bloc_test.dart` vérifient notamment les refus avec un cache disponible,
+les erreurs de protocole, les messages localisés et les paiements incertains.
+Ces contrôles locaux ne remplacent pas les essais bout en bout avec le backend.
+
+### Vérifications
+
 ```bash
 flutter analyze
 flutter test --coverage

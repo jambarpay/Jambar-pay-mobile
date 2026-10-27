@@ -22,6 +22,29 @@ class AppLocalizations {
 
   static const Map<String, Map<String, String>> _translations = {
     'fr': {
+      'errorNetwork':
+          'Connexion indisponible. Vérifiez votre connexion Internet.',
+      'errorTimeout': 'Le délai de réponse est dépassé. Réessayez plus tard.',
+      'errorUnauthenticated':
+          'Votre session n’est plus valide. Reconnectez-vous.',
+      'errorForbidden': 'Vous n’êtes pas autorisé à effectuer cette action.',
+      'errorNotFound': 'La ressource demandée est introuvable.',
+      'errorConflict':
+          'Cette action entre en conflit avec l’état actuel. Actualisez les données.',
+      'errorExpired': 'Ce code ou cette demande a expiré.',
+      'errorRateLimited': 'Trop de demandes. Patientez avant de réessayer.',
+      'errorValidation': 'Vérifiez les informations saisies.',
+      'errorInvalidResponse':
+          'La réponse du service est invalide. Réessayez plus tard.',
+      'errorUnsupported':
+          'Cette fonctionnalité est indisponible pour le moment.',
+      'errorUnexpected':
+          'Une erreur inattendue est survenue. Réessayez plus tard.',
+      'errorPaymentUncertain':
+          'Le résultat du paiement n’a pas pu être confirmé. Vérifiez votre historique avant de payer à nouveau.',
+      'errorInvalidOtp': 'Code OTP incorrect. Vérifiez le code reçu.',
+      'errorInvalidPinFormat': 'Le code PIN doit contenir 4 chiffres.',
+      'errorInvalidOtpFormat': 'Le code OTP doit contenir 6 chiffres.',
       'appTitle': 'Jambar Pay Mobile',
       'chooseLanguage': 'Choisir la langue',
       'french': 'Français',
@@ -224,6 +247,25 @@ class AppLocalizations {
       'pinDigitsEntered': '{count} chiffre(s) saisi(s) sur {total}',
     },
     'en': {
+      'errorNetwork': 'No connection. Check your Internet connection.',
+      'errorTimeout': 'The request timed out. Try again later.',
+      'errorUnauthenticated': 'Your session is no longer valid. Sign in again.',
+      'errorForbidden': 'You are not allowed to perform this action.',
+      'errorNotFound': 'The requested resource was not found.',
+      'errorConflict':
+          'This action conflicts with the current state. Refresh the data.',
+      'errorExpired': 'This code or request has expired.',
+      'errorRateLimited': 'Too many requests. Wait before trying again.',
+      'errorValidation': 'Check the information you entered.',
+      'errorInvalidResponse':
+          'The service returned an invalid response. Try again later.',
+      'errorUnsupported': 'This feature is currently unavailable.',
+      'errorUnexpected': 'An unexpected error occurred. Try again later.',
+      'errorPaymentUncertain':
+          'The payment result could not be confirmed. Check your history before paying again.',
+      'errorInvalidOtp': 'Incorrect OTP. Check the code you received.',
+      'errorInvalidPinFormat': 'The PIN must contain 4 digits.',
+      'errorInvalidOtpFormat': 'The OTP must contain 6 digits.',
       'appTitle': 'Jambar Pay Mobile',
       'chooseLanguage': 'Choose language',
       'french': 'French',
@@ -434,6 +476,23 @@ class AppLocalizations {
     }
     return value;
   }
+
+  String get errorNetwork => _translate('errorNetwork');
+  String get errorTimeout => _translate('errorTimeout');
+  String get errorUnauthenticated => _translate('errorUnauthenticated');
+  String get errorForbidden => _translate('errorForbidden');
+  String get errorNotFound => _translate('errorNotFound');
+  String get errorConflict => _translate('errorConflict');
+  String get errorExpired => _translate('errorExpired');
+  String get errorRateLimited => _translate('errorRateLimited');
+  String get errorValidation => _translate('errorValidation');
+  String get errorInvalidResponse => _translate('errorInvalidResponse');
+  String get errorUnsupported => _translate('errorUnsupported');
+  String get errorUnexpected => _translate('errorUnexpected');
+  String get errorPaymentUncertain => _translate('errorPaymentUncertain');
+  String get errorInvalidOtp => _translate('errorInvalidOtp');
+  String get errorInvalidPinFormat => _translate('errorInvalidPinFormat');
+  String get errorInvalidOtpFormat => _translate('errorInvalidOtpFormat');
 
   String get appTitle => _translate('appTitle');
   String get chooseLanguage => _translate('chooseLanguage');

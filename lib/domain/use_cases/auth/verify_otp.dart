@@ -1,3 +1,4 @@
+import '../../errors/app_failure.dart';
 import '../../repositories/auth_repository.dart';
 import '../../entities/user.dart';
 import '../../value_objects/phone_number.dart';
@@ -14,15 +15,24 @@ class VerifyOtp {
     String? pinConfirmation,
   }) {
     if (pin != null && !RegExp(r'^\d{4}$').hasMatch(pin)) {
-      throw Exception('Le code PIN doit contenir 4 chiffres.');
+      throw const ValidationFailure(
+        'Le code PIN doit contenir 4 chiffres.',
+        code: 'invalid_pin',
+      );
     }
     if (pinConfirmation != null &&
         !RegExp(r'^\d{4}$').hasMatch(pinConfirmation)) {
-      throw Exception('La confirmation du PIN doit contenir 4 chiffres.');
+      throw const ValidationFailure(
+        'La confirmation du PIN doit contenir 4 chiffres.',
+        code: 'invalid_pin',
+      );
     }
     if ((pin == null) != (pinConfirmation == null) ||
         (pin != null && pin != pinConfirmation)) {
-      throw Exception('Les deux codes PIN doivent être identiques.');
+      throw const ValidationFailure(
+        'Les deux codes PIN doivent être identiques.',
+        code: 'pin_mismatch',
+      );
     }
     return _authRepository.verifyOtp(
       phone: phone,

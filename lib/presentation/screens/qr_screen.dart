@@ -1,4 +1,7 @@
 import 'dart:async';
+import '../../core/errors/failure_handling.dart';
+import '../../domain/errors/app_failure.dart';
+import '../utils/failure_messages.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -297,7 +300,8 @@ class _QrScreenState extends State<QrScreen> {
         });
         _scheduleEmployeeQrRefresh(cached.expiresAt);
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(error, stackTrace, operation: 'qr.cache_read');
       // Continue with the network request.
     }
 
@@ -310,7 +314,10 @@ class _QrScreenState extends State<QrScreen> {
         response['expiresAt']?.toString() ?? '',
       );
       if (content.isEmpty) {
-        throw StateError('QR employé vide');
+        throw const AppFailure(
+          'Invalid QR response',
+          kind: FailureKind.invalidResponse,
+        );
       }
 
       try {
@@ -319,7 +326,12 @@ class _QrScreenState extends State<QrScreen> {
           content: content,
           expiresAt: expiresAt,
         );
-      } catch (_) {
+      } catch (error, stackTrace) {
+        FailureDiagnostics.record(
+          error,
+          stackTrace,
+          operation: 'qr.cache_write',
+        );
         // The fresh QR can still be displayed if the cache write fails.
       }
       if (!mounted) return;
@@ -328,14 +340,16 @@ class _QrScreenState extends State<QrScreen> {
         _qrErrorMessage = null;
       });
       _scheduleEmployeeQrRefresh(expiresAt);
-    } catch (_) {
+    } catch (error, stackTrace) {
       if (!mounted) return;
       setState(() {
-        // Keep the last QR rendered on screen when the network is offline.
-        // Only show an error when there is no local QR to fall back to.
-        _qrErrorMessage = _employeeQrContent == null
-            ? AppLocalizations.of(context).invalidQrCode
-            : null;
+        if (!canUseCachedData(error)) _employeeQrContent = null;
+        _qrErrorMessage = failureMessage(
+          error,
+          localizations: AppLocalizations.of(context),
+          stackTrace: stackTrace,
+          operation: 'qr.refresh',
+        );
       });
       if (_employeeQrContent != null) {
         _scheduleEmployeeQrRetry();

@@ -67,6 +67,8 @@ void main() {
 
       final failed = TransactionDto.fromJson({
         'id': 'tx-3',
+        'amount': 500,
+        'date': '2026-01-01',
         'status': 'échec',
       }).toDomain();
       expect(failed.status, TransactionStatus.failed);
@@ -148,14 +150,53 @@ void main() {
 
       await expectLater(
         repository.confirmPayment(paymentToken: 'token', pin: '12'),
-        throwsA(isA<ApiException>()),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.kind,
+            'kind',
+            FailureKind.validation,
+          ),
+        ),
       );
+      expect(api.lastData, isNull);
+
+      await expectLater(
+        repository.confirmPayment(paymentToken: 'token', pin: '1234'),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.kind,
+            'kind',
+            FailureKind.validation,
+          ),
+        ),
+      );
+      expect(api.lastData, isNull);
+
+      session.clear();
+      await expectLater(
+        repository.confirmPayment(paymentToken: 'token', pin: '1234'),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.kind,
+            'kind',
+            FailureKind.unauthenticated,
+          ),
+        ),
+      );
+      expect(api.lastData, isNull);
+      session.setUserId('user-1');
 
       await repository.initiatePayment(qrToken: 'token', amount: Money.xof(1));
       api.postResponses[BaseUrl.payWithQr()] = <Object>[];
       await expectLater(
         repository.confirmPayment(paymentToken: 'token', pin: '1234'),
-        throwsA(isA<ApiException>()),
+        throwsA(
+          isA<ApiException>().having(
+            (error) => error.kind,
+            'kind',
+            FailureKind.invalidResponse,
+          ),
+        ),
       );
     });
   });
@@ -197,7 +238,7 @@ void main() {
       final repository = TransactionRepositoryImpl(
         TransactionRemoteDataSource(api),
       );
-      api.getResponses[BaseUrl.transactions('missing')] = <Object>[];
+      api.getResponses[BaseUrl.transactions('missing')] = null;
 
       expect(await repository.getTransactionById('missing'), isNull);
     });

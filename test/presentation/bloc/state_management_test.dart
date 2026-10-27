@@ -1,3 +1,4 @@
+import 'package:jambar_pay_mobile/domain/errors/app_failure.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jambar_pay_mobile/domain/entities/transaction.dart';
 import 'package:jambar_pay_mobile/domain/entities/user.dart';
@@ -148,7 +149,8 @@ void main() {
     });
 
     test('emits failures from load and refresh operations', () async {
-      final repository = _WalletTestRepository()..error = StateError('offline');
+      final repository = _WalletTestRepository()
+        ..error = const AppFailure('offline', kind: FailureKind.network);
       final bloc = WalletBloc(
         getWallet: GetWallet(repository),
         refreshWallet: RefreshWallet(repository),
@@ -162,7 +164,7 @@ void main() {
       bloc.add(const WalletLoadRequested());
       await loadFailure;
 
-      repository.error = StateError('timeout');
+      repository.error = const AppFailure('timeout', kind: FailureKind.timeout);
       final refreshFailure = expectLater(
         bloc.stream,
         emits(isA<WalletFailure>()),
@@ -238,7 +240,7 @@ void main() {
       );
 
       final failingRepository = _TransactionTestRepository(const [])
-        ..error = StateError('offline');
+        ..error = const AppFailure('offline', kind: FailureKind.network);
       final failureBloc = TransactionBloc(
         getTransactions: GetTransactions(failingRepository),
         filterTransactions: const FilterTransactions(),

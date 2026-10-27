@@ -300,7 +300,9 @@ class _PinScreenState extends State<PinScreen> {
   }
 
   void _onKeypadDigit(String digit) {
-    if (isLocked || widget.isSubmitting || widget.pin.length >= widget.totalDigits) {
+    if (isLocked ||
+        widget.isSubmitting ||
+        widget.pin.length >= widget.totalDigits) {
       return;
     }
     widget.onDigitTap(digit);

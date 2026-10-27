@@ -356,7 +356,10 @@ final class MockApiService extends ApiService {
 
     if (endpoint == BaseUrl.authEmployeeLogin()) {
       if (data['pin']?.toString() != '1234') {
-        throw const ApiException('Téléphone ou code PIN incorrect.');
+        throw const ApiException(
+          'Téléphone ou code PIN incorrect.',
+          statusCode: 401,
+        );
       }
       return {
         'success': true,
@@ -432,7 +435,7 @@ final class MockApiService extends ApiService {
 
     if (endpoint == '/comptes/payer') {
       if (data['pin']?.toString() != '1234') {
-        throw const ApiException('Code secret incorrect.');
+        throw const ApiException('Code secret incorrect.', statusCode: 401);
       }
       final token = data['paymentToken']?.toString() ?? '';
       final payment = _pendingPayments[token];

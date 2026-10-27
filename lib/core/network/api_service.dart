@@ -4,16 +4,20 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../config/api_messages.dart';
+import '../../domain/errors/app_failure.dart';
 import 'base_url.dart';
 
-class ApiException implements Exception {
-  const ApiException(this.message, {this.statusCode});
+export '../../domain/errors/app_failure.dart';
 
-  final String message;
-  final int? statusCode;
-
-  @override
-  String toString() => message;
+class ApiException extends AppFailure {
+  const ApiException(
+    super.message, {
+    super.statusCode,
+    super.kind,
+    super.code,
+    super.retryAfter,
+    super.correlationId,
+  });
 }
 
 /// Small authenticated JSON client used by remote data sources.
@@ -50,56 +54,81 @@ class ApiService {
     ).replace(queryParameters: queryParameters);
   }
 
-  Future<dynamic> _decodeBody(http.Response response) async {
+  dynamic _decodeBody(http.Response response, {bool strict = false}) {
     if (response.body.isEmpty) {
       return null;
     }
 
     try {
       return json.decode(response.body);
-    } catch (_) {
+    } on FormatException {
+      if (strict && (response.headers['content-type'] ?? '').contains('json')) {
+        throw ApiException(
+          'Invalid JSON response',
+          kind: FailureKind.invalidResponse,
+          statusCode: response.statusCode,
+          correlationId: response.headers['x-correlation-id'],
+        );
+      }
       return response.body;
     }
   }
 
-  Future<dynamic> _request(Future<http.Response> future) async {
+  Future<dynamic> _request(Future<http.Response> Function() send) async {
     try {
-      final response = await future;
+      final response = await send();
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return await _decodeBody(response);
+        return _decodeBody(response, strict: true);
       }
 
-      final decodedBody = await _decodeBody(response);
-      final serverMessage = _serverMessage(decodedBody);
+      final decodedBody = _decodeBody(response);
+      final serverMessage = response.statusCode < 500
+          ? _serverMessage(decodedBody)
+          : null;
       if (response.body.toLowerCase().contains('unverified')) {
         throw ApiException(
           ApiMessages.smsError,
           statusCode: response.statusCode,
+          correlationId: response.headers['x-correlation-id'],
         );
       }
 
       throw ApiException(
         serverMessage ?? ApiMessages.http('HTTP', response.statusCode),
         statusCode: response.statusCode,
+        code: decodedBody is Map && decodedBody['code'] is String
+            ? decodedBody['code'] as String
+            : null,
+        retryAfter: _retryAfter(response.headers['retry-after']),
+        correlationId: response.headers['x-correlation-id'],
       );
-    } on TimeoutException {
-      throw ApiException('${ApiMessages.network}: timeout');
+    } on TimeoutException catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const ApiException('Request timed out', kind: FailureKind.timeout),
+        stackTrace,
+      );
     } on ApiException {
       rethrow;
-    } on http.ClientException catch (error) {
-      throw ApiException('${ApiMessages.network}: ${error.message}');
+    } on http.ClientException catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const ApiException('Network unavailable', kind: FailureKind.network),
+        stackTrace,
+      );
     }
   }
 
   String? _serverMessage(dynamic decodedBody) {
     if (decodedBody is Map) {
-      final value = decodedBody['message'] ?? decodedBody['error'];
+      final value = decodedBody['message'] ?? decodedBody['detail'];
       if (value is String && value.trim().isNotEmpty) return value.trim();
     }
-    if (decodedBody is String && decodedBody.trim().length <= 200) {
-      return decodedBody.trim().isEmpty ? null : decodedBody.trim();
-    }
     return null;
+  }
+
+  Duration? _retryAfter(String? value) {
+    final seconds = int.tryParse(value ?? '');
+    if (seconds == null || seconds < 0) return null;
+    return Duration(seconds: seconds);
   }
 
   Future<dynamic> get(
@@ -110,7 +139,7 @@ class ApiService {
   }) {
     final uri = _buildUri(endpoint, queryParameters);
     final merged = {..._defaultHeaders, ...?headers};
-    return _request(_client.get(uri, headers: merged).timeout(timeout));
+    return _request(() => _client.get(uri, headers: merged).timeout(timeout));
   }
 
   Future<dynamic> post(
@@ -126,7 +155,7 @@ class ApiService {
       merged.remove('Authorization');
     }
     return _request(
-      _client
+      () => _client
           .post(uri, headers: merged, body: json.encode(data))
           .timeout(timeout),
     );
@@ -141,7 +170,7 @@ class ApiService {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
     return _request(
-      _client
+      () => _client
           .put(uri, headers: merged, body: json.encode(data))
           .timeout(timeout),
     );
@@ -156,7 +185,7 @@ class ApiService {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
     return _request(
-      _client
+      () => _client
           .patch(uri, headers: merged, body: json.encode(data))
           .timeout(timeout),
     );
@@ -169,7 +198,9 @@ class ApiService {
   }) {
     final uri = _buildUri(endpoint);
     final merged = {..._defaultHeaders, ...?headers};
-    return _request(_client.delete(uri, headers: merged).timeout(timeout));
+    return _request(
+      () => _client.delete(uri, headers: merged).timeout(timeout),
+    );
   }
 
   void dispose() => _client.close();

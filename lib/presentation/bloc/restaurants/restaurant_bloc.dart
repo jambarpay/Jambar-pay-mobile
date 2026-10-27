@@ -1,3 +1,5 @@
+import '../../../core/errors/failure_handling.dart';
+import '../../utils/failure_messages.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/use_cases/restaurants/get_restaurants.dart';
@@ -28,12 +30,21 @@ class RestaurantBloc extends Bloc<RestaurantEvent, RestaurantState> {
       if (_backgroundSync) {
         try {
           emit(RestaurantLoaded(await _getRestaurants(forceRefresh: true)));
-        } catch (_) {
+        } catch (error) {
+          if (!canUseCachedData(error)) rethrow;
           // The cached restaurants remain usable while the device is offline.
         }
       }
-    } catch (error) {
-      emit(RestaurantFailure(error.toString()));
+    } catch (error, stackTrace) {
+      emit(
+        RestaurantFailure(
+          failureMessage(
+            error,
+            stackTrace: stackTrace,
+            operation: 'restaurants',
+          ),
+        ),
+      );
     }
   }
 
@@ -44,8 +55,16 @@ class RestaurantBloc extends Bloc<RestaurantEvent, RestaurantState> {
     emit(const RestaurantLoading());
     try {
       emit(RestaurantLoaded(await _getRestaurants(forceRefresh: true)));
-    } catch (error) {
-      emit(RestaurantFailure(error.toString()));
+    } catch (error, stackTrace) {
+      emit(
+        RestaurantFailure(
+          failureMessage(
+            error,
+            stackTrace: stackTrace,
+            operation: 'restaurants',
+          ),
+        ),
+      );
     }
   }
 }

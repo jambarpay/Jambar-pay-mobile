@@ -1,3 +1,4 @@
+import '../../utils/failure_messages.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'payment_event.dart';
 import 'payment_state.dart';
@@ -40,8 +41,12 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
           amount: initiation.amount,
         ),
       );
-    } catch (error) {
-      emit(PaymentFailure(error.toString()));
+    } catch (error, stackTrace) {
+      emit(
+        PaymentFailure(
+          failureMessage(error, stackTrace: stackTrace, operation: 'payment'),
+        ),
+      );
     }
   }
 
@@ -66,8 +71,17 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
         pin: event.pin,
       );
       emit(PaymentSuccess(transaction));
-    } catch (e) {
-      emit(PaymentFailure('Paiement échoué: ${e.toString()}'));
+    } catch (e, stackTrace) {
+      emit(
+        PaymentFailure(
+          failureMessage(
+            e,
+            stackTrace: stackTrace,
+            operation: 'payment.confirm',
+            context: FailureContext.paymentConfirmation,
+          ),
+        ),
+      );
     }
   }
 

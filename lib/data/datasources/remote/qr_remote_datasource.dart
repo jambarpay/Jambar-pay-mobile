@@ -11,7 +11,10 @@ class QrRemoteDataSource {
       'userId': userId,
     });
     if (response is! Map) {
-      throw const ApiException('Format de QR employé invalide.');
+      throw const ApiException(
+        'Format de QR employé invalide.',
+        kind: FailureKind.invalidResponse,
+      );
     }
     return Map<String, dynamic>.from(response);
   }

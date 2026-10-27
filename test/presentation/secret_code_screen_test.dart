@@ -61,7 +61,7 @@ void main() {
 
   test('a network failure is not reported as an incorrect PIN', () async {
     final repository = _RecordingAuthRepository()
-      ..loginError = Exception('Erreur réseau');
+      ..loginError = const ApiException('offline', kind: FailureKind.network);
     final authBloc = AuthBloc(
       sendOtp: SendOtp(repository),
       verifyOtp: VerifyOtp(repository),
@@ -81,7 +81,7 @@ void main() {
         isA<AuthFailure>().having(
           (state) => state.errorMessage,
           'message',
-          contains('serveur'),
+          contains('connexion Internet'),
         ),
       ]),
     );

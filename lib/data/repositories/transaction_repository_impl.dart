@@ -47,13 +47,9 @@ class TransactionRepositoryImpl
 
   @override
   Future<Transaction?> getTransactionById(String id) async {
-    try {
-      final json = await _remoteDataSource.getTransactionById(id);
-      if (json == null) return null;
-      return TransactionDto.fromJson(json).toDomain();
-    } catch (e) {
-      throw Exception('Impossible de trouver la transaction: ${e.toString()}');
-    }
+    final json = await _remoteDataSource.getTransactionById(id);
+    if (json == null) return null;
+    return TransactionDto.fromJson(json).toDomain();
   }
 
   @override
@@ -63,21 +59,17 @@ class TransactionRepositoryImpl
     DateTime? endDate,
     TransactionStatus? status,
   }) async {
-    try {
-      final typeStr = type?.name.toUpperCase();
-      final statusStr = status?.name.toLowerCase();
+    final typeStr = type?.name.toUpperCase();
+    final statusStr = status?.name.toLowerCase();
 
-      final response = await _remoteDataSource.getFilteredTransactions(
-        type: typeStr,
-        startDate: startDate,
-        endDate: endDate,
-        status: statusStr,
-      );
-      return response
-          .map((json) => TransactionDto.fromJson(json).toDomain())
-          .toList();
-    } catch (e) {
-      throw Exception('Erreur de filtrage: ${e.toString()}');
-    }
+    final response = await _remoteDataSource.getFilteredTransactions(
+      type: typeStr,
+      startDate: startDate,
+      endDate: endDate,
+      status: statusStr,
+    );
+    return response
+        .map((json) => TransactionDto.fromJson(json).toDomain())
+        .toList();
   }
 }

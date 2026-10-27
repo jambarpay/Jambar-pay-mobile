@@ -1,3 +1,4 @@
+import '../../core/errors/failure_handling.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/value_objects/phone_number.dart';
@@ -6,7 +7,6 @@ import '../datasources/local/auth_local_datasource.dart';
 import '../models/dto/user_dto.dart';
 import '../../core/session/current_user_session.dart';
 import '../../core/storage/secure_session_storage.dart';
-import '../../core/network/api_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -27,30 +27,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> startEmployeeOnboarding(PhoneNumber phone) async {
-    try {
-      if (_useLocalAuth) {
-        return await _localDataSource.startEmployeeOnboarding(phone.digits);
-      }
-      return await _remoteDataSource.startEmployeeOnboarding(phone.digits);
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      throw Exception('Erreur réseau: ${e.toString()}');
+    if (_useLocalAuth) {
+      return await _localDataSource.startEmployeeOnboarding(phone.digits);
     }
+    return await _remoteDataSource.startEmployeeOnboarding(phone.digits);
   }
 
   @override
   Future<void> sendOtp(PhoneNumber phone) async {
-    try {
-      if (_useLocalAuth) {
-        await _localDataSource.sendOtp(phone.digits);
-      } else {
-        await _remoteDataSource.sendOtp(phone.digits);
-      }
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      throw Exception('Erreur réseau: ${e.toString()}');
+    if (_useLocalAuth) {
+      await _localDataSource.sendOtp(phone.digits);
+    } else {
+      await _remoteDataSource.sendOtp(phone.digits);
     }
   }
 
@@ -72,32 +60,26 @@ class AuthRepositoryImpl implements AuthRepository {
     String? pin,
     String? pinConfirmation,
   }) async {
-    try {
-      final response = _useLocalAuth
-          ? await _localDataSource.verifyOtp(
-              phone: phone.digits,
-              otp: otp,
-              pin: pin,
-              pinConfirmation: pinConfirmation,
-            )
-          : await _remoteDataSource.verifyOtp(
-              phone: phone.digits,
-              otp: otp,
-              pin: pin,
-              pinConfirmation: pinConfirmation,
-            );
-      final userDto = UserDto.fromJson(response);
-      final user = userDto.toDomain();
-      _currentUserSession?.setUserId(user.id);
-      await _rememberPhone(phone);
-      await _rememberUser(user);
-      await _rememberPin(user, pin);
-      return user;
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      throw Exception('Échec de la vérification: ${e.toString()}');
-    }
+    final response = _useLocalAuth
+        ? await _localDataSource.verifyOtp(
+            phone: phone.digits,
+            otp: otp,
+            pin: pin,
+            pinConfirmation: pinConfirmation,
+          )
+        : await _remoteDataSource.verifyOtp(
+            phone: phone.digits,
+            otp: otp,
+            pin: pin,
+            pinConfirmation: pinConfirmation,
+          );
+    final userDto = UserDto.fromJson(response);
+    final user = userDto.toDomain();
+    _currentUserSession?.setUserId(user.id);
+    await _rememberPhone(phone);
+    await _rememberUser(user);
+    await _rememberPin(user, pin);
+    return user;
   }
 
   @override
@@ -115,22 +97,20 @@ class AuthRepositoryImpl implements AuthRepository {
       await _rememberUser(user);
       await _rememberPin(user, pin);
       return user;
-    } catch (e) {
-      final offlineUser = await _tryOfflineLogin(phone: phone, pin: pin);
-      if (offlineUser != null) return offlineUser;
-      throw Exception('Échec de la connexion: ${e.toString()}');
+    } catch (error) {
+      if (classifyFailure(error).allowsOfflineLogin) {
+        final offlineUser = await _tryOfflineLogin(phone: phone, pin: pin);
+        if (offlineUser != null) return offlineUser;
+      }
+      rethrow;
     }
   }
 
   @override
   Future<String> refreshToken(String refreshToken) async {
-    try {
-      return _useLocalAuth
-          ? await _localDataSource.refreshToken(refreshToken)
-          : await _remoteDataSource.refreshToken(refreshToken);
-    } catch (e) {
-      throw Exception('Impossible de rafraîchir le token: ${e.toString()}');
-    }
+    return _useLocalAuth
+        ? await _localDataSource.refreshToken(refreshToken)
+        : await _remoteDataSource.refreshToken(refreshToken);
   }
 
   @override
@@ -174,7 +154,12 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> _rememberPhone(PhoneNumber phone) async {
     try {
       await _sessionStorage?.saveRememberedPhone(phone.digits);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       // A storage failure must not turn a successful authentication into an
       // error. The phone is only a convenience for the next login.
     }
@@ -188,7 +173,12 @@ class AuthRepositoryImpl implements AuthRepository {
         phone: user.phone.value,
         avatarUrl: user.avatarUrl,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       // Secure storage is a cache for the authenticated profile. A storage
       // issue must not make a valid authentication fail.
     }
@@ -198,7 +188,12 @@ class AuthRepositoryImpl implements AuthRepository {
     if (pin == null) return;
     try {
       await _sessionStorage?.savePinVerifier(userId: user.id, pin: pin);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       // Local PIN verification is an offline convenience; a storage failure
       // must not invalidate an otherwise successful online login.
     }
@@ -218,7 +213,12 @@ class AuthRepositoryImpl implements AuthRepository {
       if (verified != true) return null;
       _currentUserSession?.setUserId(user.id);
       return user;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       return null;
     }
   }
@@ -227,7 +227,12 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final profile = await _sessionStorage?.readUserProfile();
       return profile == null ? null : UserDto.fromJson(profile).toDomain();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       return null;
     }
   }
@@ -243,7 +248,12 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _sessionStorage?.clearRememberedPhone();
       await _sessionStorage?.clear();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       // The account is already disabled remotely; local cleanup is best effort.
     }
   }
@@ -256,14 +266,24 @@ class AuthRepositoryImpl implements AuthRepository {
       } else {
         await _remoteDataSource.logout();
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'auth_repository_impl',
+      );
       // Ignore errors on logout
     } finally {
       _currentUserSession?.clear();
       try {
         await _sessionStorage?.clearRememberedPhone();
         await _sessionStorage?.clear();
-      } catch (_) {
+      } catch (error, stackTrace) {
+        FailureDiagnostics.record(
+          error,
+          stackTrace,
+          operation: 'auth_repository_impl',
+        );
         // The local auth state must still be cleared when storage is
         // temporarily unavailable.
       }

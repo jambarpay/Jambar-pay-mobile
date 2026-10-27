@@ -1,3 +1,4 @@
+import '../utils/failure_messages.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -134,8 +135,9 @@ class _PhoneStepState extends State<_PhoneStep> {
       if (completed == true && mounted) {
         Navigator.of(context).pop(true);
       }
-    } catch (error) {
-      if (mounted) setState(() => _errorMessage = _cleanError(error));
+    } catch (error, stackTrace) {
+      final message = _cleanError(error, stackTrace);
+      if (mounted) setState(() => _errorMessage = message);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -261,8 +263,9 @@ class _OtpStepState extends State<_OtpStep> {
     });
     try {
       await context.read<AuthBloc>().requestOtpForPinReset(widget.phoneNumber);
-    } catch (error) {
-      if (mounted) setState(() => _errorMessage = _cleanError(error));
+    } catch (error, stackTrace) {
+      final message = _cleanError(error, stackTrace);
+      if (mounted) setState(() => _errorMessage = message);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -433,8 +436,8 @@ class _PinStepState extends State<_PinStep> {
       );
       final result = await resultFuture;
       if (result is AuthFailure) error = result.errorMessage;
-    } catch (exception) {
-      error = _cleanError(exception);
+    } catch (exception, stackTrace) {
+      error = _cleanError(exception, stackTrace);
     }
 
     if (!mounted) return;
@@ -765,8 +768,12 @@ String _formatPartialPhone(String value) {
   return parts.join(' ');
 }
 
-String _cleanError(Object error) {
-  return error.toString().replaceFirst('Exception: ', '');
+String _cleanError(Object error, StackTrace stackTrace) {
+  return failureMessage(
+    error,
+    stackTrace: stackTrace,
+    operation: 'auth.secret_code',
+  );
 }
 
 PageRoute<T> _flowRoute<T>(BuildContext context, Widget child) {

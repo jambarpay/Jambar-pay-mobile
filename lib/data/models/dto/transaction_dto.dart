@@ -1,4 +1,5 @@
 import '../../../domain/entities/transaction.dart';
+import '../../../domain/errors/app_failure.dart';
 import 'money_dto.dart';
 
 class TransactionDto {
@@ -136,7 +137,10 @@ class TransactionDto {
       // fall through
     }
 
-    return DateTime.now();
+    throw const AppFailure(
+      'Invalid transaction date',
+      kind: FailureKind.invalidResponse,
+    );
   }
 
   DateTime _parseRelativeDate(String rawDate, DateTime baseDate) {

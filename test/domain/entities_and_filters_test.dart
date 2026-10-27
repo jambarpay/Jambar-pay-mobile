@@ -138,10 +138,7 @@ void main() {
     expect(BaseUrl.transactions(), '/api/v1/payments/transactions');
     expect(BaseUrl.transactions('tx-1'), '/api/v1/payments/transactions/tx-1');
     expect(BaseUrl.restaurants(), '/api/v1/restaurants');
-    expect(
-      BaseUrl.walletByOwner('user-1'),
-      '/api/v1/wallets/owners/user-1',
-    );
+    expect(BaseUrl.walletByOwner('user-1'), '/api/v1/wallets/owners/user-1');
     expect(BaseUrl.payWithQr(), '/api/v1/payments/qr');
     expect(BaseUrl.employeeQr(), '/api/v1/qrs/employee');
     expect(ApiMessages.http('API', 500), 'API error: 500');

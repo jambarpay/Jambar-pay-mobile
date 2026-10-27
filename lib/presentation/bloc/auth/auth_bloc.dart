@@ -1,3 +1,5 @@
+import '../../utils/failure_messages.dart';
+import '../../../core/errors/failure_handling.dart';
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -244,17 +246,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         _currentPin = '';
         emit(AuthPinEntry(phone.formatted));
       }
-    } on ApiException catch (error) {
-      if (generation != _otpCheckGeneration || state is! AuthPhoneLoading) {
-        return;
-      }
-      emit(AuthPhoneInvalid(error.message, phone.formatted));
-    } catch (_) {
+    } catch (error, stackTrace) {
       if (generation != _otpCheckGeneration || state is! AuthPhoneLoading) {
         return;
       }
       emit(
-        AuthPhoneInvalid(_messages.loginServiceUnavailable, phone.formatted),
+        AuthPhoneInvalid(
+          failureMessage(
+            error,
+            stackTrace: stackTrace,
+            operation: 'auth.onboarding',
+          ),
+          phone.formatted,
+        ),
       );
     } finally {
       _isStartingOnboarding = false;
@@ -301,13 +305,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _settingUpPin = true;
       _confirmingSetupPin = false;
       emit(AuthPinSetupEntry(phone.formatted, code));
-    } catch (error) {
+    } catch (error, stackTrace) {
       if (generation != _otpCheckGeneration || state is! AuthOtpEntry) return;
       _otpCode = '';
       _currentPin = '';
       _setupPin = '';
       _settingUpPin = false;
       _confirmingSetupPin = false;
+      FailureDiagnostics.record(error, stackTrace, operation: 'auth.otp');
       emit(AuthOtpEntry(phone.formatted, code, _otpErrorMessage(error)));
     }
   }
@@ -432,8 +437,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthPinLoading(PhoneNumber(_currentPhone).formatted));
     try {
       await _completePinLogin(emit);
-    } catch (e) {
-      _registerPinFailure(emit);
+    } catch (e, stackTrace) {
+      FailureDiagnostics.record(e, stackTrace, operation: 'auth.login');
+      _handlePinLoginFailure(e, emit);
     }
   }
 
@@ -449,7 +455,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _pinLockedUntil = null;
       _currentPin = '';
       _currentPhone = '';
-    } catch (error) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(error, stackTrace, operation: 'auth.login');
       _handlePinLoginFailure(error, emit);
     }
   }
@@ -495,15 +502,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _currentOtp = '';
       _otpCode = '';
       emit(AuthOtpEntry(phone.formatted));
-    } catch (error) {
+    } catch (error, stackTrace) {
       if (generation != _otpCheckGeneration || state is! AuthOtpEntry) return;
       emit(
         AuthOtpEntry(
           phone.formatted,
           _currentOtp,
-          error is ApiException
-              ? error.message
-              : _messages.loginServiceUnavailable,
+          failureMessage(
+            error,
+            stackTrace: stackTrace,
+            operation: 'auth.resend',
+          ),
         ),
       );
     }
@@ -520,12 +529,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(AuthAuthenticated(user));
       _resetSensitiveState();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (e is ApiException &&
-          (e.statusCode == 410 ||
-              e.statusCode == 429 ||
-              (e.statusCode == 401 &&
-                  e.message.toLowerCase().contains('otp')))) {
+          (e.statusCode == 410 || e.statusCode == 429 || e.statusCode == 401)) {
         _currentPin = '';
         _setupPin = '';
         _otpCode = '';
@@ -548,7 +554,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           _otpCode,
           _setupPin,
           confirmation: '',
-          errorMessage: e.toString(),
+          errorMessage: failureMessage(
+            e,
+            stackTrace: stackTrace,
+            operation: 'auth.activate',
+          ),
         ),
       );
     }
@@ -583,8 +593,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _failedPinAttempts = 0;
       _pinLockedUntil = null;
       emit(AuthPinResetSuccess(phone.formatted));
-    } catch (error) {
-      emit(AuthFailure(error.toString(), phone.formatted));
+    } catch (error, stackTrace) {
+      emit(
+        AuthFailure(
+          failureMessage(
+            error,
+            stackTrace: stackTrace,
+            operation: 'auth.reset_pin',
+          ),
+          phone.formatted,
+        ),
+      );
     }
   }
 
@@ -616,17 +635,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthPhoneInitial());
   }
 
-  String _otpErrorMessage(Object error) {
-    if (error is ApiException) {
-      return switch (error.statusCode) {
-        401 => 'Code OTP incorrect. Vérifiez le code reçu.',
-        410 => 'Ce code OTP a expiré.',
-        429 => error.message,
-        _ => error.message,
-      };
-    }
-    return 'Impossible de vérifier le code pour le moment. Réessayez.';
-  }
+  String _otpErrorMessage(Object error) =>
+      failureMessage(error, context: FailureContext.otp);
 
   bool get _isPinLocked =>
       _pinLockedUntil != null && DateTime.now().isBefore(_pinLockedUntil!);
@@ -672,19 +682,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
 
     _currentPin = '';
-    emit(
-      AuthFailure(_messages.loginServiceUnavailable, _formattedCurrentPhone),
-    );
+    emit(AuthFailure(failureMessage(error), _formattedCurrentPhone));
   }
 
-  bool _isInvalidPinError(Object error) {
-    final message = error.toString().toLowerCase();
-    return message.contains('code pin incorrect') ||
-        message.contains('code secret incorrect') ||
-        message.contains('phone or pin') ||
-        message.contains('unauthorized') ||
-        message.contains('401');
-  }
+  bool _isInvalidPinError(Object error) =>
+      classifyFailure(error).kind == FailureKind.unauthenticated;
 
   String _pinLockMessage() {
     final lockedUntil = _pinLockedUntil;

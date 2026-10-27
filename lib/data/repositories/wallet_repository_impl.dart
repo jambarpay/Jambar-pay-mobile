@@ -1,6 +1,7 @@
 import '../../domain/repositories/wallet_repository.dart';
 import '../../domain/entities/wallet.dart';
 import '../../domain/value_objects/money.dart';
+import '../../domain/errors/app_failure.dart';
 import '../datasources/remote/wallet_remote_datasource.dart';
 
 class WalletRepositoryImpl implements WalletRepository {
@@ -10,12 +11,8 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<Wallet> getWallet() async {
-    try {
-      final json = await _remoteDataSource.getWallet();
-      return _mapToWallet(json);
-    } catch (e) {
-      throw Exception('Impossible de charger le portefeuille: ${e.toString()}');
-    }
+    final json = await _remoteDataSource.getWallet();
+    return _mapToWallet(json);
   }
 
   @override
@@ -23,15 +20,11 @@ class WalletRepositoryImpl implements WalletRepository {
     required Money amount,
     required bool isCredit,
   }) async {
-    try {
-      final json = await _remoteDataSource.updateBalanceAfterPayment(
-        amount: amount.amount,
-        isCredit: isCredit,
-      );
-      return _mapToWallet(json);
-    } catch (e) {
-      throw Exception('Impossible de mettre à jour le solde: ${e.toString()}');
-    }
+    final json = await _remoteDataSource.updateBalanceAfterPayment(
+      amount: amount.amount,
+      isCredit: isCredit,
+    );
+    return _mapToWallet(json);
   }
 
   @override
@@ -39,35 +32,30 @@ class WalletRepositoryImpl implements WalletRepository {
     required Money amount,
     required String providerTransactionId,
   }) async {
-    try {
-      final json = await _remoteDataSource.topUpWithProvider(
-        amount: amount.amount,
-        providerTransactionId: providerTransactionId,
-      );
-      return _mapToWallet(json);
-    } catch (e) {
-      throw Exception('Impossible de confirmer la recharge: ${e.toString()}');
-    }
+    final json = await _remoteDataSource.topUpWithProvider(
+      amount: amount.amount,
+      providerTransactionId: providerTransactionId,
+    );
+    return _mapToWallet(json);
   }
 
   @override
   Future<Wallet> refreshWallet() async {
-    try {
-      final json = await _remoteDataSource.refreshWallet();
-      return _mapToWallet(json);
-    } catch (e) {
-      throw Exception(
-        'Impossible de rafraîchir le portefeuille: ${e.toString()}',
-      );
-    }
+    final json = await _remoteDataSource.refreshWallet();
+    return _mapToWallet(json);
   }
 
   Wallet _mapToWallet(Map<String, dynamic> json) {
     final rawBalance = json['balance'];
+    final rawAmount = rawBalance is Map ? rawBalance['amount'] : rawBalance;
+    if (rawAmount is! num || !rawAmount.isFinite) {
+      throw const AppFailure(
+        'Invalid wallet balance',
+        kind: FailureKind.invalidResponse,
+      );
+    }
     final balance = Money(
-      amount: rawBalance is Map
-          ? (rawBalance['amount'] as num?)?.round() ?? 0
-          : (rawBalance as num?)?.round() ?? 0,
+      amount: rawAmount.round(),
       currency: rawBalance is Map
           ? rawBalance['currency']?.toString() ?? 'XOF'
           : json['currency']?.toString() ?? 'XOF',

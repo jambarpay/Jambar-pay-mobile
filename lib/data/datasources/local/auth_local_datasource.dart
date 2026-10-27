@@ -33,11 +33,14 @@ class AuthLocalDataSource {
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (otp != '123456' && otp != _currentPin) {
-      throw Exception('Code secret incorrect');
+      throw const ApiException('Code secret incorrect', statusCode: 401);
     }
     if (pin != null &&
         (!RegExp(r'^\d{4}$').hasMatch(pin) || pin != pinConfirmation)) {
-      throw Exception('Le code PIN doit contenir 4 chiffres et être confirmé');
+      throw const ValidationFailure(
+        'Le code PIN doit contenir 4 chiffres et être confirmé',
+        code: 'invalid_pin',
+      );
     }
     if (pin != null) {
       _currentPin = pin;
@@ -57,7 +60,7 @@ class AuthLocalDataSource {
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     if (pin != _currentPin) {
-      throw Exception('Code PIN incorrect.');
+      throw const ApiException('Code PIN incorrect.', statusCode: 401);
     }
     return {
       'id': _testUserId,
@@ -79,10 +82,16 @@ class AuthLocalDataSource {
     await Future.delayed(const Duration(milliseconds: 300));
     if (!RegExp(r'^\d{4}$').hasMatch(currentPin) ||
         !RegExp(r'^\d{4}$').hasMatch(newPin)) {
-      throw Exception('Le code PIN doit contenir 4 chiffres.');
+      throw const ValidationFailure(
+        'Le code PIN doit contenir 4 chiffres.',
+        code: 'invalid_pin',
+      );
     }
     if (currentPin != _currentPin) {
-      throw Exception('Code secret actuel incorrect.');
+      throw const ApiException(
+        'Code secret actuel incorrect.',
+        statusCode: 401,
+      );
     }
     _currentPin = newPin;
   }
@@ -94,10 +103,16 @@ class AuthLocalDataSource {
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     if (!RegExp(r'^\d{4}$').hasMatch(newPin)) {
-      throw Exception('Le code PIN doit contenir 4 chiffres.');
+      throw const ValidationFailure(
+        'Le code PIN doit contenir 4 chiffres.',
+        code: 'invalid_pin',
+      );
     }
     if (verificationCode != '123456' && verificationCode != _currentPin) {
-      throw Exception('Code de vérification incorrect.');
+      throw const ApiException(
+        'Code de vérification incorrect.',
+        statusCode: 401,
+      );
     }
     _currentPin = newPin;
   }

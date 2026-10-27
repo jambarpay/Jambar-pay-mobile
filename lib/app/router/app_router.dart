@@ -1,3 +1,4 @@
+import '../../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -88,8 +89,9 @@ abstract final class AppRouter {
         },
       ),
     ],
-    errorBuilder: (context, state) =>
-        Scaffold(body: Center(child: Text(state.error.toString()))),
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(child: Text(AppLocalizations.of(context).errorNotFound)),
+    ),
   );
 }
 

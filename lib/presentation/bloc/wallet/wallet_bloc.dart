@@ -1,3 +1,5 @@
+import '../../../core/errors/failure_handling.dart';
+import '../../utils/failure_messages.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/use_cases/wallet/get_wallet.dart';
@@ -33,12 +35,17 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
       if (_backgroundSync) {
         try {
           emit(WalletLoaded(await _refreshWallet()));
-        } catch (_) {
+        } catch (error) {
+          if (!canUseCachedData(error)) rethrow;
           // The cached wallet remains usable while the device is offline.
         }
       }
-    } catch (error) {
-      emit(WalletFailure(error.toString()));
+    } catch (error, stackTrace) {
+      emit(
+        WalletFailure(
+          failureMessage(error, stackTrace: stackTrace, operation: 'wallet'),
+        ),
+      );
     }
   }
 
@@ -48,8 +55,12 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
   ) async {
     try {
       emit(WalletLoaded(await _refreshWallet()));
-    } catch (error) {
-      emit(WalletFailure(error.toString()));
+    } catch (error, stackTrace) {
+      emit(
+        WalletFailure(
+          failureMessage(error, stackTrace: stackTrace, operation: 'wallet'),
+        ),
+      );
     }
   }
 

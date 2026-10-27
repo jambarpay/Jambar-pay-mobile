@@ -1,3 +1,4 @@
+import '../../../core/errors/failure_handling.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/network/base_url.dart';
 import '../../../core/session/current_user_session.dart';
@@ -31,30 +32,49 @@ class WalletRemoteDataSource {
       try {
         final cached = await _sessionStorage?.readWalletCache();
         if (cached != null) return cached;
-      } catch (_) {
+      } catch (error, stackTrace) {
+        FailureDiagnostics.record(
+          error,
+          stackTrace,
+          operation: 'wallet_remote_datasource',
+        );
         // Continue with the network request when the cache is unavailable.
       }
     }
     try {
       final response = await apiService.get(BaseUrl.walletByOwner(_ownerId));
       if (response is! Map) {
-        throw Exception('Invalid wallet response');
+        throw const ApiException(
+          'Invalid wallet response',
+          kind: FailureKind.invalidResponse,
+        );
       }
       final wallet = Map<String, dynamic>.from(response);
       try {
         await _sessionStorage?.saveWalletCache(wallet);
-      } catch (_) {
+      } catch (error, stackTrace) {
+        FailureDiagnostics.record(
+          error,
+          stackTrace,
+          operation: 'wallet_remote_datasource',
+        );
         // Cache failures must not affect a successful network response.
       }
       return wallet;
     } catch (error) {
+      if (!canUseCachedData(error)) rethrow;
       try {
         final cached = await _sessionStorage?.readWalletCache();
         if (cached != null) return cached;
-      } catch (_) {
+      } catch (error, stackTrace) {
+        FailureDiagnostics.record(
+          error,
+          stackTrace,
+          operation: 'wallet_remote_datasource',
+        );
         // Fall through to the original network error.
       }
-      throw error;
+      rethrow;
     }
   }
 
@@ -75,7 +95,10 @@ class WalletRemoteDataSource {
       'currency': wallet['currency']?.toString() ?? 'XOF',
     });
     if (response is! Map) {
-      throw Exception('Invalid update response');
+      throw const ApiException(
+        'Invalid update response',
+        kind: FailureKind.invalidResponse,
+      );
     }
     return Map<String, dynamic>.from(response);
   }
@@ -97,7 +120,10 @@ class WalletRemoteDataSource {
       'providerTransactionId': providerTransactionId,
     });
     if (response is! Map) {
-      throw Exception('Invalid top-up response');
+      throw const ApiException(
+        'Invalid top-up response',
+        kind: FailureKind.invalidResponse,
+      );
     }
     return Map<String, dynamic>.from(response);
   }

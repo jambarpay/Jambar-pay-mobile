@@ -1,3 +1,4 @@
+import 'package:jambar_pay_mobile/domain/errors/app_failure.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -250,7 +251,7 @@ class _Repository implements RestaurantRepository {
   @override
   Future<List<Restaurant>> getRestaurants() async {
     calls++;
-    if (fail) throw Exception('Connexion indisponible');
+    if (fail) throw const AppFailure('offline', kind: FailureKind.network);
     return data;
   }
 }

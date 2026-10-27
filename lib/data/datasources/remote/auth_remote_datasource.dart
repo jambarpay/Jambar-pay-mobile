@@ -26,7 +26,10 @@ class AuthRemoteDataSource {
       includeAuthorization: false,
     );
     if (response is! Map || response['success'] != true) {
-      throw const ApiException('Réponse d’activation invalide.');
+      throw const ApiException(
+        'Réponse d’activation invalide.',
+        kind: FailureKind.invalidResponse,
+      );
     }
     final envelope = Map<String, dynamic>.from(response);
     final data = envelope['data'] is Map
@@ -34,7 +37,10 @@ class AuthRemoteDataSource {
         : envelope;
     final onboardingRequired = data['onboardingRequired'];
     if (onboardingRequired is! bool) {
-      throw const ApiException('Réponse d’activation invalide.');
+      throw const ApiException(
+        'Réponse d’activation invalide.',
+        kind: FailureKind.invalidResponse,
+      );
     }
     return onboardingRequired;
   }
@@ -52,6 +58,7 @@ class AuthRemoteDataSource {
     if (response is! Map || response['success'] != true) {
       throw const ApiException(
         'La vérification du code n’a pas été confirmée. Réessayez.',
+        kind: FailureKind.invalidResponse,
       );
     }
   }
@@ -90,11 +97,14 @@ class AuthRemoteDataSource {
     final response = await apiService.post(BaseUrl.authRegisterVerify(), {
       'phoneNumber': phone,
       'otp': otp,
-      if (pin != null) 'pin': pin,
-      if (pinConfirmation != null) 'pinConfirmation': pinConfirmation,
+      'pin': ?pin,
+      'pinConfirmation': ?pinConfirmation,
     }, includeAuthorization: false);
     if (response is! Map) {
-      throw Exception('Invalid response format');
+      throw const ApiException(
+        'Invalid response format',
+        kind: FailureKind.invalidResponse,
+      );
     }
     final envelope = Map<String, dynamic>.from(response);
     final responseMap = envelope['data'] is Map
@@ -114,7 +124,10 @@ class AuthRemoteDataSource {
       return Map<String, dynamic>.from(user);
     }
     if (responseMap.containsKey('user')) {
-      throw const ApiException('Invalid user response format');
+      throw const ApiException(
+        'Invalid user response format',
+        kind: FailureKind.invalidResponse,
+      );
     }
 
     // OTP verification provisions the PIN; obtain the normal employee JWT
@@ -148,7 +161,10 @@ class AuthRemoteDataSource {
       'pin': pin,
     }, includeAuthorization: false);
     if (response is! Map) {
-      throw const ApiException('Invalid login response format');
+      throw const ApiException(
+        'Invalid login response format',
+        kind: FailureKind.invalidResponse,
+      );
     }
 
     final envelope = Map<String, dynamic>.from(response);
@@ -157,7 +173,10 @@ class AuthRemoteDataSource {
         : envelope;
     final accessToken = responseMap['accessToken']?.toString();
     if (accessToken == null || accessToken.isEmpty) {
-      throw const ApiException('Invalid login response');
+      throw const ApiException(
+        'Invalid login response',
+        kind: FailureKind.invalidResponse,
+      );
     }
 
     _setAccessToken(accessToken);
@@ -165,7 +184,10 @@ class AuthRemoteDataSource {
 
     final profile = responseMap['profile'];
     if (profile is! Map) {
-      throw const ApiException('Invalid user response format');
+      throw const ApiException(
+        'Invalid user response format',
+        kind: FailureKind.invalidResponse,
+      );
     }
     final profileMap = Map<String, dynamic>.from(profile);
     return {'id': profileMap['id'], 'name': profileMap['name'], 'phone': phone};
@@ -174,6 +196,7 @@ class AuthRemoteDataSource {
   Future<String> refreshToken(String refreshToken) async {
     throw const ApiException(
       'Le backend actuel ne fournit pas de renouvellement de session.',
+      kind: FailureKind.unsupported,
     );
   }
 
@@ -183,6 +206,7 @@ class AuthRemoteDataSource {
   }) async {
     throw const ApiException(
       'Le backend actuel ne fournit pas de changement de code secret.',
+      kind: FailureKind.unsupported,
     );
   }
 

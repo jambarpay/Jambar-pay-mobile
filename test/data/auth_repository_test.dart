@@ -117,7 +117,7 @@ void main() {
   );
 
   test(
-    'AuthRepositoryImpl contextualizes errors and keeps logout safe',
+    'AuthRepositoryImpl preserves original errors and keeps logout safe',
     () async {
       final remote = _RemoteAuthStub()..error = StateError('offline');
       final repository = AuthRepositoryImpl(
@@ -126,35 +126,14 @@ void main() {
         useLocalAuth: false,
       );
 
-      await expectLater(
-        repository.sendOtp(phone),
-        throwsA(
-          isA<Exception>().having(
-            (error) => error.toString(),
-            'message',
-            contains('Erreur réseau'),
-          ),
-        ),
-      );
+      await expectLater(repository.sendOtp(phone), throwsA(same(remote.error)));
       await expectLater(
         repository.verifyOtp(phone: phone, otp: '1234'),
-        throwsA(
-          isA<Exception>().having(
-            (error) => error.toString(),
-            'message',
-            contains('Échec de la vérification'),
-          ),
-        ),
+        throwsA(same(remote.error)),
       );
       await expectLater(
         repository.refreshToken('refresh'),
-        throwsA(
-          isA<Exception>().having(
-            (error) => error.toString(),
-            'message',
-            contains('Impossible de rafraîchir'),
-          ),
-        ),
+        throwsA(same(remote.error)),
       );
       await expectLater(repository.logout(), completes);
     },

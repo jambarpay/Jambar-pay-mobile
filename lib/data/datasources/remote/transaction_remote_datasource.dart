@@ -1,3 +1,4 @@
+import '../../../core/errors/failure_handling.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/network/base_url.dart';
 import '../../../core/storage/secure_session_storage.dart';
@@ -15,9 +16,10 @@ class TransactionRemoteDataSource {
       await _saveCache(items);
       return items;
     } catch (error) {
+      if (!canUseCachedData(error)) rethrow;
       final cached = await _readCache();
       if (cached != null) return cached;
-      throw error;
+      rethrow;
     }
   }
 
@@ -47,6 +49,7 @@ class TransactionRemoteDataSource {
       await _saveCache(normalized['content'] as List<dynamic>);
       return normalized;
     } catch (error) {
+      if (!canUseCachedData(error)) rethrow;
       if (page == 0) {
         final cached = await _readCache();
         if (cached != null) {
@@ -59,13 +62,19 @@ class TransactionRemoteDataSource {
           };
         }
       }
-      throw error;
+      rethrow;
     }
   }
 
   Future<Map<String, dynamic>?> getTransactionById(String id) async {
     final response = await apiService.get(BaseUrl.transactions(id));
-    if (response is! Map<String, dynamic>) return null;
+    if (response == null) return null;
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException(
+        'Invalid transaction response',
+        kind: FailureKind.invalidResponse,
+      );
+    }
     return Map<String, dynamic>.from(response);
   }
 
@@ -94,9 +103,10 @@ class TransactionRemoteDataSource {
       await _saveCache(items);
       return items;
     } catch (error) {
+      if (!canUseCachedData(error)) rethrow;
       final cached = await _readCache();
       if (cached != null) return cached;
-      throw error;
+      rethrow;
     }
   }
 
@@ -113,19 +123,21 @@ class TransactionRemoteDataSource {
         'totalPages': response.isEmpty ? 0 : 1,
       };
     }
-    return {
-      'content': const <dynamic>[],
-      'page': page,
-      'size': 0,
-      'totalElements': 0,
-      'totalPages': 0,
-    };
+    throw const ApiException(
+      'Invalid transaction page',
+      kind: FailureKind.invalidResponse,
+    );
   }
 
   Future<void> _saveCache(List<dynamic> items) async {
     try {
       await _sessionStorage?.saveTransactionsCache(items);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'transaction_remote_datasource',
+      );
       // Cache failures must not affect a successful network response.
     }
   }
@@ -133,7 +145,12 @@ class TransactionRemoteDataSource {
   Future<List<dynamic>?> _readCache() async {
     try {
       return await _sessionStorage?.readTransactionsCache();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      FailureDiagnostics.record(
+        error,
+        stackTrace,
+        operation: 'transaction_remote_datasource',
+      );
       return null;
     }
   }
@@ -143,6 +160,9 @@ class TransactionRemoteDataSource {
     if (response is Map && response['content'] is List) {
       return List<dynamic>.from(response['content'] as List);
     }
-    return const [];
+    throw const ApiException(
+      'Invalid transactions response',
+      kind: FailureKind.invalidResponse,
+    );
   }
 }

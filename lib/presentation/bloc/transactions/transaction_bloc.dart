@@ -1,3 +1,5 @@
+import '../../../core/errors/failure_handling.dart';
+import '../../utils/failure_messages.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'transaction_event.dart';
 import 'transaction_state.dart';
@@ -59,12 +61,17 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           } else {
             _emitLoadedPage(freshResult, emit);
           }
-        } catch (_) {
+        } catch (error) {
+          if (!canUseCachedData(error)) rethrow;
           // The cached transactions remain usable while the device is offline.
         }
       }
-    } catch (e) {
-      emit(TransactionFailure(e.toString()));
+    } catch (e, stackTrace) {
+      emit(
+        TransactionFailure(
+          failureMessage(e, stackTrace: stackTrace, operation: 'transactions'),
+        ),
+      );
     }
   }
 
@@ -113,8 +120,12 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           page: result.page,
         ),
       );
-    } catch (e) {
-      emit(TransactionFailure(e.toString()));
+    } catch (e, stackTrace) {
+      emit(
+        TransactionFailure(
+          failureMessage(e, stackTrace: stackTrace, operation: 'transactions'),
+        ),
+      );
     }
   }
 
@@ -147,8 +158,12 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           page: result.page,
         ),
       );
-    } catch (e) {
-      emit(TransactionFailure(e.toString()));
+    } catch (e, stackTrace) {
+      emit(
+        TransactionFailure(
+          failureMessage(e, stackTrace: stackTrace, operation: 'transactions'),
+        ),
+      );
     }
   }
 

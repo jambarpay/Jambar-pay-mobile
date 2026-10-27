@@ -1,3 +1,5 @@
+import '../../../core/errors/failure_handling.dart';
+import '../../utils/failure_messages.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
@@ -49,8 +51,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       await _changePin(currentPin: event.currentPin, newPin: event.newPin);
       add(const PinChanged());
-    } catch (e) {
-      emit(PinChangeFailure(e.toString()));
+    } catch (e, stackTrace) {
+      emit(
+        PinChangeFailure(
+          failureMessage(e, stackTrace: stackTrace, operation: 'profile'),
+        ),
+      );
     }
   }
 
@@ -66,7 +72,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       await _logout();
       emit(const LogoutComplete());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      FailureDiagnostics.record(e, stackTrace, operation: 'profile.logout');
       emit(const LogoutComplete());
     }
   }
