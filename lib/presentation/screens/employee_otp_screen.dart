@@ -106,8 +106,9 @@ class EmployeeOtpScreen extends StatelessWidget {
                           const SizedBox(height: 24),
                           NumericKeypad(
                             onDigitTap: (digit) {
-                              if (!isSubmitting && !isResending)
+                              if (!isSubmitting && !isResending) {
                                 onDigitTap(digit);
+                              }
                             },
                             onBackspace: () {
                               if (!isSubmitting && !isResending) onBackspace();
